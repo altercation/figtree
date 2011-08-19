@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Ethan Schoonover <es@ethanschoonover.com>
+
 # proto-automatic
 # aif procedure to install a various prototype configurations
 # including hardware prototypes for specific makes/models,
@@ -30,7 +32,9 @@
 
 depend_procedure core automatic # most of automatic fits our needs
 
-# TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
+# !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
+# the worker to call is configure_system. it's actually ok to call the second default function (post_configure target) several times
+# though maybe better to either redefine configure_system, move it to the end, or have another post-configure worker at the end of the phase_system
 phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
 
 # use yaourt instead of pacman (see yaourt related worker/functions below)
@@ -70,55 +74,96 @@ var_ARGS_USAGE=$(cat <<EOF_ARGS_USAGE
 
 -e
 -a
--u/-c
+-c <profile-path>:  specify a profile in one of three formats:
+
+                        1. relative path:       systems/make/model
+                        2. absolute path:       /tmp/downloads/systems/make/model
+                        3. remote path:         http://github.com/archproto/profiles/my-laptop
+
+                    All paths may refer to either an actual file or a directory containing a file named "profile". Thus:
+
+                        profiles/my-laptop
+
+                    can eiether be a directory with a file with the completed path: "profiles/my-laptop/profile" or a
+                    profile file named "my-laptop". The use of a directory with a "profile" file is used when the profile
+                    has and overlay subdirectory with overlay files for use during installation. Thus in the case of the
+                    subdirectory "profiles/my-laptop", archproto/automatic will source:
+
+                        profiles/my-laptop/profile == the profile file
+                        profiles/my-laptop/overlay == files installed with the profile
+
+                    If a relative path is specified, archproto/automatic will attempt to load it from the same module
+                    location as the archproto/automatic procedure. Thus if archproto is located in:
+
+                        /usr/lib/aif/user/archproto
+
+                    and was specified to aif as:
+
+                        aif -p archproto/automatic -c profiles/my-laptop
+
+                    the procedure will look for the "profiles/my-laptop" profile in:
+
+                        /usr/lib/aif/user/archproto/profiles/my-laptop
+
+                    while if you have specified a remote location for the archproto/automatic procedure on the aif command line:
+
+                        aif -p http://github.com/yourusername/archproto/procedures/automatic -c profiles/my-laptop
+
+                    archproto/automatic will look in the same repository for the profile at:
+
+                        http://github.com/yourusername/archproto/profiles/my-laptop
+
+                    Note that it ok to source the archproto/automatic procedure from one remote location and the profile from another:
+
+                        aif -p http://firsturl.net/archproto/procedures/automatic -c http://secondurl.com/archproto/profiles/my-laptop
+
+                    Finally, it is important to note that the config profile you source can in turn source other profiles according
+                    to the same rules.
+
 
 EOF_ARGS_USAGE)
 
+# process_args is called by aif master script
+# and we are depending on the core/automatic profile so I'm going to keep close to it's behavior
+#
+# changes from core/automatic:
+# - allow multiple profiles to be specified (multiple -c parameters)
+# - calls load_profile to enable profile search/load logic
+#
 process_args ()
 {
     var_AUTOMATIC_PROFILE=
-    var_ARCHPROTO_APPLICATIONS=
-    var_ARCHPROTO_SYSTEM=
-    var_ARCHPROTO_ENVIRONMENTS=
     while [[ -n $1 ]]
     do
         case $1 in
-            -c) [ -n "$2" ] var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif profile when using the -c flag." ;;
-            -a) [ -n "$2" ] var_ARCHPROTO_APPLICATIONS=$2 || die_error "You must specify archproto application sets when using the -a flag." ;;
-            -u) [ -n "$2" ] var_ARCHPROTO_USER=$2 || die_error "You must specify an aif/archproto user profile when using the -u flag." ;;
-            -s) [ -n "$2" ] var_ARCHPROTO_SYSTEM=$2 || die_error "You must specify an archproto system make/model when using the -s flag." ;;
-            -e) [ -n "$2" ] var_ARCHPROTO_ENVIRONMENTS=$2 || die_error "You must specify archproto environments when using the -e flag." ;;
+            -c) [ -n "$2" ] var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
             *) usage && exit 5;;
         esac
         shift 2
     done
 }
 
-worker_intro ()
+# full value of the -c profile; could be a relative, absolute or remote path
+load_profile ()
 {
-        notify "archproto automatic procedure using system profile $archproto_SYSTEM_PROFILE and additional AIF profile $var_AUTOMATIC_PROFILE\n$DISCLAIMER"
+        if profile is of type:
+
+        absolute
+                check if it exists, load it
+        remote
+                check if we've already loaded, if not then download the entire module...
+                then turn it into an absolute path and call again
+        relative
+                if $module isn't http then
+                        figure out where archproto has been called from and turn things back into an absolute path
+                if $module is http then
+                        turn it into a remote path and call load_profile again
+        done!
 }
 
-
-# CURRENTLY IDENTICAL TO CORE/AUTOMATIC, DO WE NEED/WANT TO CHANGE?
-worker_configure ()
+worker_intro ()
 {
-	var_UI_TYPE=${arg_ui_type:-cli}
-	ui_init
-	[ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
-	source $var_AUTOMATIC_PROFILE   || die_error "Could not source config $var_AUTOMATIC_PROFILE"
-	# Check mandatory options
-	[ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
-	[ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
-	[ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
-	# initialize internal variables based on variables set by the user (some of the vars are handled in other workers):
-	var_RUNTIME_REPOSITORIES=$RUNTIME_REPOSITORIES
-	var_RUNTIME_PACKAGES=$RUNTIME_PACKAGES
-	var_GRUB_DEVICE=$GRUB_DEVICE
-	var_PARTITIONS=$PARTITIONS
-	var_BLOCKDATA=$BLOCKDATA
-	HARDWARECLOCK=${HARDWARECLOCK:-localtime}
-	TIMEZONE=${TIMEZONE:-Canada/Pacific}
+        notify "AIF archproto automatic procedure using system profile $archproto_SYSTEM_PROFILE and additional AIF profile $var_AUTOMATIC_PROFILE\n$DISCLAIMER"
 }
 
 # from dieter's examples in unofficial subdir of aif github repo
@@ -138,35 +183,6 @@ worker_install_packages
        PACMAN_TARGET=$PACMAN_TARGET_BACKUP
 }
 
-
-#worker_configure_hardware ()
-#worker_configure_platform ()
-#
-#worker_prototype_environment ()
-#worker_prototype_applications ()
-
-#alternate to single worker below:
-#could just add items to packages to install
-#and then create two new workers:
-#
-#worker_change_configfiles
-#worker_write_overlayfiles
-#
-#we would potentially still need a custom worker to do fiddly seds and such, 
-#normally just returning true but could be customized/overridden in the system 
-#config
-#
-#could then also add an "install home" step
-
-worker_package_list ()
-{
-        var_TARGET_PACKAGES=$TARGET_PACKAGES
-        var_TARGET_GROUPS=$TARGET_GROUPS
-        var_TARGET_PACKAGES_EXCLUDE=$TARGET_PACKAGES_EXCLUDE
-        [ -z "$var_TARGET_PACKAGES" -a -z "$var_TARGET_GROUPS" ] && var_TARGET_GROUPS=base
-        true
-}
-
 worker_change_configvalues()
 {
         process_config_changes $CONFIG_CHANGES
@@ -183,16 +199,6 @@ worker_system_extras()
 {
         system_extras
 }
-
-# ---------------------------------------------------------------------
-# lib-flowcontrol like functions
-#
-# some of these are overrides of core/libs/lib-flowcontrol.sh in order
-# to enable loading files remotely; others are new (to enable loading system 
-# configs remotely)
-# ---------------------------------------------------------------------
-
-(maybe only load_lib ?)
 
 # $1 array of packages (from official and aur) to add to TARGET_PACKAGES
 # installed via standard installation functions
@@ -218,11 +224,16 @@ add_overlay_files()
 write_config_changes()
 {
         true
+        # iterate through array of config changes
+        # write changes using augeas or custom function
 }
 
 write_overlay_files()
 {
         true
+        # iterate over list of overlay files
+        # write files using current file permissions
+        # backup original file?
 }
 
 # this is a catch all function that any system profile can override

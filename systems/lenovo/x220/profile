@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Ethan Schoonover <es@ethanschoonover.com>
+
 # lenovo x220 tablet
 # aif/archproto system profile
 #
@@ -12,40 +14,67 @@
 # ----------------------------------------------------------------------
 # some of these aren't entirely hardware specific
 # but best to just put them here
-add_packages        (wireless_tools rfkill wpa_supplicant dialog wpa_actiond ifplugd netcfg wifi-select-git)
-add_config_changes  ('remove /etc/rc.conf/INTERFACES' \
-                     'remove /etc/rc.conf/eth0' \
-                     'remove /etc/rc.conf/eth1' \
-                     'set /etc/rc.conf/WIRED_INTERFACE eth0' \
-                     'set /etc/rc.conf/WIRELESS_INTERFACE wlan0' \
-                     'setlist /etc/rc.conf/NETWORKS main')
-                        rc_unset_daemon network # no longer required due to netcfg
-                        set_daemon @net-auto-wired
-                        set_daemon @net-auto-wireless
-add_overlay_files   ('/etc/wpa_supplicant.conf' '/etc/network.d/ethernet-dhcp')
+add_packages        (
+                    wireless_tools
+                    rfkill
+                    wpa_supplicant
+                    dialog
+                    wpa_actiond
+                    ifplugd
+                    netcfg
+                    wifi-select-git
+                    )
+add_config_changes  (
+                    'remove /etc/rc.conf/INTERFACES'
+                    'remove /etc/rc.conf/eth0'
+                    'remove /etc/rc.conf/eth1'
+                    'set /etc/rc.conf/WIRED_INTERFACE eth0'
+                    'set /etc/rc.conf/WIRELESS_INTERFACE wlan0'
+                    'setlist /etc/rc.conf/NETWORKS main'
+                    rc_unset_daemon network # no longer required due to netcfg
+                    set_daemon @net-auto-wired
+                    set_daemon @net-auto-wireless
+                    )
+add_overlay_files   (
+                    /etc/wpa_supplicant.conf
+                    /etc/network.d/ethernet-dhcp
+                    )
 
 # ----------------------------------------------------------------------
 # POWER
 # ----------------------------------------------------------------------
 # plus acpi input event handling for some hotkeys
 
-add_packages        (acpi acpid acpitool pm-utils cpufrequtils thinkfan lm_sensors)
-rc_set_daemon @acpid
-rc_set_module thinkpad_acpi
-rc_set_module acpi_cpufreq
-rc_set_module cpufreq_ondemand
-rc_set_module cpufreq_powersave
-rc_set_daemon sensors
-add_config_changes  ('/etc/rc.conf/VARIABLE value')
-add_overlay_files   ('/etc/acpi/handler.sh' \
-                     '/etc/pm/power.d/cpu' \
-                     '/etc/pm/power.d/display' \
-                     '/etc/pm/power.d/network' \
-                     '/etc/pm/power.d/save-state' \
-                     '/etc/pm/power.d/sound' \
-                     '/etc/pm/sleep.d/11netcfg' \
-                     '/etc/pm/sleep.d/90alsa' \
-                     '/etc/thinkfan.conf')
+add_packages        (
+                    acpi
+                    acpid
+                    acpitool
+                    pm-utils
+                    cpufrequtils
+                    thinkfan
+                    lm_sensors
+                    )
+add_config_changes  (
+                    rc_set_daemon @acpi
+                    rc_set_module thinkpad_acpi
+                    rc_set_module acpi_cpufreq
+                    rc_set_module cpufreq_ondemand
+                    rc_set_module cpufreq_powersave
+                    rc_set_daemon sensors
+                    '/etc/rc.conf/VARIABLE value'
+                    )
+add_overlay_files   (
+                    /etc/acpi/handler.sh
+                    /etc/pm/power.d/cpu
+                    /etc/pm/power.d/display
+                    /etc/pm/power.d/network
+                    /etc/pm/power.d/save-state
+                    /etc/pm/power.d/sound
+                    /etc/pm/sleep.d/11netcfg
+                    /etc/pm/sleep.d/90alsa
+                    /etc/thinkfan.conf
+                    )
+
 # note that the sleep.d/90physlock is not system specific and should probably 
 # be in environment
 #                    '/etc/pm/sleep.d/90physlock' \
@@ -77,32 +106,55 @@ add_overlay_files   ('/etc/acpi/handler.sh' \
 # ----------------------------------------------------------------------
 # hotkeys not handled by acpi or bios
 
-add_packages        (xbindkeys)
-add_overlay_files   ('/lib/udev/keymaps/lenovo-thinkpad_x220_tablet' \
-                     '/etc/udev/rules.d/95-keymap.rules' \
-                     '/etc/X11/xinit/xinitrc' \
-                     '/etc/X11/xinit/Xmodmap' \
-                     '/etc/X11/xinit/xbindkeysrc' \
-                     '/usr/bin/rotate-screen' \
-                     )
+add_packages        (
+                    xbindkeys
+                    )
+add_overlay_files   (
+                    /lib/udev/keymaps/lenovo-thinkpad_x220_tablet
+                    /etc/udev/rules.d/95-keymap.rules
+                    /etc/X11/xinit/xinitrc
+                    /etc/X11/xinit/Xmodmap
+                    /etc/X11/xinit/xbindkeysrc
+                    /usr/bin/rotate-screen
+                    )
 
 # ----------------------------------------------------------------------
 # SOUND
 # ----------------------------------------------------------------------
 
-add_packages        (alsa-utils alsa-oss)
+add_packages        (
+                    alsa-utils
+                    alsa-oss
+                    )
                 rc_set_daemon @alsa
-add_overlay_files   ('/var/lib/alsa/asound.state')
+add_overlay_files   (
+                    /var/lib/alsa/asound.state
+                    )
 
 # ----------------------------------------------------------------------
 # DISPLAY
 # ----------------------------------------------------------------------
 
-add_packages        (libdrm dri2proto xf86-video-intel)
-add_packages        (xorg-server xorg-xinit xorg-utils xorg-server-utils xf86-input-synaptics unclutter mesa mesa-demos xorg-xlsfonts xdotool)
-add_overlay_files   ('/etc/drirc')
+add_packages        (
+                    libdrm
+                    dri2proto
+                    xf86-video-intel
+                    )
+add_packages        (
+                    xorg-server
+                    xorg-xinit
+                    xorg-utils
+                    xorg-server-utils
+                    xf86-input-synaptics
+                    unclutter
+                    mesa
+                    mesa-demos
+                    xorg-xlsfonts
+                    xdotool
+                    )
+add_overlay_files   (/etc/drirc)
 # this xorg.conf.d/90-monitor.conf is to fix lcd monitor dpi size
-add_overlay_files   ('/etc/X11/xorg.conf.d/90-monitor.conf')
+add_overlay_files   (/etc/X11/xorg.conf.d/90-monitor.conf)
 
 # TODO ... abstract to a function or stick in extras 
 if ( ! grep -q 'MODULES="i915"' /etc/mkinitcpio.conf ); then

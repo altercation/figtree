@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Ethan Schoonover <es@ethanschoonover.com>
+
 # this is an aif config file
 # it can work with aif "standard" automic procedure
 # or with archproto on top of a system profile
@@ -9,10 +11,30 @@
 
 HOSTNAME=rho
 TIMEZONE=
+other rc stuff?
+
+
+what about?
+each of these could be relative to the current aif module or could be full root 
+relative paths, use a different module name, or could be http remote
+...
+the logic for sourcing them should be basic: if not a root relative or http 
+remote, and the profile specified is not found in the same module as 
+this profile, look in the /usr/lib/aif/user/archproto/* path. If not there, 
+then it's not found.
+archproto_SYSTEM_PROFILE="lenovo/x220"
+archproto_ENVIRONMENT_PROFILES="xmonad/es"
+archproto_APPLICATION_PROFILES="cli/complete gui/lighweight"
+archproto_USER_PROFILE="es"
+
+# networking stuff
+# write a network profile
+# (password?)
+# prompt for password
+# and write network name as home, ssid or main and then write it here as 
+# NETWORK
 
 # TODO: GIT, HOME SETUP STUFF
-# note: var could be put back in .local?
-# about etc... could it be back in .config? or not?
 
 # how does below interact with procedure?
 TARGET_PACKAGES='openssh e2fsprogs cryptsetup lvm2 xfsprogs'
