@@ -1,44 +1,106 @@
 #!/bin/bash
-# This is a procedure for automatic deployment/installation/configuration of systems.
-# check /usr/share/aif/examples for some example config files.
-# This procedure can easily replace the old quickinst script if you look at the "generic install" config file
-# Look at the base procedure to see the phases and which workers they'll execute.
-# It should be:
-# phase_preparation=(configure intro sysprep select_source runtime_network runtime_repositories runtime_packages)
-# phase_basics=(set_clock prepare_disks)
-# phase_system=(package_list install_packages configure_system install_bootloader)
-# phase_finish=(msg_report)
 
-# In theory, the only manual thing should maybe be configuring the runtime network and putting the configfile in place
-# I don't know if you can do non-interactive dm_crypt stuff.. maybe by pulling luks keyfiles from svn/git/..?
-# TODO: implement setting hostname, keymap, consolefont, network settings, root pass, etc
+# proto-automatic
+# aif procedure to install a various prototype configurations
+# including hardware prototypes for specific makes/models,
+# environment prototypes for common wm/de configurations
+# application set prototypes (e.g. lightweight-cli apps)
+# user protytpes
+
+# also takes a user customized aif profile
+
+# defined herein:
+#
+# additional custom worker(s)
+# custom command line parameter handling
+# revised http remote module sourcing to enable overlay, etc.
+# revised profile/config source heuristic to be smart (but not too smart) about 
+# where to get the specified profiles from
+# addition to phases to include correct worker(s)
+#
+# we also define and redefine some lib functions, notably those related to 
+# loading libs, files, etc. The reason for these redefined functions is that we 
+# want to be able to source those file remotely, be smart (but not too smart) 
+# about the path searched for those files and enable loading new types of files 
+# such as the system prototype profiles. Finally we have to redefine these here 
+# rather than a library script because this is the only file we can load from 
+# aif remotely.
+
+# see aif core/base procedure
+
+depend_procedure core automatic # most of automatic fits our needs
+
+# TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
+phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
+
+# use yaourt instead of pacman (see yaourt related worker/functions below)
+# for repository information (see http://archlinux.fr/yaourt-en#get_it)
+var_RUNTIME_REPOSITORIES=(archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
+var_RUNTIME_PACKAGES="augeas yaourt"
+
+# ---------------------------------------------------------------------
+# following two lines from dieter's automatic procedure, for ref
+# TODO: implement setting hostname, keymap, consolefont, network settings, root 
 # for a list of recognized variables, see examples/generic-install-on-sda
+# ---------------------------------------------------------------------
 
-depend_procedure core base # important, don't be confused when worker/variable definitions seem to be missing here.
+var_ARGS_USAGE=$(cat <<EOF_ARGS_USAGE
+-s <make/model>:    Specify a make/model prototype AIF system profile to install. If specified as simply "make/model" the path of the 
+                    archproto module as specified in the -p parameter will be used. This allows for specifying the following:
 
-var_OPTS_STRING="c:"
-var_ARGS_USAGE="-c <config>: Specify a configfile (profile) to be used"
-var_AUTOMATIC_PROFILE=""
-# TODO: if the user does aif -p automatic -c, then $1 is ":-" ??? if you do -c <something> then it's ok.
+                        aif -p archproto/automatic -s lenovo/x120e
+
+                    and aif will automatically source the system profile from:
+
+                        /usr/lib/aif/user/archproto/systems/lenovo/x120e/profile
+
+                    allowing for a remote procedure source to successfully search for the system profile:
+
+                        aif -p http://url.net/archproto/procedures/automatic -s lenovo/x120e
+
+                    in which case the system profile will be sourced from:
+
+                        http://url.net/archproto/systems/lenovo/x120e/profile
+
+                    The system profile make/model can also be prefixed by a root relative full path on the local filesystem or by
+                    a complete URL:
+
+                        aif -p archproto/automatic -s /tmp/lenovo/x120e
+                        aif -p http://url.net/archproto/procedures/automatic -s http://otherurl.com/mysystems/lenovo/x120e
+
+-e
+-a
+-u/-c
+
+EOF_ARGS_USAGE)
+
 process_args ()
 {
-	if [ "$1" = '-c' ]
-	then
-		[ -z "$2" ] && die_error "You must specify a config"
-		var_AUTOMATIC_PROFILE=$2
-	else
-		usage
-		exit 5
-	fi
+    var_AUTOMATIC_PROFILE=
+    var_ARCHPROTO_APPLICATIONS=
+    var_ARCHPROTO_SYSTEM=
+    var_ARCHPROTO_ENVIRONMENTS=
+    while [[ -n $1 ]]
+    do
+        case $1 in
+            -c) [ -n "$2" ] var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif profile when using the -c flag." ;;
+            -a) [ -n "$2" ] var_ARCHPROTO_APPLICATIONS=$2 || die_error "You must specify archproto application sets when using the -a flag." ;;
+            -u) [ -n "$2" ] var_ARCHPROTO_USER=$2 || die_error "You must specify an aif/archproto user profile when using the -u flag." ;;
+            -s) [ -n "$2" ] var_ARCHPROTO_SYSTEM=$2 || die_error "You must specify an archproto system make/model when using the -s flag." ;;
+            -e) [ -n "$2" ] var_ARCHPROTO_ENVIRONMENTS=$2 || die_error "You must specify archproto environments when using the -e flag." ;;
+            *) usage && exit 5;;
+        esac
+        shift 2
+    done
 }
-
 
 worker_intro ()
 {
-        notify "Automatic archsystems procedure for $var_AUTOMATIC_SYSTEM_PROFILE and $var_AUTOMATIC_PROFILE ...\n$DISCLAIMER"
+        notify "archproto automatic procedure using system profile $archproto_SYSTEM_PROFILE and additional AIF profile $var_AUTOMATIC_PROFILE\n$DISCLAIMER"
 }
 
 
+# CURRENTLY IDENTICAL TO CORE/AUTOMATIC, DO WE NEED/WANT TO CHANGE?
 worker_configure ()
 {
 	var_UI_TYPE=${arg_ui_type:-cli}
@@ -59,61 +121,115 @@ worker_configure ()
 	TIMEZONE=${TIMEZONE:-Canada/Pacific}
 }
 
-worker_select_source ()
+# from dieter's examples in unofficial subdir of aif github repo
+# better to do this here rather than redefine PACMAN & PACMAN_TARGET?
+worker_install_packages
 {
-	var_PKG_SOURCE_TYPE=${SOURCE:-cd}
-	var_FILE_URL=${FILE_URL:-file:///src/core/pkg}
-	var_SYNC_URL=${SYNC_URL:-}
+       PACMAN_BACKUP=$PACMAN
+       PACMAN_TARGET_BACKUP=$PACMAN_TARGET
+       PACMAN=${PACMAN//pacman/yaourt}
+       PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
+
+       target_prepare_pacman core extra community
+       [ -z "$TARGET_PACKAGES" ] && die_error "No packages listed for installation!"
+       installpkg
+
+       PACMAN=$PACMAN_BACKUP
+       PACMAN_TARGET=$PACMAN_TARGET_BACKUP
 }
 
-worker_prepare_disks ()
-{
-	get_possible_fs
-	echo "$var_PARTITIONS" > $TMP_PARTITIONS
-	echo "$var_BLOCKDATA" > $TMP_BLOCKDEVICES
-	process_disks       || die_error "Could not process_disks"
-	if ! process_filesystems
-	then
-		show_warning 'Disk processing' "Could not process_filesystems"
-		txt='also failed to execute properly'
-		rollback_filesystems && txt='ended successfully'
-		die_error "Something failed while processing the filesystem.  A rollback was executed, which $txt"
-	fi
-	inform "Partitions and filesystems made successfully"
 
-	# TODO: fstab? auto-add to fstab with libs? auto mkdir's on target_dir?
-}
+#worker_configure_hardware ()
+#worker_configure_platform ()
+#
+#worker_prototype_environment ()
+#worker_prototype_applications ()
+
+#alternate to single worker below:
+#could just add items to packages to install
+#and then create two new workers:
+#
+#worker_change_configfiles
+#worker_write_overlayfiles
+#
+#we would potentially still need a custom worker to do fiddly seds and such, 
+#normally just returning true but could be customized/overridden in the system 
+#config
+#
+#could then also add an "install home" step
 
 worker_package_list ()
 {
-	var_TARGET_PACKAGES=$TARGET_PACKAGES
-	var_TARGET_GROUPS=$TARGET_GROUPS
-	var_TARGET_PACKAGES_EXCLUDE=$TARGET_PACKAGES_EXCLUDE
-	[ -z "$var_TARGET_PACKAGES" -a -z "$var_TARGET_GROUPS" ] && var_TARGET_GROUPS=base
-	true
+        var_TARGET_PACKAGES=$TARGET_PACKAGES
+        var_TARGET_GROUPS=$TARGET_GROUPS
+        var_TARGET_PACKAGES_EXCLUDE=$TARGET_PACKAGES_EXCLUDE
+        [ -z "$var_TARGET_PACKAGES" -a -z "$var_TARGET_GROUPS" ] && var_TARGET_GROUPS=base
+        true
 }
 
-
-worker_install_packages ()
+worker_change_configvalues()
 {
-	target_prepare_pacman core extra community && installpkg
+        process_config_changes $CONFIG_CHANGES
 }
 
-
-worker_set_clock ()
+worker_write_overlayfiles()
 {
-	# uses $TIMEZONE, clock itself remains untouched.
-	copy_timezone_file
+        # This is more problematic as we have to include the correct prefix path
+        # and make sure to source it properly if local/remote, etc.
+        write_overlayfiles $OVERLAY_FILES
 }
 
-
-worker_install_bootloader ()
+worker_system_extras()
 {
-	get_grub_map || return 1
-	grub-install $var_GRUB_DEVICE --root-directory=/mnt || return 1
-	# check if we have a seperate bootdev (/boot)
-	# ToDo: This is double-work, find a better place!
-	# See comment in generate_grub_menulst and interactive_grub
-	bootdev=$(mount | grep $var_TARGET_DIR/boot | cut -d' ' -f 1)
-	generate_grub_menulst || return 1
+        system_extras
+}
+
+# ---------------------------------------------------------------------
+# lib-flowcontrol like functions
+#
+# some of these are overrides of core/libs/lib-flowcontrol.sh in order
+# to enable loading files remotely; others are new (to enable loading system 
+# configs remotely)
+# ---------------------------------------------------------------------
+
+(maybe only load_lib ?)
+
+# $1 array of packages (from official and aur) to add to TARGET_PACKAGES
+# installed via standard installation functions
+add_packages()
+{
+        [[ -n "$1" ]] && TARGET_PACKAGES+=" $1" || true
+}
+
+# $1 array of changes in augeas format to add to CONFIG_CHANGES
+# later written out with write_config_changes()
+add_config_changes()
+{
+        [[ -n "$1" ]] && CONFIG_CHANGES+=" $1"  || true
+}
+
+# $1 array of (final root relative) config files to add to OVERLAY_FILES
+# later written out with write_overlay_files()
+add_overlay_files()
+{
+        [[ -n "$1" ]] && OVERLAY_FILES+=" $1"   || true
+}
+
+write_config_changes()
+{
+        true
+}
+
+write_overlay_files()
+{
+        true
+}
+
+# this is a catch all function that any system profile can override
+# to do anything that needs doing (custom sed commands, etc.)
+# (so a profile in archproto/systems/make/model/profile can override
+# this arbitrarily)
+system_extras()
+{
+        true
 }

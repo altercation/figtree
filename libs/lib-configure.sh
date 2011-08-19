@@ -11,5 +11,13 @@
 #
 # 3. use of an "overlay" subdirectory to write out a set of predefined system 
 # configuration files (for example, /etc/acpi/handler.sh)
+#
+# 4. a possible fourth class of functions might involve the customization of 
+# kernel boot parameters (adding, removing, etc.)
+#
+#
+# It is unclear whether augeas can be used for all these
+# It might be feasible to use it, but are augeas lenses available for all of 
+# the above classes of config changes?
 
 
