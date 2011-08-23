@@ -2,14 +2,14 @@
 
 # Ethan Schoonover <es@ethanschoonover.com>
 
-# proto-automatic
+# archproto/automatic
 # aif procedure to install a various prototype configurations
 # including hardware prototypes for specific makes/models,
 # environment prototypes for common wm/de configurations
 # application set prototypes (e.g. lightweight-cli apps)
 # user protytpes
 
-# also takes a user customized aif profile
+# also takes a user customized aif profile using archproto specific functions
 
 # defined herein:
 #
@@ -28,19 +28,23 @@
 # rather than a library script because this is the only file we can load from 
 # aif remotely.
 
-# see aif core/base procedure
+# rename some variables for my own cognitive clarity
+ARCHPROTO_MODULE_NAME=archproto # in case we need to change our script name 
+AIF_MODULE_NAME="$module" # from aif.sh
+AIF_PROCEDURE_PATH="$procedure" # from aif.sh
+# MODULE_PATHS is used in load_profile; assumes that our procedure is *always* in the aif appropriate path (modulename/procedures/procedurename)
+MODULE_PATHS=("$(dirname $(dirname ${CURRENT_PROCEDURE_PATH}))")
+DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ ! -d "$DOWNLOADS_DIR" ]] && mkdir -p "$DOWNLOADS_DIR"
+KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
 
 depend_procedure core automatic # most of automatic fits our needs
+phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
+var_RUNTIME_REPOSITORIES=(archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
+var_RUNTIME_PACKAGES="augeas yaourt" # use yaourt instead of pacman as systems may require AUR packages
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
 # the worker to call is configure_system. it's actually ok to call the second default function (post_configure target) several times
 # though maybe better to either redefine configure_system, move it to the end, or have another post-configure worker at the end of the phase_system
-phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
-
-# use yaourt instead of pacman (see yaourt related worker/functions below)
-# for repository information (see http://archlinux.fr/yaourt-en#get_it)
-var_RUNTIME_REPOSITORIES=(archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
-var_RUNTIME_PACKAGES="augeas yaourt"
 
 # ---------------------------------------------------------------------
 # following two lines from dieter's automatic procedure, for ref
@@ -129,9 +133,13 @@ EOF_ARGS_USAGE)
 # changes from core/automatic:
 # - allow multiple profiles to be specified (multiple -c parameters)
 # - calls load_profile to enable profile search/load logic
-#
+
 process_args ()
 {
+# our job here is to set the type of:
+# - module (aif has determined this for us)
+# - profile (local or remote)
+# this will determine how and where we look for the profile
     var_AUTOMATIC_PROFILE=
     while [[ -n $1 ]]
     do
@@ -141,35 +149,130 @@ process_args ()
         esac
         shift 2
     done
+
+    add to module paths:
+    aif procedure module path
+    profile path if different from module path
+
+    # need to add first path to MODULE_PATHS here
 }
 
-# full value of the -c profile; could be a relative, absolute or remote path
-load_profile ()
+# if load_profile is called from main script, not a function, failure should 
+# die? or do we not care? can be handled differently in different circumstances 
+# so only really critical failures cause death here
+load_profile()
 {
-        if profile is of type:
-
-        absolute
-                check if it exists, load it
-        remote
-                check if we've already loaded, if not then download the entire module...
-                then turn it into an absolute path and call again
-        relative
-                if $module isn't http then
-                        figure out where archproto has been called from and turn things back into an absolute path
-                if $module is http then
-                        turn it into a remote path and call load_profile again
-        done!
+    # arguments:
+    # $1 (assigned to profile_path): a path, either relative, absolute local or remote URL
+    # expects/uses state:
+    # OVERLAY: current value of OVERLAY directory path
+    # MODULE_PATHS: array of paths to use, in order, as module roots with relative paths
+    source_and_overlay() { local revert_overlay=$OVERLAY; OVERLAY="$(dirname '$1')/overlay"; source $1; OVERLAY=$revert_overlay; unset revert_overlay; }
+    makelocal() { echo "$DOWNLOADS_DIR/${1:$(expr "$1" : 'https*://')}"; }
+    extract_module_path_and_add_if_new()
+    {
+        TODO: finish and add to load profile http, absolute?
+        one way to check would be to look for the known subdirs... 
+        procedures/systems/profiles
+        local test_module_path=$(dirname $(dirname $1)
+        if module paths contains it already, exit
+        else add it
+        MODULE_PATHS=("" "${MODULE_PATHS[@]}")
+    }
+    conform_repo ()
+    {
+        local repo_remote=$1
+        local repo_local=
+        local repo_type=
+        if [[ -n "$repo_type" ]]; then : # $repo_type already set
+        elif [[ "$(expr "$path_remote" : 'https*://.*github.com')" > 0 ]]; then repo_type=git
+        elif [[ "$(expr "$path_remote" : '.*/git/')" > 0 ]]; then repo_type=git
+        elif [[ "$(expr "$path_remote" : 'https*://.*bitbucket.org')" > 0 ]]; then repo_type=hg
+        elif [[ "$(expr "$path_remote" : '.*/hg/')" > 0 ]]; then repo_type=hg
+        elif [[ "$(expr "$path_remote" : '.*/mercurial/')" > 0 ]]; then repo_type=hg
+        elif [[ "$(expr "$path_remote" : '.*/svn/')" > 0 ]]; then repo_type=svn
+        fi
+        local repo_command=
+        local repo_suffix=
+        case $repo_type in
+            git) repo_command="git clone --depth=0" && repo_suffix=".git";;
+            hg)  repo_command="hg clone" ;;
+            svn) repo_command="svn checkout" ;;
+        esac
+        while [[ -n "$repo_remote" && "$repo_remote" != "." ]]; 
+        do
+            local repo_local=$(makelocal "$path_remote")
+            [[ -e "$repo_local" ]] && return 0 || $(repo_command "$repo_remote" "$repo_local") && return 0 || repo_remote=$(dirname "$repo_remote")
+        done
+        die error "failed to download repo from path $1"
+    }
+    local profile_path=${1%/} # strips any trailing slash
+    if [[ "${profile_path:0:1}" == "/" ]]; then # absolute local path
+        update_modulepaths_from_profilepath # add to module paths (thus if we've donwloaded a repo, we'll check locally next time)
+        [[ -d $profile_path ]] && profile_path="$profile_path/profile"
+        [[ -f $profile_path ]] && source_and_overlay "$path" || return 1
+    elif [[ "${profile_path:0:4}" == "http" ]]; then # remote url, could be http or https with this match
+        # no update_modulepaths_from_profilepath needed here; it's taken care 
+        # of in absolute since that means we've already successfully downloaded 
+        # a repository
+        [[ conform_repo $profile_path ]] && (load_profile $(makelocal $profile_path) || return 1 ) || die_error "(shouldn't reach this) error cloning repo for $profile_path"
+    else # assumed relative path (e.g. profiles/profilename)
+        for module_root in $MODULE_PATHS; do load_profile "${module_root%/}${profile_path#/}" && return 0; done; return 1
+    fi
 }
 
-worker_intro ()
+depend_profile() { load_profile "$1"; }
+
+update_modulepaths_from_profilepath()
 {
-        notify "AIF archproto automatic procedure using system profile $archproto_SYSTEM_PROFILE and additional AIF profile $var_AUTOMATIC_PROFILE\n$DISCLAIMER"
+# expects parameters:
+# $1: a local absolute path or http remote *profile* path
+# we need to make some assumptions about either the depth of all profile paths 
+# or standard names such as procedure, systems, etc. this is the trickiest 
+# assumption we make and the only other option I see is to never allow 
+# a relative path, which is silly.
+#
+# requires state:
+# $KNOWN_SUBDIRS
+#
+# modifies state:
+# $MODULE_PATHS
+
+    local module_path=${1%profile} # strip profile
+    module_path=${module_path%/} # strip trailing slash
+
+    while [[ -n "$module_path" && "$module_path" != "." ]]; do
+        for known_subdir in $KNOWN_SUBDIRS; do
+            if [[ "$(basename $module_path)" == "$known_subdir" ]]
+                # we have a match and assume we are one level away from root || trim and loop
+                module_path="$(dirname $module_path)"
+                # now check to see if this path is already in MODULE_PATHS
+                for test_path in $MODULE_PATHS; do [[ "$test_path" == "$module_path" ]] && return 0; done
+                # still here, add path to MODULE_PATHS
+                MODULE_PATHS=("$module_path" "${MODULE_PATHS[@]}")
+                return 0
+            else
+                # no match, trim a level
+                module_path="$(dirname $module_path)"
+            fi
+        done
+    done
+    # if we are still here then we didn't find a "known subdir"... best to error 
+    # out here, though another option is to just strip the last two / three 
+    # path components. we could try to standardize all "known" subdir formats 
+    # to: modulename/knownsubidr/category/specificprofile, eg:
+    #     archproto/systems/lenovo/x220
+    # or
+    #     archproto/environments/xmonad/es
+    die_error "failed to find known subdirectory (one of ${KNOWN_SUBDIRS[@]}) in path $1;"
 }
 
-# from dieter's examples in unofficial subdir of aif github repo
-# better to do this here rather than redefine PACMAN & PACMAN_TARGET?
+worker_intro () { notify "AIF archproto automatic procedure using initial profile $archproto_PROFILE"; }
+
 worker_install_packages
 {
+# from dieter's examples in unofficial subdir of aif github repo
+# better to do this here rather than redefine PACMAN & PACMAN_TARGET?
        PACMAN_BACKUP=$PACMAN
        PACMAN_TARGET_BACKUP=$PACMAN_TARGET
        PACMAN=${PACMAN//pacman/yaourt}
@@ -202,24 +305,15 @@ worker_system_extras()
 
 # $1 array of packages (from official and aur) to add to TARGET_PACKAGES
 # installed via standard installation functions
-add_packages()
-{
-        [[ -n "$1" ]] && TARGET_PACKAGES+=" $1" || true
-}
+add_packages() { [[ -n "$1" ]] && TARGET_PACKAGES+=" $1" || true; }
 
 # $1 array of changes in augeas format to add to CONFIG_CHANGES
 # later written out with write_config_changes()
-add_config_changes()
-{
-        [[ -n "$1" ]] && CONFIG_CHANGES+=" $1"  || true
-}
+add_config_changes() { [[ -n "$1" ]] && CONFIG_CHANGES+=" $1"  || true; }
 
 # $1 array of (final root relative) config files to add to OVERLAY_FILES
 # later written out with write_overlay_files()
-add_overlay_files()
-{
-        [[ -n "$1" ]] && OVERLAY_FILES+=" $1"   || true
-}
+add_overlay_files() { [[ -n "$1" ]] && OVERLAY_FILES+=" $1"   || true; }
 
 write_config_changes()
 {

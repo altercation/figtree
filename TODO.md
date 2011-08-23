@@ -89,3 +89,37 @@ our profile_load logic should:
 OR NO WARNING... JUST STRIP AND RECALL function (or proceed with new value with no recall) TO IDENTIFY CORRECT PATH
 2. check if the item downloaded is a file or directory. if a file then use it (so es-laptop could be a profile itself) or if a directory then look for "profile"
 3. look for overlay subdir in same directory as profile file
+
+
+
+
+
+search path priorities given a relative profile path:
+
+
+# ------------------------------------------------------------------------
+# from aif with local procedure:
+# ------------------------------------------------------------------------
+
+aif -p archproto/automatic -c systems/lenovo/x220
+
+NOT...1. $PWD
+procedure's module (e.g. /usr/lib/aif/user/archproto)
+
+
+# ------------------------------------------------------------------------
+# from aif with remote procedure:
+# ------------------------------------------------------------------------
+
+aif -p http://github.com/username/reponame/archproto/procedures/automatic -c systems/lenovo/x220
+
+1. $PWD
+2. remote repository, downloaded and normalized to a local absolute path, trimmed to a module root (ARCHPROTO_MODULE_ROOT?)
+3. default user module for archproto (e.g. /usr/lib/aif/user/archproto)
+
+
+
+note: if a profile changes from the procedures module path (local OR remote), that profile path becomes the new default location for all subsequent imports unless specified otherwise
+
+
+maybe depend_profile should send two values to load_profile: the current value of search_path and the profile name
