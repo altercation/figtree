@@ -1,13 +1,16 @@
 #!/bin/bash
 
 # Ethan Schoonover <es@ethanschoonover.com>
-
+#
 # lenovo x220 tablet
 # aif/archproto system profile
 #
 # notes:
 # you might not want to install all the xbindkeys, xinitrc, etc.
 # but they are enough to get the bezel buttons working
+
+echo "IN PROFILE lenovo/x220"
+exit
 
 # ----------------------------------------------------------------------
 # NETWORKING

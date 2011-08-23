@@ -52,32 +52,41 @@ var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 # for a list of recognized variables, see examples/generic-install-on-sda
 # ---------------------------------------------------------------------
 
-var_ARGS_USAGE=$(cat <<EOF_ARGS_USAGE
-TODO: revise this
+read -r -d '' var_ARGS_USAGE <<-'EOF'
 -s <make/model>:    Specify a make/model prototype AIF system profile to install. If specified as simply "make/model" the path of the 
                     archproto module as specified in the -p parameter will be used. This allows for specifying the following:
 
                         aif -p archproto/automatic -s lenovo/x120e
 
                     and aif will automatically source the system profile from:
-EOF_ARGS_USAGE)
+EOF
+dfunc()
+{
+    # debug function, better info than "caller"
+    # called without parameters at top of function; reports where it was called 
+    # from (calling function and line number)
+    echo ">>> ${FUNCNAME[1]}() called at line ${BASH_LINENO[1]} by ${FUNCNAME[2]}"
+}
+
 process_args ()
 {
+    dfunc
     var_AUTOMATIC_PROFILE=
     while [[ -n $1 ]]
     do
         case $1 in
-            -c) [ -n "$2" ] var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
-            -r) [ -n "$2" ] REPO_TYPE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
+            -c) [[ -n "$2" ]] && var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
+            -r) [[ -n "$2" ]] && REPO_TYPE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
             *) usage && exit 5 ;;
         esac
         shift 2
     done
 }
-source_and_overlay() { local revert_overlay=$OVERLAY; OVERLAY="$(dirname '$1')/overlay"; source $1; OVERLAY=$revert_overlay; unset revert_overlay; }
-makelocal() { echo "$DOWNLOADS_DIR/${1:$(expr "$1" : 'https*://')}"; }
+source_and_overlay() { dfunc; local revert_overlay=$OVERLAY; OVERLAY="$(dirname '$1')/overlay"; source $1; OVERLAY=$revert_overlay; unset revert_overlay; }
+makelocal() { dfunc; echo "$DOWNLOADS_DIR/${1:$(expr "$1" : 'https*://')}"; }
 conform_repo ()
 {
+    dfunc
     local repo_remote=$1
     local repo_local=
     local repo_type=${REPO_TYPE:-} # from optional -r command line argument
@@ -96,7 +105,7 @@ conform_repo ()
         hg)  repo_command="hg clone" ;;
         svn) repo_command="svn checkout" ;;
     esac
-    while [[ -n "$repo_remote" && "$repo_remote" != "." ]]; 
+    while [[ -n "$repo_remote" && ${#repo_remote} > 1 ]]; 
     do
         local repo_local=$(makelocal "$path_remote")
         [[ -e "$repo_local" ]] && return 0 || $(repo_command "$repo_remote" "$repo_local") && return 0 || repo_remote=$(dirname "$repo_remote")
@@ -105,50 +114,55 @@ conform_repo ()
 }
 load_profile()
 {
+    dfunc
     # arguments:
     # $1 (assigned to profile_path): a path, either relative, absolute local or remote URL
+    # $2 is the *original* type of profile (relative, remote, absolute) and is only set from insid the function
     # expects/uses state:
     # OVERLAY: current value of OVERLAY directory path
     # MODULE_PATHS: array of paths to use, in order, as module roots with relative paths
     local profile_path=${1%/} # strips any trailing slash
+    local profile_type=${2:-}
     if [[ "${profile_path:0:1}" == "/" ]]; then # absolute local path
-        update_modulepaths_from_profilepath # add to module paths (thus if we've donwloaded a repo, we'll check locally next time)
-        [[ -d $profile_path ]] && profile_path="$profile_path/profile"
-        [[ -f $profile_path ]] && source_and_overlay "$path" || return 1
+        [[ "${profile_type}" != "xrelative" ]] && update_modulepaths_from_profilepath "$profile_path" # add to module paths (thus if we've donwloaded a repo, we'll check locally next time)
+        [[ -d "${profile_path}" ]] && profile_path="$profile_path/profile"
+        [[ -f "${profile_path}" ]] && source_and_overlay "$profile_path" || return 1
     elif [[ "${profile_path:0:4}" == "http" ]]; then # remote url, could be http or https with this match
         # no update_modulepaths_from_profilepath needed here; it's taken care 
         # of in absolute since that means we've already successfully downloaded 
         # a repository
-        [[ conform_repo $profile_path ]] && (load_profile $(makelocal $profile_path) || return 1 ) || die_error "(shouldn't reach this) error cloning repo for $profile_path"
+        [[ $(conform_repo "$profile_path") ]] && (load_profile $(makelocal ${profile_path}) ${profile_type:-http} || return 1 ) || die_error "(shouldn't reach this) error cloning repo for $profile_path"
     else # assumed relative path (e.g. profiles/profilename)
-        for module_root in $MODULE_PATHS; do load_profile "${module_root%/}${profile_path#/}" && return 0; done; return 1
+        for module_root in ${MODULE_PATHS[@]}; do load_profile "${module_root%/}/${profile_path#/}" "relative" && return 0; done; return 1
     fi
 }
 depend_profile() { load_profile "$1"; }
 update_modulepaths_from_profilepath()
 {
-# expects parameters:
-# $1: a local absolute path or http remote *profile* path we need to make some assumptions about either the depth of all profile paths or standard names 
-# such as procedure, systems, etc. this is the trickiest assumption we make and the only other option I see is to never allow a relative path, which is silly.
-# requires state: $KNOWN_SUBDIRS
-# modifies state: $MODULE_PATHS
+    dfunc
+    echo "MODULE_PATHS IS CURRENTLY: $MODULE_PATHS"
+    # expects parameters:
+    # $1: a local absolute path or http remote *profile* path we need to make some assumptions about either the depth of all profile paths or standard names 
+    # such as procedure, systems, etc. this is the trickiest assumption we make and the only other option I see is to never allow a relative path, which is silly.
+    # requires state: $KNOWN_SUBDIRS
+    # modifies state: $MODULE_PATHS
     local module_path=${1%profile} # strip profile
     module_path=${module_path%/} # strip trailing slash
-    while [[ -n "$module_path" && "$module_path" != "." ]]; do
-        for known_subdir in $KNOWN_SUBDIRS; do
+    while [[ -n "$module_path" && ${#module_path} > 1 ]]; do
+        for known_subdir in ${KNOWN_SUBDIRS[@]}; do
+        echo ">>>>>>> )))))))))))))))))))))))))) testing $known_subdir against $(basename $module_path)"
             if [[ "$(basename $module_path)" == "$known_subdir" ]]
+            then
                 # we have a match and assume we are one level away from root || trim and loop
                 module_path="$(dirname $module_path)"
                 # now check to see if this path is already in MODULE_PATHS
-                for test_path in $MODULE_PATHS; do [[ "$test_path" == "$module_path" ]] && return 0; done
+                for test_path in ${MODULE_PATHS[@]}; do [[ "$test_path" == "$module_path" ]] && return 0; done
                 # still here, add path to MODULE_PATHS
                 MODULE_PATHS=("$module_path" "${MODULE_PATHS[@]}")
                 return 0
-            else
-                # no match, trim a level
-                module_path="$(dirname $module_path)"
             fi
         done
+        module_path="$(dirname $module_path)" # no match, trim a level
     done
     # if we are still here then we didn't find a "known subdir"... best to error out here, though another option is to just strip the last two / three 
     # path components. we could try to standardize all "known" subdir formats to: modulename/knownsubidr/category/specificprofile, eg:
@@ -156,33 +170,56 @@ update_modulepaths_from_profilepath()
     die_error "failed to find known subdirectory (one of ${KNOWN_SUBDIRS[@]}) in path $1;"
 }
 worker_intro () { notify "AIF archproto automatic procedure using initial profile $archproto_PROFILE"; }
-
+worker_configure ()
+{
+        dfunc
+        var_UI_TYPE=${arg_ui_type:-cli}
+        ui_init
+        [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
+        load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
+        #source $var_AUTOMATIC_PROFILE   || die_error "Could not source config $var_AUTOMATIC_PROFILE"
+        # Check mandatory options
+        [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
+        [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
+        [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
+        # initialize internal variables based on variables set by the user (some of the vars are handled in other workers):
+        var_RUNTIME_REPOSITORIES=$RUNTIME_REPOSITORIES
+        var_RUNTIME_PACKAGES=$RUNTIME_PACKAGES
+        var_GRUB_DEVICE=$GRUB_DEVICE
+        var_PARTITIONS=$PARTITIONS
+        var_BLOCKDATA=$BLOCKDATA
+        HARDWARECLOCK=${HARDWARECLOCK:-localtime}
+        TIMEZONE=${TIMEZONE:-Canada/Pacific}
+}
 worker_install_packages()
 {
-# from dieter's examples in unofficial subdir of aif github repo
-# better to do this here rather than redefine PACMAN & PACMAN_TARGET?
-true
-return
-#       PACMAN_BACKUP=$PACMAN
-#       PACMAN_TARGET_BACKUP=$PACMAN_TARGET
-#       PACMAN=${PACMAN//pacman/yaourt}
-#       PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
-#
-#       target_prepare_pacman core extra community
-#       [ -z "$TARGET_PACKAGES" ] && die_error "No packages listed for installation!"
-#       installpkg
-#
-#       PACMAN=$PACMAN_BACKUP
-#       PACMAN_TARGET=$PACMAN_TARGET_BACKUP
+    dfunc
+    # from dieter's examples in unofficial subdir of aif github repo
+    # better to do this here rather than redefine PACMAN & PACMAN_TARGET?
+    true
+    return
+    #       PACMAN_BACKUP=$PACMAN
+    #       PACMAN_TARGET_BACKUP=$PACMAN_TARGET
+    #       PACMAN=${PACMAN//pacman/yaourt}
+    #       PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
+    #
+    #       target_prepare_pacman core extra community
+    #       [ -z "$TARGET_PACKAGES" ] && die_error "No packages listed for installation!"
+    #       installpkg
+    #
+    #       PACMAN=$PACMAN_BACKUP
+    #       PACMAN_TARGET=$PACMAN_TARGET_BACKUP
 }
 
 worker_change_configvalues()
 {
+        dfunc
         write_config_changes $CONFIG_CHANGES
 }
 
 worker_write_overlayfiles()
 {
+        dfunc
         # This is more problematic as we have to include the correct prefix path
         # and make sure to source it properly if local/remote, etc.
         # the add overlay files function will have to correctly assign a full path
@@ -191,23 +228,25 @@ worker_write_overlayfiles()
 
 worker_system_extras()
 {
+        dfunc
         system_extras
 }
 
 # $1 array of packages (from official and aur) to add to TARGET_PACKAGES
 # installed via standard installation functions
-add_packages() { [[ -n "$1" ]] && TARGET_PACKAGES+=" $1" || true; }
+add_packages() { dfunc; [[ -n "$1" ]] && TARGET_PACKAGES+=" $1" || true; }
 
 # $1 array of changes in augeas format to add to CONFIG_CHANGES
 # later written out with write_config_changes()
-add_config_changes() { [[ -n "$1" ]] && CONFIG_CHANGES+=" $1"  || true; }
+add_config_changes() { dfunc; [[ -n "$1" ]] && CONFIG_CHANGES+=" $1"  || true; }
 
 # $1 array of (final root relative) config files to add to OVERLAY_FILES
 # later written out with write_overlay_files()
-add_overlay_files() { [[ -n "$1" ]] && OVERLAY_FILES+=" $1"   || true; }
+add_overlay_files() { dfunc; [[ -n "$1" ]] && OVERLAY_FILES+=" $1"   || true; }
 
 write_config_changes()
 {
+        dfunc
         true
         echo "CONFIG CHANGES TO BE WRITTEN:"
         echo "$CONFIG_CHANGES"
@@ -217,6 +256,7 @@ write_config_changes()
 
 write_overlay_files()
 {
+        dfunc
         true
         echo "OVERLAY FILES TO WRITE"
         echo "$OVERLAY_FILES"
@@ -231,5 +271,6 @@ write_overlay_files()
 # this arbitrarily)
 system_extras()
 {
+        dfunc
         true
 }
