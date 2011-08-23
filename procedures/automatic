@@ -28,19 +28,19 @@
 # rather than a library script because this is the only file we can load from 
 # aif remotely.
 
-# rename some variables for my own cognitive clarity
 ARCHPROTO_MODULE_NAME=archproto # in case we need to change our script name 
-AIF_MODULE_NAME="$module" # from aif.sh
-AIF_PROCEDURE_PATH="$procedure" # from aif.sh
-# MODULE_PATHS is used in load_profile; assumes that our procedure is *always* in the aif appropriate path (modulename/procedures/procedurename)
-MODULE_PATHS=("$(dirname $(dirname ${CURRENT_PROCEDURE_PATH}))")
 DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ ! -d "$DOWNLOADS_DIR" ]] && mkdir -p "$DOWNLOADS_DIR"
 KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
+
+AIF_MODULE_NAME="$module" # from aif.sh
+AIF_PROCEDURE_PATH="$procedure" # from aif.sh
+MODULE_PATHS=("$(dirname $(dirname ${AIF_PROCEDURE_PATH}))") # this works in both cases of module being either http or local
 
 depend_procedure core automatic # most of automatic fits our needs
 phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
 var_RUNTIME_REPOSITORIES=(archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_PACKAGES="augeas yaourt" # use yaourt instead of pacman as systems may require AUR packages
+var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
 # the worker to call is configure_system. it's actually ok to call the second default function (post_configure target) several times
@@ -53,113 +53,56 @@ var_RUNTIME_PACKAGES="augeas yaourt" # use yaourt instead of pacman as systems m
 # ---------------------------------------------------------------------
 
 var_ARGS_USAGE=$(cat <<EOF_ARGS_USAGE
+TODO: revise this
 -s <make/model>:    Specify a make/model prototype AIF system profile to install. If specified as simply "make/model" the path of the 
                     archproto module as specified in the -p parameter will be used. This allows for specifying the following:
 
                         aif -p archproto/automatic -s lenovo/x120e
 
                     and aif will automatically source the system profile from:
-
-                        /usr/lib/aif/user/archproto/systems/lenovo/x120e/profile
-
-                    allowing for a remote procedure source to successfully search for the system profile:
-
-                        aif -p http://url.net/archproto/procedures/automatic -s lenovo/x120e
-
-                    in which case the system profile will be sourced from:
-
-                        http://url.net/archproto/systems/lenovo/x120e/profile
-
-                    The system profile make/model can also be prefixed by a root relative full path on the local filesystem or by
-                    a complete URL:
-
-                        aif -p archproto/automatic -s /tmp/lenovo/x120e
-                        aif -p http://url.net/archproto/procedures/automatic -s http://otherurl.com/mysystems/lenovo/x120e
-
--e
--a
--c <profile-path>:  specify a profile in one of three formats:
-
-                        1. relative path:       systems/make/model
-                        2. absolute path:       /tmp/downloads/systems/make/model
-                        3. remote path:         http://github.com/archproto/profiles/my-laptop
-
-                    All paths may refer to either an actual file or a directory containing a file named "profile". Thus:
-
-                        profiles/my-laptop
-
-                    can eiether be a directory with a file with the completed path: "profiles/my-laptop/profile" or a
-                    profile file named "my-laptop". The use of a directory with a "profile" file is used when the profile
-                    has and overlay subdirectory with overlay files for use during installation. Thus in the case of the
-                    subdirectory "profiles/my-laptop", archproto/automatic will source:
-
-                        profiles/my-laptop/profile == the profile file
-                        profiles/my-laptop/overlay == files installed with the profile
-
-                    If a relative path is specified, archproto/automatic will attempt to load it from the same module
-                    location as the archproto/automatic procedure. Thus if archproto is located in:
-
-                        /usr/lib/aif/user/archproto
-
-                    and was specified to aif as:
-
-                        aif -p archproto/automatic -c profiles/my-laptop
-
-                    the procedure will look for the "profiles/my-laptop" profile in:
-
-                        /usr/lib/aif/user/archproto/profiles/my-laptop
-
-                    while if you have specified a remote location for the archproto/automatic procedure on the aif command line:
-
-                        aif -p http://github.com/yourusername/archproto/procedures/automatic -c profiles/my-laptop
-
-                    archproto/automatic will look in the same repository for the profile at:
-
-                        http://github.com/yourusername/archproto/profiles/my-laptop
-
-                    Note that it ok to source the archproto/automatic procedure from one remote location and the profile from another:
-
-                        aif -p http://firsturl.net/archproto/procedures/automatic -c http://secondurl.com/archproto/profiles/my-laptop
-
-                    Finally, it is important to note that the config profile you source can in turn source other profiles according
-                    to the same rules.
-
-
 EOF_ARGS_USAGE)
-
-# process_args is called by aif master script
-# and we are depending on the core/automatic profile so I'm going to keep close to it's behavior
-#
-# changes from core/automatic:
-# - allow multiple profiles to be specified (multiple -c parameters)
-# - calls load_profile to enable profile search/load logic
-
 process_args ()
 {
-# our job here is to set the type of:
-# - module (aif has determined this for us)
-# - profile (local or remote)
-# this will determine how and where we look for the profile
     var_AUTOMATIC_PROFILE=
     while [[ -n $1 ]]
     do
         case $1 in
             -c) [ -n "$2" ] var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
-            *) usage && exit 5;;
+            -r) [ -n "$2" ] REPO_TYPE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
+            *) usage && exit 5 ;;
         esac
         shift 2
     done
-
-    add to module paths:
-    aif procedure module path
-    profile path if different from module path
-
-    # need to add first path to MODULE_PATHS here
 }
-
-# if load_profile is called from main script, not a function, failure should 
-# die? or do we not care? can be handled differently in different circumstances 
-# so only really critical failures cause death here
+source_and_overlay() { local revert_overlay=$OVERLAY; OVERLAY="$(dirname '$1')/overlay"; source $1; OVERLAY=$revert_overlay; unset revert_overlay; }
+makelocal() { echo "$DOWNLOADS_DIR/${1:$(expr "$1" : 'https*://')}"; }
+conform_repo ()
+{
+    local repo_remote=$1
+    local repo_local=
+    local repo_type=${REPO_TYPE:-} # from optional -r command line argument
+    if [[ -n "$repo_type" ]]; then : # $repo_type already set
+    elif [[ "$(expr "$path_remote" : 'https*://.*github.com')" > 0 ]]; then repo_type=git
+    elif [[ "$(expr "$path_remote" : '.*/git/')" > 0 ]]; then repo_type=git
+    elif [[ "$(expr "$path_remote" : 'https*://.*bitbucket.org')" > 0 ]]; then repo_type=hg
+    elif [[ "$(expr "$path_remote" : '.*/hg/')" > 0 ]]; then repo_type=hg
+    elif [[ "$(expr "$path_remote" : '.*/mercurial/')" > 0 ]]; then repo_type=hg
+    elif [[ "$(expr "$path_remote" : '.*/svn/')" > 0 ]]; then repo_type=svn
+    fi
+    local repo_command=
+    local repo_suffix=
+    case $repo_type in
+        git) repo_command="git clone --depth=0" && repo_suffix=".git";;
+        hg)  repo_command="hg clone" ;;
+        svn) repo_command="svn checkout" ;;
+    esac
+    while [[ -n "$repo_remote" && "$repo_remote" != "." ]]; 
+    do
+        local repo_local=$(makelocal "$path_remote")
+        [[ -e "$repo_local" ]] && return 0 || $(repo_command "$repo_remote" "$repo_local") && return 0 || repo_remote=$(dirname "$repo_remote")
+    done
+    die error "failed to download repo from path $1"
+}
 load_profile()
 {
     # arguments:
@@ -167,45 +110,6 @@ load_profile()
     # expects/uses state:
     # OVERLAY: current value of OVERLAY directory path
     # MODULE_PATHS: array of paths to use, in order, as module roots with relative paths
-    source_and_overlay() { local revert_overlay=$OVERLAY; OVERLAY="$(dirname '$1')/overlay"; source $1; OVERLAY=$revert_overlay; unset revert_overlay; }
-    makelocal() { echo "$DOWNLOADS_DIR/${1:$(expr "$1" : 'https*://')}"; }
-    extract_module_path_and_add_if_new()
-    {
-        TODO: finish and add to load profile http, absolute?
-        one way to check would be to look for the known subdirs... 
-        procedures/systems/profiles
-        local test_module_path=$(dirname $(dirname $1)
-        if module paths contains it already, exit
-        else add it
-        MODULE_PATHS=("" "${MODULE_PATHS[@]}")
-    }
-    conform_repo ()
-    {
-        local repo_remote=$1
-        local repo_local=
-        local repo_type=
-        if [[ -n "$repo_type" ]]; then : # $repo_type already set
-        elif [[ "$(expr "$path_remote" : 'https*://.*github.com')" > 0 ]]; then repo_type=git
-        elif [[ "$(expr "$path_remote" : '.*/git/')" > 0 ]]; then repo_type=git
-        elif [[ "$(expr "$path_remote" : 'https*://.*bitbucket.org')" > 0 ]]; then repo_type=hg
-        elif [[ "$(expr "$path_remote" : '.*/hg/')" > 0 ]]; then repo_type=hg
-        elif [[ "$(expr "$path_remote" : '.*/mercurial/')" > 0 ]]; then repo_type=hg
-        elif [[ "$(expr "$path_remote" : '.*/svn/')" > 0 ]]; then repo_type=svn
-        fi
-        local repo_command=
-        local repo_suffix=
-        case $repo_type in
-            git) repo_command="git clone --depth=0" && repo_suffix=".git";;
-            hg)  repo_command="hg clone" ;;
-            svn) repo_command="svn checkout" ;;
-        esac
-        while [[ -n "$repo_remote" && "$repo_remote" != "." ]]; 
-        do
-            local repo_local=$(makelocal "$path_remote")
-            [[ -e "$repo_local" ]] && return 0 || $(repo_command "$repo_remote" "$repo_local") && return 0 || repo_remote=$(dirname "$repo_remote")
-        done
-        die error "failed to download repo from path $1"
-    }
     local profile_path=${1%/} # strips any trailing slash
     if [[ "${profile_path:0:1}" == "/" ]]; then # absolute local path
         update_modulepaths_from_profilepath # add to module paths (thus if we've donwloaded a repo, we'll check locally next time)
@@ -220,27 +124,16 @@ load_profile()
         for module_root in $MODULE_PATHS; do load_profile "${module_root%/}${profile_path#/}" && return 0; done; return 1
     fi
 }
-
 depend_profile() { load_profile "$1"; }
-
 update_modulepaths_from_profilepath()
 {
 # expects parameters:
-# $1: a local absolute path or http remote *profile* path
-# we need to make some assumptions about either the depth of all profile paths 
-# or standard names such as procedure, systems, etc. this is the trickiest 
-# assumption we make and the only other option I see is to never allow 
-# a relative path, which is silly.
-#
-# requires state:
-# $KNOWN_SUBDIRS
-#
-# modifies state:
-# $MODULE_PATHS
-
+# $1: a local absolute path or http remote *profile* path we need to make some assumptions about either the depth of all profile paths or standard names 
+# such as procedure, systems, etc. this is the trickiest assumption we make and the only other option I see is to never allow a relative path, which is silly.
+# requires state: $KNOWN_SUBDIRS
+# modifies state: $MODULE_PATHS
     local module_path=${1%profile} # strip profile
     module_path=${module_path%/} # strip trailing slash
-
     while [[ -n "$module_path" && "$module_path" != "." ]]; do
         for known_subdir in $KNOWN_SUBDIRS; do
             if [[ "$(basename $module_path)" == "$known_subdir" ]]
@@ -257,44 +150,42 @@ update_modulepaths_from_profilepath()
             fi
         done
     done
-    # if we are still here then we didn't find a "known subdir"... best to error 
-    # out here, though another option is to just strip the last two / three 
-    # path components. we could try to standardize all "known" subdir formats 
-    # to: modulename/knownsubidr/category/specificprofile, eg:
-    #     archproto/systems/lenovo/x220
-    # or
-    #     archproto/environments/xmonad/es
+    # if we are still here then we didn't find a "known subdir"... best to error out here, though another option is to just strip the last two / three 
+    # path components. we could try to standardize all "known" subdir formats to: modulename/knownsubidr/category/specificprofile, eg:
+    # archproto/systems/lenovo/x220 or archproto/environments/xmonad/es
     die_error "failed to find known subdirectory (one of ${KNOWN_SUBDIRS[@]}) in path $1;"
 }
-
 worker_intro () { notify "AIF archproto automatic procedure using initial profile $archproto_PROFILE"; }
 
-worker_install_packages
+worker_install_packages()
 {
 # from dieter's examples in unofficial subdir of aif github repo
 # better to do this here rather than redefine PACMAN & PACMAN_TARGET?
-       PACMAN_BACKUP=$PACMAN
-       PACMAN_TARGET_BACKUP=$PACMAN_TARGET
-       PACMAN=${PACMAN//pacman/yaourt}
-       PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
-
-       target_prepare_pacman core extra community
-       [ -z "$TARGET_PACKAGES" ] && die_error "No packages listed for installation!"
-       installpkg
-
-       PACMAN=$PACMAN_BACKUP
-       PACMAN_TARGET=$PACMAN_TARGET_BACKUP
+true
+return
+#       PACMAN_BACKUP=$PACMAN
+#       PACMAN_TARGET_BACKUP=$PACMAN_TARGET
+#       PACMAN=${PACMAN//pacman/yaourt}
+#       PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
+#
+#       target_prepare_pacman core extra community
+#       [ -z "$TARGET_PACKAGES" ] && die_error "No packages listed for installation!"
+#       installpkg
+#
+#       PACMAN=$PACMAN_BACKUP
+#       PACMAN_TARGET=$PACMAN_TARGET_BACKUP
 }
 
 worker_change_configvalues()
 {
-        process_config_changes $CONFIG_CHANGES
+        write_config_changes $CONFIG_CHANGES
 }
 
 worker_write_overlayfiles()
 {
         # This is more problematic as we have to include the correct prefix path
         # and make sure to source it properly if local/remote, etc.
+        # the add overlay files function will have to correctly assign a full path
         write_overlayfiles $OVERLAY_FILES
 }
 
@@ -318,6 +209,8 @@ add_overlay_files() { [[ -n "$1" ]] && OVERLAY_FILES+=" $1"   || true; }
 write_config_changes()
 {
         true
+        echo "CONFIG CHANGES TO BE WRITTEN:"
+        echo "$CONFIG_CHANGES"
         # iterate through array of config changes
         # write changes using augeas or custom function
 }
@@ -325,6 +218,8 @@ write_config_changes()
 write_overlay_files()
 {
         true
+        echo "OVERLAY FILES TO WRITE"
+        echo "$OVERLAY_FILES"
         # iterate over list of overlay files
         # write files using current file permissions
         # backup original file?
