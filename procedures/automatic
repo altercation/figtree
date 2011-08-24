@@ -131,6 +131,7 @@ conform_repo ()
         local repo_local=$(makelocal "$repo_remote")
         echo "$repo_local"
         echo "XXXXXXXXXXXXXXXXXXXXXXXXXXX"
+        echo "$repo_infix"
         echo "$repo_local" | sed "s^$repo_infix^^"
         exit
 
