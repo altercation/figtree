@@ -39,6 +39,9 @@ KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users 
 
 AIF_MODULE_NAME="$module" # from aif.sh
 AIF_PROCEDURE_PATH="$procedure" # from aif.sh
+echo "AIF PROCEDURE IS $AIF_PROCEDURE_PATH"
+echo "AIF MODULE IS $AIF_MODULE_PATH"
+echo "command line args are $*"
 MODULE_PATHS=("$(dirname $(dirname ${AIF_PROCEDURE_PATH}))") # this works in both cases of module being either http or local
 
 depend_procedure core automatic # most of automatic fits our needs
