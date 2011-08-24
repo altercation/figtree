@@ -32,6 +32,10 @@
 # rather than a library script because this is the only file we can load from 
 # aif remotely.
 
+# ----------------------------------------------------------------------
+# procedure specific definitions
+# ----------------------------------------------------------------------
+
 ARCHPROTO_MODULE_NAME=archproto # in case we need to change our script name 
 ARCHPROTO_PROCEDURE_SUBPATH=/procedures/automatic
 DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$DOWNLOADS_DIR" ]] && rm -rf "$DOWNLOADS_DIR"; mkdir -p "$DOWNLOADS_DIR"
@@ -64,9 +68,99 @@ read -r -d '' var_ARGS_USAGE <<-'EOF'
 
                     and aif will automatically source the system profile from:
 EOF
+
+# ----------------------------------------------------------------------
+# procedure workers
+# ----------------------------------------------------------------------
+
+worker_intro ()
+{
+        notify "AIF archproto automatic procedure using initial profile $archproto_PROFILE"
+}
+
+worker_configure ()
+{
+        dfunc
+        var_UI_TYPE=${arg_ui_type:-cli}
+        ui_init
+        [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
+        load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
+        #source $var_AUTOMATIC_PROFILE   || die_error "Could not source config $var_AUTOMATIC_PROFILE"
+        # Check mandatory options
+        [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
+        [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
+        [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
+        # initialize internal variables based on variables set by the user (some of the vars are handled in other workers):
+        var_RUNTIME_REPOSITORIES=$RUNTIME_REPOSITORIES
+        var_RUNTIME_PACKAGES=$RUNTIME_PACKAGES
+        var_GRUB_DEVICE=$GRUB_DEVICE
+        var_PARTITIONS=$PARTITIONS
+        var_BLOCKDATA=$BLOCKDATA
+        HARDWARECLOCK=${HARDWARECLOCK:-localtime}
+        TIMEZONE=${TIMEZONE:-Canada/Pacific}
+}
+
+worker_install_packages()
+{
+    dfunc
+    # from dieter's examples in unofficial subdir of aif github repo
+    # better to do this here rather than redefine PACMAN & PACMAN_TARGET?
+    true
+    return
+    #       PACMAN_BACKUP=$PACMAN
+    #       PACMAN_TARGET_BACKUP=$PACMAN_TARGET
+    #       PACMAN=${PACMAN//pacman/yaourt}
+    #       PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
+    #
+    #       target_prepare_pacman core extra community
+    #       [ -z "$TARGET_PACKAGES" ] && die_error "No packages listed for installation!"
+    #       installpkg
+    #
+    #       PACMAN=$PACMAN_BACKUP
+    #       PACMAN_TARGET=$PACMAN_TARGET_BACKUP
+}
+
+worker_change_configvalues()
+{
+        dfunc
+        write_config_changes $CONFIG_CHANGES
+}
+
+worker_write_overlayfiles()
+{
+        dfunc
+        # This is more problematic as we have to include the correct prefix path
+        # and make sure to source it properly if local/remote, etc.
+        # the add overlay files function will have to correctly assign a full path
+        write_overlayfiles $OVERLAY_FILES
+}
+
+worker_system_extras()
+{
+        dfunc
+        system_extras
+}
+
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# library functions
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# These should ideally be stored in the module libs directory as an
+# actual function library, but as we are loading the procedure remotely
+# it's better to bundle them here. Alternately we could try to 
+# manufacture a libs path from the remote procedure, but this adds
+# potentially needless complexity. TODO: consider breaking out a 
+# separate lib and creating a remote lib sourcing function in future
+
+# ----------------------------------------------------------------------
+# lib-archproto
+# ----------------------------------------------------------------------
+# functions to support archproto procedure itself
+
 dfunc()
 {
-    # debug function, better info than "caller"
+    # quick debug function, better info than "caller"
     # called without parameters at top of function; reports where it was called 
     # from (calling function and line number)
     echo ">>> ${FUNCNAME[1]}() called at line ${BASH_LINENO[1]} by ${FUNCNAME[2]}"
@@ -86,9 +180,50 @@ process_args ()
         shift 2
     done
 }
-source_and_overlay() { dfunc; local revert_overlay=$OVERLAY; OVERLAY="$(dirname '$1')/overlay"; source $1; OVERLAY=$revert_overlay; unset revert_overlay; }
-#OLDmakelocal() { echo "$DOWNLOADS_DIR/${1:$(expr "$1" : 'https*://')}"; }
-maketemp() { echo "$TEMP_DIR/${1:$(expr "$1" : 'https*://')}"; }
+
+source_and_overlay()
+{
+    dfunc
+    local revert_overlay=$OVERLAY
+    OVERLAY="$(dirname '$1')/overlay"
+    source $1
+    OVERLAY=$revert_overlay
+}
+
+update_modulepaths_from_profilepath()
+{
+    dfunc
+    echo "MODULE_PATHS IS CURRENTLY: ${MODULE_PATHS[@]}"
+    echo "called with args $*"
+    # expects parameters:
+    # $1: a local absolute path or http remote *profile* path we need to make some assumptions about either the depth of all profile paths or standard names 
+    # such as procedure, systems, etc. this is the trickiest assumption we make and the only other option I see is to never allow a relative path, which is silly.
+    # requires state: $KNOWN_SUBDIRS
+    # modifies state: $MODULE_PATHS
+    local module_path=${1%profile} # strip profile
+    module_path=${module_path%/} # strip trailing slash
+    while [[ -n "$module_path" && ${#module_path} > 1 ]]; do
+        for known_subdir in ${KNOWN_SUBDIRS[@]}; do
+            if [[ "$(basename $module_path)" == "$known_subdir" ]]
+            then
+                # we have a match and assume we are one level away from root || trim and loop
+                module_path="$(dirname $module_path)"
+                # now check to see if this path is already in MODULE_PATHS
+                for test_path in ${MODULE_PATHS[@]}; do [[ "$test_path" == "$module_path" ]] && return 0; done
+                # still here, add path to MODULE_PATHS
+                MODULE_PATHS=("$module_path" "${MODULE_PATHS[@]}")
+                echo "MODULE_PATHS IS NOW UPDATED TO: ${MODULE_PATHS[@]}"
+                return 0
+            fi
+        done
+        module_path="$(dirname $module_path)" # no match, trim a level
+    done
+    # if we are still here then we didn't find a "known subdir"... best to error out here, though another option is to just strip the last two / three 
+    # path components. we could try to standardize all "known" subdir formats to: modulename/knownsubidr/category/specificprofile, eg:
+    # archproto/systems/lenovo/x220 or archproto/environments/xmonad/es
+    die_error "failed to find known subdirectory (one of ${KNOWN_SUBDIRS[@]}) in path $1;"
+}
+
 make_local ()
 {
     # takes a remote repo path and returns a local path (dies if repo can't be cloned)
@@ -190,6 +325,7 @@ make_local ()
         repo_local="$DOWNLOADS_DIR/${repo_remote:$(expr "$repo_remote" : 'https*://')}"
     done; die error "failed to download repo from path $1"
 }
+
 load_profile()
 {
     dfunc
@@ -221,114 +357,6 @@ load_profile()
         for module_root in ${MODULE_PATHS[@]}; do load_profile "${module_root%/}/${profile_path#/}" "relative" && return 0; done; return 1
     fi
 }
-depend_profile() { load_profile "$1"; }
-update_modulepaths_from_profilepath()
-{
-    dfunc
-    echo "MODULE_PATHS IS CURRENTLY: ${MODULE_PATHS[@]}"
-    echo "called with args $*"
-    # expects parameters:
-    # $1: a local absolute path or http remote *profile* path we need to make some assumptions about either the depth of all profile paths or standard names 
-    # such as procedure, systems, etc. this is the trickiest assumption we make and the only other option I see is to never allow a relative path, which is silly.
-    # requires state: $KNOWN_SUBDIRS
-    # modifies state: $MODULE_PATHS
-    local module_path=${1%profile} # strip profile
-    module_path=${module_path%/} # strip trailing slash
-    while [[ -n "$module_path" && ${#module_path} > 1 ]]; do
-        for known_subdir in ${KNOWN_SUBDIRS[@]}; do
-            if [[ "$(basename $module_path)" == "$known_subdir" ]]
-            then
-                # we have a match and assume we are one level away from root || trim and loop
-                module_path="$(dirname $module_path)"
-                # now check to see if this path is already in MODULE_PATHS
-                for test_path in ${MODULE_PATHS[@]}; do [[ "$test_path" == "$module_path" ]] && return 0; done
-                # still here, add path to MODULE_PATHS
-                MODULE_PATHS=("$module_path" "${MODULE_PATHS[@]}")
-                echo "MODULE_PATHS IS NOW UPDATED TO: ${MODULE_PATHS[@]}"
-                return 0
-            fi
-        done
-        module_path="$(dirname $module_path)" # no match, trim a level
-    done
-    # if we are still here then we didn't find a "known subdir"... best to error out here, though another option is to just strip the last two / three 
-    # path components. we could try to standardize all "known" subdir formats to: modulename/knownsubidr/category/specificprofile, eg:
-    # archproto/systems/lenovo/x220 or archproto/environments/xmonad/es
-    die_error "failed to find known subdirectory (one of ${KNOWN_SUBDIRS[@]}) in path $1;"
-}
-worker_intro () { notify "AIF archproto automatic procedure using initial profile $archproto_PROFILE"; }
-worker_configure ()
-{
-        dfunc
-        var_UI_TYPE=${arg_ui_type:-cli}
-        ui_init
-        [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
-        load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
-        #source $var_AUTOMATIC_PROFILE   || die_error "Could not source config $var_AUTOMATIC_PROFILE"
-        # Check mandatory options
-        [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
-        [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
-        [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
-        # initialize internal variables based on variables set by the user (some of the vars are handled in other workers):
-        var_RUNTIME_REPOSITORIES=$RUNTIME_REPOSITORIES
-        var_RUNTIME_PACKAGES=$RUNTIME_PACKAGES
-        var_GRUB_DEVICE=$GRUB_DEVICE
-        var_PARTITIONS=$PARTITIONS
-        var_BLOCKDATA=$BLOCKDATA
-        HARDWARECLOCK=${HARDWARECLOCK:-localtime}
-        TIMEZONE=${TIMEZONE:-Canada/Pacific}
-}
-worker_install_packages()
-{
-    dfunc
-    # from dieter's examples in unofficial subdir of aif github repo
-    # better to do this here rather than redefine PACMAN & PACMAN_TARGET?
-    true
-    return
-    #       PACMAN_BACKUP=$PACMAN
-    #       PACMAN_TARGET_BACKUP=$PACMAN_TARGET
-    #       PACMAN=${PACMAN//pacman/yaourt}
-    #       PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
-    #
-    #       target_prepare_pacman core extra community
-    #       [ -z "$TARGET_PACKAGES" ] && die_error "No packages listed for installation!"
-    #       installpkg
-    #
-    #       PACMAN=$PACMAN_BACKUP
-    #       PACMAN_TARGET=$PACMAN_TARGET_BACKUP
-}
-
-worker_change_configvalues()
-{
-        dfunc
-        write_config_changes $CONFIG_CHANGES
-}
-
-worker_write_overlayfiles()
-{
-        dfunc
-        # This is more problematic as we have to include the correct prefix path
-        # and make sure to source it properly if local/remote, etc.
-        # the add overlay files function will have to correctly assign a full path
-        write_overlayfiles $OVERLAY_FILES
-}
-
-worker_system_extras()
-{
-        dfunc
-        system_extras
-}
-
-# $1 array of packages (from official and aur) to add to TARGET_PACKAGES
-# installed via standard installation functions
-add_packages() { dfunc; [[ -n "$1" ]] && TARGET_PACKAGES+=" $1" || true; }
-
-# $1 array of changes in augeas format to add to CONFIG_CHANGES
-# later written out with write_config_changes()
-add_config_changes() { dfunc; [[ -n "$1" ]] && CONFIG_CHANGES+=" $1"  || true; }
-
-# $1 array of (final root relative) config files to add to OVERLAY_FILES
-# later written out with write_overlay_files()
-add_overlay_files() { dfunc; [[ -n "$1" ]] && OVERLAY_FILES+=" $1"   || true; }
 
 write_config_changes()
 {
@@ -350,6 +378,27 @@ write_overlay_files()
         # write files using current file permissions
         # backup original file?
 }
+
+# ----------------------------------------------------------------------
+# lib-profiles
+# ----------------------------------------------------------------------
+# functions to support archproto profiles
+
+# why not just load_profile? better to keep all profile functions
+# separate in case we need to change them down the road
+depend_profile() { load_profile "$1"; }
+
+# $1 array of packages (from official and aur) to add to TARGET_PACKAGES
+# installed via standard installation functions
+add_packages() { dfunc; [[ -n "$1" ]] && TARGET_PACKAGES+=" $1" || true; }
+
+# $1 array of changes in augeas format to add to CONFIG_CHANGES
+# later written out with write_config_changes()
+add_config_changes() { dfunc; [[ -n "$1" ]] && CONFIG_CHANGES+=" $1"  || true; }
+
+# $1 array of (final root relative) config files to add to OVERLAY_FILES
+# later written out with write_overlay_files()
+add_overlay_files() { dfunc; [[ -n "$1" ]] && OVERLAY_FILES+=" $1"   || true; }
 
 # this is a catch all function that any system profile can override
 # to do anything that needs doing (custom sed commands, etc.)
