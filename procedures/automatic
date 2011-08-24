@@ -2,6 +2,10 @@
 
 # Ethan Schoonover <es@ethanschoonover.com>
 
+# command line tests:
+# aif -p http://github.com/altercation/archproto/raw/master/procedures/automatic -c systems/lenovo/x220
+# aif -p archproto/automatic -c https://github.com/altercation/archproto/systems/lenovo/x220/profile
+
 # archproto/automatic
 # aif procedure to install a various prototype configurations
 # including hardware prototypes for specific makes/models,
@@ -29,7 +33,8 @@
 # aif remotely.
 
 ARCHPROTO_MODULE_NAME=archproto # in case we need to change our script name 
-DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ ! -d "$DOWNLOADS_DIR" ]] && mkdir -p "$DOWNLOADS_DIR"
+DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$DOWNLOADS_DIR" ]] && rm -rf "$DOWNLOADS_DIR"; mkdir -p "$DOWNLOADS_DIR"
+#TEMP_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$TEMP_DIR" ]] && rm -rf "$TEMP_DIR"; mkdir -p "$TEMP_DIR"
 KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
 
 AIF_MODULE_NAME="$module" # from aif.sh
@@ -83,20 +88,24 @@ process_args ()
     done
 }
 source_and_overlay() { dfunc; local revert_overlay=$OVERLAY; OVERLAY="$(dirname '$1')/overlay"; source $1; OVERLAY=$revert_overlay; unset revert_overlay; }
-makelocal() { dfunc; echo "$DOWNLOADS_DIR/${1:$(expr "$1" : 'https*://')}"; }
+makelocal() { echo "$DOWNLOADS_DIR/${1:$(expr "$1" : 'https*://')}"; }
+maketemp() { echo "$TEMP_DIR/${1:$(expr "$1" : 'https*://')}"; }
 conform_repo ()
 {
+# TODO: this could be made more intelligent (or maybe too clever) by cloning the repo successfully to a temp directory (e.g. temp/archproto) regardless of
+# what URL is given, so if we give a *raw* url for a github repo (say, for the aif procedure), we can still clone the repository and then once it is in temp
+# we know that the newly cloned repo is our module root, and we can move it into our downloads root and add it to our path.
     dfunc
     local repo_remote=$1
     local repo_local=
     local repo_type=${REPO_TYPE:-} # from optional -r command line argument
     if [[ -n "$repo_type" ]]; then : # $repo_type already set
-    elif [[ "$(expr "$path_remote" : 'https*://.*github.com')" > 0 ]]; then repo_type=git
-    elif [[ "$(expr "$path_remote" : '.*/git/')" > 0 ]]; then repo_type=git
-    elif [[ "$(expr "$path_remote" : 'https*://.*bitbucket.org')" > 0 ]]; then repo_type=hg
-    elif [[ "$(expr "$path_remote" : '.*/hg/')" > 0 ]]; then repo_type=hg
-    elif [[ "$(expr "$path_remote" : '.*/mercurial/')" > 0 ]]; then repo_type=hg
-    elif [[ "$(expr "$path_remote" : '.*/svn/')" > 0 ]]; then repo_type=svn
+    elif [ $(expr "$repo_remote" : 'https*://.*github.com') -gt 0 ]; then repo_type=git
+    elif [ $(expr "$repo_remote" : '.*/git/') -gt 0 ]; then repo_type=git
+    elif [ $(expr "$repo_remote" : 'https*://.*bitbucket.org') -gt 0 ]; then repo_type=hg
+    elif [ $(expr "$repo_remote" : '.*/hg/') -gt 0 ]; then repo_type=hg
+    elif [ $(expr "$repo_remote" : '.*/mercurial/') -gt 0 ]; then repo_type=hg
+    elif [ $(expr "$repo_remote" : '.*/svn/') -gt 0 ]; then repo_type=svn
     fi
     local repo_command=
     local repo_suffix=
@@ -107,14 +116,26 @@ conform_repo ()
     esac
     while [[ -n "$repo_remote" && ${#repo_remote} > 1 ]]; 
     do
-        local repo_local=$(makelocal "$path_remote")
-        [[ -e "$repo_local" ]] && return 0 || $(repo_command "$repo_remote" "$repo_local") && return 0 || repo_remote=$(dirname "$repo_remote")
+        local repo_local=$(makelocal "$repo_remote")
+        if [[ -e "$repo_local" ]] 
+        then
+                echo "FOUND LOCAL REPO at $repo_local"
+                return 0
+        elif $repo_command "$repo_remote" "$repo_local" &>/dev/null
+        then
+                return 0
+        else
+                # failed so we *must* remove the failed target directory here, otherwise we end up with a false positive later
+                rm -rf "$repo_local" "$(dirname $repo_local)"
+        fi
+        repo_remote=$(dirname "$repo_remote") # trim and retry
     done
     die error "failed to download repo from path $1"
 }
 load_profile()
 {
     dfunc
+    echo "with args $*"
     # arguments:
     # $1 (assigned to profile_path): a path, either relative, absolute local or remote URL
     # $2 is the *original* type of profile (relative, remote, absolute) and is only set from insid the function
@@ -131,7 +152,7 @@ load_profile()
         # no update_modulepaths_from_profilepath needed here; it's taken care 
         # of in absolute since that means we've already successfully downloaded 
         # a repository
-        [[ $(conform_repo "$profile_path") ]] && (load_profile $(makelocal ${profile_path}) ${profile_type:-http} || return 1 ) || die_error "(shouldn't reach this) error cloning repo for $profile_path"
+        [[ $(conform_repo "$profile_path") ]] && (load_profile "$(makelocal ${profile_path})" ${profile_type:-http} || return 1 ) || die_error "(shouldn't reach this) error cloning repo for $profile_path"
     else # assumed relative path (e.g. profiles/profilename)
         for module_root in ${MODULE_PATHS[@]}; do load_profile "${module_root%/}/${profile_path#/}" "relative" && return 0; done; return 1
     fi
@@ -140,7 +161,8 @@ depend_profile() { load_profile "$1"; }
 update_modulepaths_from_profilepath()
 {
     dfunc
-    echo "MODULE_PATHS IS CURRENTLY: $MODULE_PATHS"
+    echo "MODULE_PATHS IS CURRENTLY: ${MODULE_PATHS[@]}"
+    echo "called with args $*"
     # expects parameters:
     # $1: a local absolute path or http remote *profile* path we need to make some assumptions about either the depth of all profile paths or standard names 
     # such as procedure, systems, etc. this is the trickiest assumption we make and the only other option I see is to never allow a relative path, which is silly.
@@ -159,6 +181,7 @@ update_modulepaths_from_profilepath()
                 for test_path in ${MODULE_PATHS[@]}; do [[ "$test_path" == "$module_path" ]] && return 0; done
                 # still here, add path to MODULE_PATHS
                 MODULE_PATHS=("$module_path" "${MODULE_PATHS[@]}")
+                echo "MODULE_PATHS IS NOW UPDATED TO: ${MODULE_PATHS[@]}"
                 return 0
             fi
         done
