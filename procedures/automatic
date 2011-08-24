@@ -186,7 +186,7 @@ process_args ()
 
 source_and_overlay()
 {
-    dfunc $@
+    dfunc "$*"
     local revert_overlay=$OVERLAY
     OVERLAY="$(dirname '$1')/overlay"
     source $1
@@ -324,7 +324,7 @@ update_modulepaths_from_profilepath()
 
 load_profile()
 {
-    dfunc
+    dfunc "$*"
     # arguments:
     # $1 (assigned to profile_path): a path, either relative, absolute local or remote URL
     # $2 is the *original* type of profile (relative, remote, absolute) and is only set from insid the function
