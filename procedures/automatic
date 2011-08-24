@@ -107,10 +107,20 @@ conform_repo ()
     fi
     local repo_command=
     local repo_suffix=
+    local repo_infix=
     case $repo_type in
-        git) repo_command="git clone --depth=0" && repo_suffix=".git";;
-        hg)  repo_command="hg clone" ;;
-        svn) repo_command="svn checkout" ;;
+        git)
+                repo_command="git clone --depth=0"
+                repo_suffix=".git"
+                repo_infix="raw[./][^/]*/" # raw/master/
+        ;;
+        hg)
+                repo_command="hg clone"
+                repo_infix="raw[./][^/]*/[^/]*/" # raw/32dc76fda832/src/
+        ;;
+        svn)
+                repo_command="svn checkout"
+        ;;
     esac
     while [[ -n "$repo_remote" && ${#repo_remote} > 1 ]]; 
     do
@@ -118,7 +128,10 @@ conform_repo ()
         # following repo_local works in cases where we have a "normal" repo file path
         # but not when we've received a github raw/master format path, for example
 
+        echo "XXXXXXXXXXXXXXXXXXXXXXXXXXX"
         local repo_local=$(makelocal "$repo_remote")
+        echo "$repo_local" | sed "s^$repo_infix^^"
+        exit
 
 #        don't need local?
 #        if raw path, local check will fail
@@ -152,6 +165,11 @@ conform_repo ()
                 return 0
         else
             if $repo_command "$repo_remote" "$repo_local" &>/dev/null
+
+#TODO TODO TODO:
+# right now we're failing the clone?
+
+
             #if cd $DOWNLOADS_DIR; echo "IN $PWD AND ABOUT TO CLONE"; $repo_command "$repo_remote" &>/dev/null
             then
            #         cd -
