@@ -32,9 +32,6 @@
 # rather than a library script because this is the only file we can load from 
 # aif remotely.
 
-echo "HELP!"
-exit
-
 ARCHPROTO_MODULE_NAME=archproto # in case we need to change our script name 
 DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$DOWNLOADS_DIR" ]] && rm -rf "$DOWNLOADS_DIR"; mkdir -p "$DOWNLOADS_DIR"
 #TEMP_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$TEMP_DIR" ]] && rm -rf "$TEMP_DIR"; mkdir -p "$TEMP_DIR"
