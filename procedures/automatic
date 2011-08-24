@@ -81,6 +81,7 @@ worker_intro ()
 worker_configure ()
 {
         dfunc
+echo "worker_configure started"
         var_UI_TYPE=${arg_ui_type:-cli}
         ui_init
         [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
@@ -159,7 +160,7 @@ worker_system_extras()
 # functions to support archproto procedure itself
 
 d() { debug PROCEDURE "$1"; }
-dstate () { d "ARCHPROTO STATECHK: $1 IS CURRENTLY: ${!1}"; }
+dstate() { d "ARCHPROTO STATECHK: $1 IS CURRENTLY: ${!1}"; }
 dfunc()
 {
     # quick debug function, better info than "caller"
@@ -291,8 +292,7 @@ make_local ()
 }
 update_modulepaths_from_profilepath()
 {
-    dfunc
-    d "ARCHPROTO STATECHK: MODULE_PATHS is currently: ${MODULE_PATHS[*]}"
+    dfunc "$*"
     # expects parameters:
     # $1: a local absolute path or http remote *profile* path we need to make some assumptions about either the depth of all profile paths or standard names 
     # such as procedure, systems, etc. this is the trickiest assumption we make and the only other option I see is to never allow a relative path, which is silly.
