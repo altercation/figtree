@@ -33,10 +33,15 @@
 # aif remotely.
 
 ARCHPROTO_MODULE_NAME=archproto # in case we need to change our script name 
+ARCHPROTO_PROCEDURE_SUBPATH=/procedures/automatic
 DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$DOWNLOADS_DIR" ]] && rm -rf "$DOWNLOADS_DIR"; mkdir -p "$DOWNLOADS_DIR"
 TEMP_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$TEMP_DIR" ]] && rm -rf "$TEMP_DIR"; mkdir -p "$TEMP_DIR"
 KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
-[[ "$module" != "http" ]] && AIF_PROCEDURE_PATH="$procedure" || AIF_PROCEDURE_PATH="$(dirname $(dirname $2))"
+[[ "$module" != "http" ]] \
+        && AIF_PROCEDURE_PATH="$procedure" \
+        || AIF_PROCEDURE_PATH="${2%$ARCHPROTO_PROCEDURE_SUBPATH*}" # strip procedures/automatic and any trailing slash
+echo "AIF PROC PATH is $AIF_PROCEDURE_PATH"
+exit
 #MODULE_PATHS[0]="$AIF_PROCEDURE_PATH"; while [[ "$(basename ${MODULE_PATHS[0]})" != "$ARCHPROTO_MODULE_NAME" ]]; do MODULE_PATHS[0]="$(dirname ${MODULE_PATHS[0]})"; done
 MODULE_PATHS[0]="$AIF_PROCEDURE_PATH"
 #TODO: $procedure is going to fuck things up if it has the raw infix... when/where do we strip it out? now? later? i feel like the paths should be immutable once set... it's weird to
