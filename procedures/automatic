@@ -78,29 +78,6 @@ worker_intro ()
         notify "AIF archproto automatic procedure using initial profile $archproto_PROFILE"
 }
 
-worker_configure ()
-{
-        dfunc
-echo "worker_configure started"
-        var_UI_TYPE=${arg_ui_type:-cli}
-        ui_init
-        [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
-        load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
-        #source $var_AUTOMATIC_PROFILE   || die_error "Could not source config $var_AUTOMATIC_PROFILE"
-        # Check mandatory options
-        [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
-        [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
-        [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
-        # initialize internal variables based on variables set by the user (some of the vars are handled in other workers):
-        var_RUNTIME_REPOSITORIES=$RUNTIME_REPOSITORIES
-        var_RUNTIME_PACKAGES=$RUNTIME_PACKAGES
-        var_GRUB_DEVICE=$GRUB_DEVICE
-        var_PARTITIONS=$PARTITIONS
-        var_BLOCKDATA=$BLOCKDATA
-        HARDWARECLOCK=${HARDWARECLOCK:-localtime}
-        TIMEZONE=${TIMEZONE:-Canada/Pacific}
-}
-
 worker_install_packages()
 {
     dfunc
@@ -402,3 +379,26 @@ system_extras()
         dfunc
         true
 }
+worker_configure ()
+{
+        dfunc
+echo "worker_configure started"
+        var_UI_TYPE=${arg_ui_type:-cli}
+        ui_init
+        [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
+        load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
+        #source $var_AUTOMATIC_PROFILE   || die_error "Could not source config $var_AUTOMATIC_PROFILE"
+        # Check mandatory options
+        [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
+        [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
+        [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
+        # initialize internal variables based on variables set by the user (some of the vars are handled in other workers):
+        var_RUNTIME_REPOSITORIES=$RUNTIME_REPOSITORIES
+        var_RUNTIME_PACKAGES=$RUNTIME_PACKAGES
+        var_GRUB_DEVICE=$GRUB_DEVICE
+        var_PARTITIONS=$PARTITIONS
+        var_BLOCKDATA=$BLOCKDATA
+        HARDWARECLOCK=${HARDWARECLOCK:-localtime}
+        TIMEZONE=${TIMEZONE:-Canada/Pacific}
+}
+
