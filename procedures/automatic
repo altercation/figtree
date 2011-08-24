@@ -37,7 +37,8 @@ DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$DOWNL
 TEMP_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$TEMP_DIR" ]] && rm -rf "$TEMP_DIR"; mkdir -p "$TEMP_DIR"
 KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
 [[ "$module" != "http" ]] && AIF_PROCEDURE_PATH="$procedure" || AIF_PROCEDURE_PATH="$2"
-MODULE_PATHS[0]="$AIF_PROCEDURE_PATH"; while [[ "$(basename ${MODULE_PATHS[0]})" != "$ARCHPROTO_MODULE_NAME" ]]; do MODULE_PATHS[0]="$(dirname ${MODULE_PATHS[0]})"; done
+#MODULE_PATHS[0]="$AIF_PROCEDURE_PATH"; while [[ "$(basename ${MODULE_PATHS[0]})" != "$ARCHPROTO_MODULE_NAME" ]]; do MODULE_PATHS[0]="$(dirname ${MODULE_PATHS[0]})"; done
+MODULE_PATHS[0]="$AIF_PROCEDURE_PATH"
 
 depend_procedure core automatic # most of automatic fits our needs
 phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
