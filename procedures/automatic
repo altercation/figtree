@@ -39,6 +39,8 @@ KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users 
 [[ "$module" != "http" ]] && AIF_PROCEDURE_PATH="$procedure" || AIF_PROCEDURE_PATH="$2"
 #MODULE_PATHS[0]="$AIF_PROCEDURE_PATH"; while [[ "$(basename ${MODULE_PATHS[0]})" != "$ARCHPROTO_MODULE_NAME" ]]; do MODULE_PATHS[0]="$(dirname ${MODULE_PATHS[0]})"; done
 MODULE_PATHS[0]="$AIF_PROCEDURE_PATH"
+#TODO: $procedure is going to fuck things up if it has the raw infix... when/where do we strip it out? now? later? i feel like the paths should be immutable once set... it's weird to
+# have that state change too. so i have to set it here.
 
 depend_procedure core automatic # most of automatic fits our needs
 phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
@@ -87,30 +89,31 @@ process_args ()
     done
 }
 source_and_overlay() { dfunc; local revert_overlay=$OVERLAY; OVERLAY="$(dirname '$1')/overlay"; source $1; OVERLAY=$revert_overlay; unset revert_overlay; }
-makelocal() { echo "$DOWNLOADS_DIR/${1:$(expr "$1" : 'https*://')}"; }
+#OLDmakelocal() { echo "$DOWNLOADS_DIR/${1:$(expr "$1" : 'https*://')}"; }
 maketemp() { echo "$TEMP_DIR/${1:$(expr "$1" : 'https*://')}"; }
-conform_repo ()
+make_local ()
 {
-# TODO: this could be made more intelligent (or maybe too clever) by cloning the repo successfully to a temp directory (e.g. temp/archproto) regardless of
-# what URL is given, so if we give a *raw* url for a github repo (say, for the aif procedure), we can still clone the repository and then once it is in temp
-# we know that the newly cloned repo is our module root, and we can move it into our downloads root and add it to our path.
+    # takes a remote repo path and returns a local path (dies if repo can't be cloned)
+    local  __resultvar=${2:-} # can take a variable name to assign result to (otherwise returns value via echo
+
     dfunc
 
     # repo remote is almost certainly never going to be an actual repo path
     # but rather a full path to a file in a repo. This is complicated by the fact that we want to provide aif an actual file for it's initial procedure and
     # subsequently use that repo information (extracted from the raw path). The infix values below should clean this up for us, but needs more testing
-    local repo_remote=$1
-    local repo_local=
+    local full_path_remote=$1
 
     # detect/set repo_type
     local repo_type=${REPO_TYPE:-} # from optional -r command line argument
     if [[ -n "$repo_type" ]]; then : # $repo_type already set
-    elif [ $(expr "$repo_remote" : 'https*://.*github.com') -gt 0 ]; then repo_type=git
-    elif [ $(expr "$repo_remote" : '.*/git/') -gt 0 ]; then repo_type=git
-    elif [ $(expr "$repo_remote" : 'https*://.*bitbucket.org') -gt 0 ]; then repo_type=hg
-    elif [ $(expr "$repo_remote" : '.*/hg/') -gt 0 ]; then repo_type=hg
-    elif [ $(expr "$repo_remote" : '.*/mercurial/') -gt 0 ]; then repo_type=hg
-    elif [ $(expr "$repo_remote" : '.*/svn/') -gt 0 ]; then repo_type=svn
+    elif [ $(expr "$full_path_remote" : 'https*://.*github.com') -gt 0 ]; then repo_type=git
+    elif [ $(expr "$full_path_remote" : '.*/git/') -gt 0 ]; then repo_type=git
+    elif [ $(expr "$full_path_remote" : 'https*://.*bitbucket.org') -gt 0 ]; then repo_type=hg
+    elif [ $(expr "$full_path_remote" : '.*/hg/') -gt 0 ]; then repo_type=hg
+    elif [ $(expr "$full_path_remote" : '.*/mercurial/') -gt 0 ]; then repo_type=hg
+    elif [ $(expr "$full_path_remote" : 'https*://code.google.com') -gt 0 ]; then repo_type=svn
+    elif [ $(expr "$full_path_remote" : '.*/trunk/') -gt 0 ]; then repo_type=svn
+    elif [ $(expr "$full_path_remote" : '.*/svn/') -gt 0 ]; then repo_type=svn
     fi
 
     # now set the repo clone command, infix to strip out github/bitbucket raw file path values, and any suffix required to clone (.git)
@@ -129,72 +132,65 @@ conform_repo ()
         ;;
         svn)
                 repo_command="svn checkout"
+                # google code, at least, doesn't stick in any infixes for the raw file
+                # but does present a different url for the raw file. this url works for cloning, however
+                # http://code.google.com/p/googlecl/source/browse/trunk/INSTALL.txt
+                # http://googlecl.googlecode.com/svn/trunk/INSTALL.txt
+                # I haven't tested other svn services yet
         ;;
     esac
 
-    while [[ -n "$repo_remote" && ${#repo_remote} > 1 ]]; 
-    do
+    # strip infix out of remote path, allowing us to just use makelocal after this
+    # all paths passed to this function must be treated as suspect as any of them
+    # could be raw format paths. for example, this converts the following github url:
+    # PRE INFIX STRIP:  http://github.com/altercation/archproto/raw/master/procedures/automatic/systems/lenovo/x220
+    # POST INFIX STRIP: http://github.com/altercation/archproto/procedures/automatic/systems/lenovo/x220
+    full_path_remote=$(echo -n "$full_path_remote" | sed "s^$repo_infix^^")
 
-        # following repo_local works in cases where we have a "normal" repo file path
-        # but not when we've received a github raw/master format path, for example
+    # at this point, we have cleaned up our full remote path and identified what kind of repo it is
+    # the repo may still be already cloned locally. normally if the user specifies a full remote
+    # procedure path and then a relative path for the profile, we will add the local repo module
+    # root to our MODULE_PATHS array and won't normally have to double check if the repo is already
+    # present. However, if someone passes identical repo paths in both the aif procedure command line
+    # argument and the profile argument (or embedded in a depend_profile command in a profile), we
+    # need to be ready to handle it here
 
-        local repo_local=$(makelocal "$repo_remote")
-        echo "REPO LOCAL PRE INFIX STRIP: $repo_local"
-        # ^ should be an unused character in most repo urls, but it's still a potential collision and we could escape the repo path first
-        repo_local=$(echo -n "$repo_local" | sed "s^$repo_infix^^")
-        echo "REPO LOCAL POST INFIX STRIP: $repo_local"
-        exit
+    # make a local path for the profile file for an initial file check and, failing that, cloning, for example:
+    # REMOTE:                       http://github.com/altercation/archproto/procedures/automatic/systems/lenovo/x220
+    # LOCAL:  /tmp/aif/archproto-downloads/github.com/altercation/archproto/procedures/automatic/systems/lenovo/x220
+    local full_path_local="$DOWNLOADS_DIR/${full_path_remote:$(expr "$full_path_remote" : 'https*://')}"
 
-#        don't need local?
-#        if raw path, local check will fail
-#
-#        if we've already downloaded via a raw path (i.e. from procedure)
-#        and we've correctly saved the local path (i.e. NOT just makelocal... that's the problem)
-#        by back filling the path (or just random save location, path)
-#        then we don't need to check repo_local via makelocal, we will have correctly checked any given relative path already
-#        since our module_paths will be used first
-#
-#        otherwise we'll have a "correct" github (or other) path and we'll correcly cascade down the path and save it correctly.... I think
-#        because we'll just save it as "/tmp/aif/archproto-temp/reponame
-#
-#        our problem above is that we might have several repos with the same name.
-#        one solution might be to take the url path (sans protocol) up to the repo name... does that work with hg, svn as well?
-#
-#        i.e. we need to have some sort of unique path but not the full raw/master stuff
-#
-#        rough algorithm:
-#
-#        clone successfully
-#        take repo name we just got (basename)
-#        work up through the url till we get to the basename
-#        that's our unique local path
-#        mkdir up to basename and mv the repo
-#
+    # we can now use that profile path to clone the remote repo by cloning, failing, and trimming until we get down to the actual repo root.
+    # this is a bit brute force and we could be smarter about it if we wanted to supply an actual template for the repo root, for example
+    # github's pattern is github.com/username/reponame
+    # that's left for a later optimization round. even with that we should support private repository urls (or unknown or less popular services)
+    # that have unknown URL formats. brute force try/trim/iterate does this for now.
 
-        if [[ -e "$repo_local" ]] 
+    local repo_remote="$full_path_remote" # initial repo_remote assignment
+    local repo_local="$DOWNLOADS_DIR/${repo_remote:$(expr "$repo_remote" : 'https*://')}"
+
+    while [[ -n "$repo_remote" && ${#repo_remote} > 1 ]]; do # loop till we trim too much, indicating profound failure
+
+        # presence of file, possibly before we've even tried to clone due to previous successful clone
+        # note well that this is not the same as repo_local
+        [[ -e "$full_path_local" ]] && echo -n "$full_path_local" && return 0 
+        
+        # we haven't returned from this function yet ($full_path_local isn't present) so try to clone with current repo path
+        # if this succeeds and the full_path_local variable is accurate then we will find the file on the next path
+        # if this fails, we need to trim and loop
+        if $repo_command $repo_remote $repo_local &>/dev/null
         then
-                echo "FOUND LOCAL REPO at $repo_local"
+                # we return the local path and load_profile can handle adding it to the path
+                [[ "$__resultvar" ]] && eval $__resultvar="'$full_path_local'" || echo "$full_path_remote"
                 return 0
         else
-            if $repo_command "$repo_remote" "$repo_local" &>/dev/null
-
-#TODO TODO TODO:
-# right now we're failing the clone?
-
-
-            #if cd $DOWNLOADS_DIR; echo "IN $PWD AND ABOUT TO CLONE"; $repo_command "$repo_remote" &>/dev/null
-            then
-           #         cd -
-           #         exit
-                    return 0
-            # else
-                    # failed so we *must* remove the failed target directory here, otherwise we end up with a false positive later
-                    # rm -rf "$repo_local" "$(dirname $repo_local)"
-            fi
+                rm -rf "$(dirname $repo_local)" # clean up bad repo path
         fi
-        repo_remote=$(dirname "$repo_remote") # trim and retry
-    done
-    die error "failed to download repo from path $1"
+
+        # trim and retry
+        repo_remote=$(dirname "$repo_remote")
+        repo_local="$DOWNLOADS_DIR/${repo_remote:$(expr "$repo_remote" : 'https*://')}"
+    done; die error "failed to download repo from path $1"
 }
 load_profile()
 {
@@ -207,20 +203,22 @@ load_profile()
     # OVERLAY: current value of OVERLAY directory path
     # MODULE_PATHS: array of paths to use, in order, as module roots with relative paths
     local profile_path=${1%/} # strips any trailing slash
-    local profile_type=${2:-}
+    local profile_type=${2:-} # only used internally in this function
     if [[ "${profile_path:0:1}" == "/" ]]; then # absolute local path
-        [[ "${profile_type}" != "xrelative" ]] && update_modulepaths_from_profilepath "$profile_path" # add to module paths (thus if we've donwloaded a repo, we'll check locally next time)
+        # add to module paths (thus if we've donwloaded a repo, we'll check locally next time)
+        [[ "${profile_type}" != "xrelative" ]] && update_modulepaths_from_profilepath "$profile_path"
         [[ -d "${profile_path}" ]] && profile_path="$profile_path/profile"
         [[ -f "${profile_path}" ]] && source_and_overlay "$profile_path" || return 1
     elif [[ "${profile_path:0:4}" == "http" ]]; then # remote url, could be http or https with this match
-        # no update_modulepaths_from_profilepath needed here; it's taken care 
-        # of in absolute since that means we've already successfully downloaded 
-        # a repository
-echo "+++++++++++++++++++++++++++++++++++"
-        conform_repo $profile_path
-exit
-#TODO: conform repo not getting called below... why?
-        [[ $(conform_repo "$profile_path") ]] && (load_profile "$(makelocal ${profile_path})" ${profile_type:-http} || return 1 ) || die_error "(shouldn't reach this) error cloning repo for $profile_path. May be due to a mismtatch between the successfully cloned repo and the expected subsequent local file path."
+        if make_local $profile_path profile_path_local
+        then
+                echo "++++++++++++++++ make_local returned $profile_path_local"
+                load_profile "$profile_path_local" ${profile_type:-http} || return 1
+        else
+                echo "++++++++++++++++ make_local returned $profile_path_local"
+                die_error "should definitely not reach this error. there was a problem getting the local profile path from a remote repo."
+        fi
+        #[[ $(make_local $profile_path profile_path_local) ]] && ( load_profile "$profile_path_local" ${profile_type:-http} || return 1 ) \ || die_error "should definitely not reach this error. there was a problem getting the local profile path from a remote repo."
     else # assumed relative path (e.g. profiles/profilename)
         for module_root in ${MODULE_PATHS[@]}; do load_profile "${module_root%/}/${profile_path#/}" "relative" && return 0; done; return 1
     fi
