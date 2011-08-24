@@ -292,7 +292,7 @@ make_local ()
 update_modulepaths_from_profilepath()
 {
     dfunc
-    debug PROCEDURE "ARCHPROTO STATE: MODULE_PATHS is currently: ${MODULE_PATHS[@]}"
+    d "ARCHPROTO STATE: MODULE_PATHS is currently: ${MODULE_PATHS[*]}"
     # expects parameters:
     # $1: a local absolute path or http remote *profile* path we need to make some assumptions about either the depth of all profile paths or standard names 
     # such as procedure, systems, etc. this is the trickiest assumption we make and the only other option I see is to never allow a relative path, which is silly.
@@ -310,7 +310,7 @@ update_modulepaths_from_profilepath()
                 for test_path in ${MODULE_PATHS[@]}; do [[ "$test_path" == "$module_path" ]] && return 0; done
                 # still here, add path to MODULE_PATHS
                 MODULE_PATHS=("$module_path" "${MODULE_PATHS[@]}")
-                debug PROCEDURE "ARCHPROTO STATE: MODULE_PATHS updated to: ${MODULE_PATHS[@]}"
+                d "ARCHPROTO STATE: MODULE_PATHS updated to: ${MODULE_PATHS[*]}"
                 return 0
             fi
         done
@@ -341,13 +341,11 @@ load_profile()
     elif [[ "${profile_path:0:4}" == "http" ]]; then # remote url, could be http or https with this match
         if make_local $profile_path profile_path_local
         then
-                echo "++++++++++++++++ make_local returned $profile_path_local"
+                d "ARCHPROTO PROFILES: preparing to load profile $profile_path_local"
                 load_profile "$profile_path_local" ${profile_type:-http} || return 1
         else
-                echo "++++++++++++++++ make_local returned $profile_path_local"
                 die_error "should definitely not reach this error. there was a problem getting the local profile path from a remote repo."
         fi
-        #[[ $(make_local $profile_path profile_path_local) ]] && ( load_profile "$profile_path_local" ${profile_type:-http} || return 1 ) \ || die_error "should definitely not reach this error. there was a problem getting the local profile path from a remote repo."
     else # assumed relative path (e.g. profiles/profilename)
         for module_root in ${MODULE_PATHS[@]}; do load_profile "${module_root%/}/${profile_path#/}" "relative" && return 0; done; return 1
     fi
