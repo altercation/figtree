@@ -43,13 +43,9 @@ echo "AIF PROCEDURE IS $AIF_PROCEDURE_PATH"
 echo "AIF MODULE IS $AIF_MODULE_NAME"
 echo "command line args are $*"
 
-# TODO: this isn't good enough... raw/master garbage in path, makes remote path not so useful in the case of a later relative path
-# what I need to do is have an initial repo path...
-# alternately, we could just pare down to the "archproto" name... maybe this is simplest for now
-MODULE_PATHS=("$(dirname $(dirname ${AIF_PROCEDURE_PATH}))") # this works in both cases of module being either http or local
-echo ${MODULE_PATHS[@]}
+MODULE_PATHS[0]="$AIF_PROCEDURE_PATH"; while [[ "$(basename ${MODULE_PATHS[0]})" != "$ARCHPROTO_MODULE_NAME" ]]; do MODULE_PATHS[0]="$(dirname ${MODULE_PATHS[0]})"; done
+echo "${MODULE_PATHS[@]}"
 exit
-while $(
 
 depend_procedure core automatic # most of automatic fits our needs
 phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
