@@ -158,12 +158,15 @@ worker_system_extras()
 # ----------------------------------------------------------------------
 # functions to support archproto procedure itself
 
+d() { debug PROCEDURE "$1"; }
+dstate () { d "ARCHPROTO STATE: $1 IS CURRENTLY: ${!1}"; }
 dfunc()
 {
     # quick debug function, better info than "caller"
     # called without parameters at top of function; reports where it was called 
     # from (calling function and line number)
-    echo ">>> ${FUNCNAME[1]}() called at line ${BASH_LINENO[1]} by ${FUNCNAME[2]}"
+    [[ $1 ]] && local with_args=" with arguments \"$@\"" || local with_args=""
+    d "ARCHPROTO FUNCTION: ${FUNCNAME[1]}() called at line ${BASH_LINENO[1]} by ${FUNCNAME[2]}${with_args}"
 }
 
 process_args ()
@@ -183,45 +186,11 @@ process_args ()
 
 source_and_overlay()
 {
-    dfunc
+    dfunc $@
     local revert_overlay=$OVERLAY
     OVERLAY="$(dirname '$1')/overlay"
     source $1
     OVERLAY=$revert_overlay
-}
-
-update_modulepaths_from_profilepath()
-{
-    dfunc
-    echo "MODULE_PATHS IS CURRENTLY: ${MODULE_PATHS[@]}"
-    echo "called with args $*"
-    # expects parameters:
-    # $1: a local absolute path or http remote *profile* path we need to make some assumptions about either the depth of all profile paths or standard names 
-    # such as procedure, systems, etc. this is the trickiest assumption we make and the only other option I see is to never allow a relative path, which is silly.
-    # requires state: $KNOWN_SUBDIRS
-    # modifies state: $MODULE_PATHS
-    local module_path=${1%profile} # strip profile
-    module_path=${module_path%/} # strip trailing slash
-    while [[ -n "$module_path" && ${#module_path} > 1 ]]; do
-        for known_subdir in ${KNOWN_SUBDIRS[@]}; do
-            if [[ "$(basename $module_path)" == "$known_subdir" ]]
-            then
-                # we have a match and assume we are one level away from root || trim and loop
-                module_path="$(dirname $module_path)"
-                # now check to see if this path is already in MODULE_PATHS
-                for test_path in ${MODULE_PATHS[@]}; do [[ "$test_path" == "$module_path" ]] && return 0; done
-                # still here, add path to MODULE_PATHS
-                MODULE_PATHS=("$module_path" "${MODULE_PATHS[@]}")
-                echo "MODULE_PATHS IS NOW UPDATED TO: ${MODULE_PATHS[@]}"
-                return 0
-            fi
-        done
-        module_path="$(dirname $module_path)" # no match, trim a level
-    done
-    # if we are still here then we didn't find a "known subdir"... best to error out here, though another option is to just strip the last two / three 
-    # path components. we could try to standardize all "known" subdir formats to: modulename/knownsubidr/category/specificprofile, eg:
-    # archproto/systems/lenovo/x220 or archproto/environments/xmonad/es
-    die_error "failed to find known subdirectory (one of ${KNOWN_SUBDIRS[@]}) in path $1;"
 }
 
 make_local ()
@@ -304,19 +273,14 @@ make_local ()
 
     while [[ -n "$repo_remote" && ${#repo_remote} > 1 ]]; do # loop till we trim too much, indicating profound failure
 
-        # presence of file, possibly before we've even tried to clone due to previous successful clone
-        # note well that this is not the same as repo_local
-        [[ -e "$full_path_local" ]] && echo -n "$full_path_local" && return 0 
-        
-        # we haven't returned from this function yet ($full_path_local isn't present) so try to clone with current repo path
-        # if this succeeds and the full_path_local variable is accurate then we will find the file on the next path
-        # if this fails, we need to trim and loop
-        if $repo_command $repo_remote $repo_local &>/dev/null
-        then
+        if [[ -e "$full_path_local" ]]; then # found local file
+            [[ "$__returnvarname" ]] && eval $__returnvarname="'$full_path_local'" || echo "$full_path_remote"
+            return 0
+        elif $repo_command $repo_remote $repo_local &>/dev/null; then # successful clone
                 # we return the local path and load_profile can handle adding it to the path
                 [[ "$__returnvarname" ]] && eval $__returnvarname="'$full_path_local'" || echo "$full_path_remote"
                 return 0
-        else
+        else # clone failed
                 rm -rf "$(dirname $repo_local)" # clean up bad repo path
         fi
 
@@ -325,11 +289,42 @@ make_local ()
         repo_local="$DOWNLOADS_DIR/${repo_remote:$(expr "$repo_remote" : 'https*://')}"
     done; die error "failed to download repo from path $1"
 }
+update_modulepaths_from_profilepath()
+{
+    dfunc
+    debug "ARCHPROTO STATE: MODULE_PATHS is currently: ${MODULE_PATHS[@]}"
+    # expects parameters:
+    # $1: a local absolute path or http remote *profile* path we need to make some assumptions about either the depth of all profile paths or standard names 
+    # such as procedure, systems, etc. this is the trickiest assumption we make and the only other option I see is to never allow a relative path, which is silly.
+    # requires state: $KNOWN_SUBDIRS
+    # modifies state: $MODULE_PATHS
+    local module_path=${1%profile} # strip profile
+    module_path=${module_path%/} # strip trailing slash
+    while [[ -n "$module_path" && ${#module_path} > 1 ]]; do
+        for known_subdir in ${KNOWN_SUBDIRS[@]}; do
+            if [[ "$(basename $module_path)" == "$known_subdir" ]]
+            then
+                # we have a match and assume we are one level away from root || trim and loop
+                module_path="$(dirname $module_path)"
+                # now check to see if this path is already in MODULE_PATHS
+                for test_path in ${MODULE_PATHS[@]}; do [[ "$test_path" == "$module_path" ]] && return 0; done
+                # still here, add path to MODULE_PATHS
+                MODULE_PATHS=("$module_path" "${MODULE_PATHS[@]}")
+                debug "ARCHPROTO STATE: MODULE_PATHS updated to: ${MODULE_PATHS[@]}"
+                return 0
+            fi
+        done
+        module_path="$(dirname $module_path)" # no match, trim a level
+    done
+    # if we are still here then we didn't find a "known subdir"... best to error out here, though another option is to just strip the last two / three 
+    # path components. we could try to standardize all "known" subdir formats to: modulename/knownsubidr/category/specificprofile, eg:
+    # archproto/systems/lenovo/x220 or archproto/environments/xmonad/es
+    die_error "failed to find known subdirectory (one of ${KNOWN_SUBDIRS[@]}) in path $1;"
+}
 
 load_profile()
 {
     dfunc
-    echo "with args $*"
     # arguments:
     # $1 (assigned to profile_path): a path, either relative, absolute local or remote URL
     # $2 is the *original* type of profile (relative, remote, absolute) and is only set from insid the function
