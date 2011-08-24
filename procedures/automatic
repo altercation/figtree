@@ -38,7 +38,7 @@ DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$DOWNL
 KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
 
 AIF_MODULE_NAME="$module" # from aif.sh
-AIF_PROCEDURE_PATH="$procedure" # from aif.sh
+[[ "$module" != "http" ]] && AIF_PROCEDURE_PATH="$procedure" || AIF_PROCEDURE_PATH="$2"
 echo "AIF PROCEDURE IS $AIF_PROCEDURE_PATH"
 echo "AIF MODULE IS $AIF_MODULE_PATH"
 echo "command line args are $*"
