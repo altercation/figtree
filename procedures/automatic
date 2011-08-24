@@ -36,16 +36,8 @@ ARCHPROTO_MODULE_NAME=archproto # in case we need to change our script name
 DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$DOWNLOADS_DIR" ]] && rm -rf "$DOWNLOADS_DIR"; mkdir -p "$DOWNLOADS_DIR"
 TEMP_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$TEMP_DIR" ]] && rm -rf "$TEMP_DIR"; mkdir -p "$TEMP_DIR"
 KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
-
-AIF_MODULE_NAME="$module" # from aif.sh
 [[ "$module" != "http" ]] && AIF_PROCEDURE_PATH="$procedure" || AIF_PROCEDURE_PATH="$2"
-echo "AIF PROCEDURE IS $AIF_PROCEDURE_PATH"
-echo "AIF MODULE IS $AIF_MODULE_NAME"
-echo "command line args are $*"
-
 MODULE_PATHS[0]="$AIF_PROCEDURE_PATH"; while [[ "$(basename ${MODULE_PATHS[0]})" != "$ARCHPROTO_MODULE_NAME" ]]; do MODULE_PATHS[0]="$(dirname ${MODULE_PATHS[0]})"; done
-echo "${MODULE_PATHS[@]}"
-exit
 
 depend_procedure core automatic # most of automatic fits our needs
 phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
@@ -126,44 +118,44 @@ conform_repo ()
         # following repo_local works in cases where we have a "normal" repo file path
         # but not when we've received a github raw/master format path, for example
 
-        # local repo_local=$(makelocal "$repo_remote")
+        local repo_local=$(makelocal "$repo_remote")
 
-        don't need local?
-        if raw path, local check will fail
-
-        if we've already downloaded via a raw path (i.e. from procedure)
-        and we've correctly saved the local path (i.e. NOT just makelocal... that's the problem)
-        by back filling the path (or just random save location, path)
-        then we don't need to check repo_local via makelocal, we will have correctly checked any given relative path already
-        since our module_paths will be used first
-
-        otherwise we'll have a "correct" github (or other) path and we'll correcly cascade down the path and save it correctly.... I think
-        because we'll just save it as "/tmp/aif/archproto-temp/reponame
-
-        our problem above is that we might have several repos with the same name.
-        one solution might be to take the url path (sans protocol) up to the repo name... does that work with hg, svn as well?
-
-        i.e. we need to have some sort of unique path but not the full raw/master stuff
-
-        rough algorithm:
-
-        clone successfully
-        take repo name we just got (basename)
-        work up through the url till we get to the basename
-        that's our unique local path
-        mkdir up to basename and mv the repo
-
+#        don't need local?
+#        if raw path, local check will fail
+#
+#        if we've already downloaded via a raw path (i.e. from procedure)
+#        and we've correctly saved the local path (i.e. NOT just makelocal... that's the problem)
+#        by back filling the path (or just random save location, path)
+#        then we don't need to check repo_local via makelocal, we will have correctly checked any given relative path already
+#        since our module_paths will be used first
+#
+#        otherwise we'll have a "correct" github (or other) path and we'll correcly cascade down the path and save it correctly.... I think
+#        because we'll just save it as "/tmp/aif/archproto-temp/reponame
+#
+#        our problem above is that we might have several repos with the same name.
+#        one solution might be to take the url path (sans protocol) up to the repo name... does that work with hg, svn as well?
+#
+#        i.e. we need to have some sort of unique path but not the full raw/master stuff
+#
+#        rough algorithm:
+#
+#        clone successfully
+#        take repo name we just got (basename)
+#        work up through the url till we get to the basename
+#        that's our unique local path
+#        mkdir up to basename and mv the repo
+#
 
         if [[ -e "$repo_local" ]] 
         then
                 echo "FOUND LOCAL REPO at $repo_local"
                 return 0
         else
-            #if $repo_command "$repo_remote" "$repo_local" &>/dev/null
-            if cd $DOWNLOADS_DIR; echo "IN $PWD AND ABOUT TO CLONE"; $repo_command "$repo_remote" &>/dev/null
+            if $repo_command "$repo_remote" "$repo_local" &>/dev/null
+            #if cd $DOWNLOADS_DIR; echo "IN $PWD AND ABOUT TO CLONE"; $repo_command "$repo_remote" &>/dev/null
             then
-                    cd -
-                    exit
+           #         cd -
+           #         exit
                     return 0
             # else
                     # failed so we *must* remove the failed target directory here, otherwise we end up with a false positive later
