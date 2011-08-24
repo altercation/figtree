@@ -34,7 +34,7 @@
 
 ARCHPROTO_MODULE_NAME=archproto # in case we need to change our script name 
 DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$DOWNLOADS_DIR" ]] && rm -rf "$DOWNLOADS_DIR"; mkdir -p "$DOWNLOADS_DIR"
-#TEMP_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$TEMP_DIR" ]] && rm -rf "$TEMP_DIR"; mkdir -p "$TEMP_DIR"
+TEMP_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$TEMP_DIR" ]] && rm -rf "$TEMP_DIR"; mkdir -p "$TEMP_DIR"
 KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
 
 AIF_MODULE_NAME="$module" # from aif.sh
@@ -119,17 +119,26 @@ conform_repo ()
     esac
     while [[ -n "$repo_remote" && ${#repo_remote} > 1 ]]; 
     do
+
+
+        # following repo_local works in cases where we have a "normal" repo file path
+        # but not when we've received a github raw/master format path, for example
         local repo_local=$(makelocal "$repo_remote")
         if [[ -e "$repo_local" ]] 
         then
                 echo "FOUND LOCAL REPO at $repo_local"
                 return 0
-        elif $repo_command "$repo_remote" "$repo_local" &>/dev/null
-        then
-                return 0
         else
-                # failed so we *must* remove the failed target directory here, otherwise we end up with a false positive later
-                rm -rf "$repo_local" "$(dirname $repo_local)"
+            #if $repo_command "$repo_remote" "$repo_local" &>/dev/null
+            if cd $DOWNLOADS_DIR; echo "IN $PWD AND ABOUT TO CLONE"; $repo_command "$repo_remote" &>/dev/null
+            then
+                    cd -
+                    exit
+                    return 0
+            # else
+                    # failed so we *must* remove the failed target directory here, otherwise we end up with a false positive later
+                    # rm -rf "$repo_local" "$(dirname $repo_local)"
+            fi
         fi
         repo_remote=$(dirname "$repo_remote") # trim and retry
     done
@@ -155,7 +164,7 @@ load_profile()
         # no update_modulepaths_from_profilepath needed here; it's taken care 
         # of in absolute since that means we've already successfully downloaded 
         # a repository
-        [[ $(conform_repo "$profile_path") ]] && (load_profile "$(makelocal ${profile_path})" ${profile_type:-http} || return 1 ) || die_error "(shouldn't reach this) error cloning repo for $profile_path"
+        [[ $(conform_repo "$profile_path") ]] && (load_profile "$(makelocal ${profile_path})" ${profile_type:-http} || return 1 ) || die_error "(shouldn't reach this) error cloning repo for $profile_path. May be due to a mismtatch between the successfully cloned repo and the expected subsequent local file path."
     else # assumed relative path (e.g. profiles/profilename)
         for module_root in ${MODULE_PATHS[@]}; do load_profile "${module_root%/}/${profile_path#/}" "relative" && return 0; done; return 1
     fi
