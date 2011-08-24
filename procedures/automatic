@@ -95,8 +95,14 @@ conform_repo ()
 # what URL is given, so if we give a *raw* url for a github repo (say, for the aif procedure), we can still clone the repository and then once it is in temp
 # we know that the newly cloned repo is our module root, and we can move it into our downloads root and add it to our path.
     dfunc
+
+    # repo remote is almost certainly never going to be an actual repo path
+    # but rather a full path to a file in a repo. This is complicated by the fact that we want to provide aif an actual file for it's initial procedure and
+    # subsequently use that repo information (extracted from the raw path). The infix values below should clean this up for us, but needs more testing
     local repo_remote=$1
     local repo_local=
+
+    # detect/set repo_type
     local repo_type=${REPO_TYPE:-} # from optional -r command line argument
     if [[ -n "$repo_type" ]]; then : # $repo_type already set
     elif [ $(expr "$repo_remote" : 'https*://.*github.com') -gt 0 ]; then repo_type=git
@@ -106,6 +112,8 @@ conform_repo ()
     elif [ $(expr "$repo_remote" : '.*/mercurial/') -gt 0 ]; then repo_type=hg
     elif [ $(expr "$repo_remote" : '.*/svn/') -gt 0 ]; then repo_type=svn
     fi
+
+    # now set the repo clone command, infix to strip out github/bitbucket raw file path values, and any suffix required to clone (.git)
     local repo_command=
     local repo_suffix=
     local repo_infix=
@@ -123,6 +131,7 @@ conform_repo ()
                 repo_command="svn checkout"
         ;;
     esac
+
     while [[ -n "$repo_remote" && ${#repo_remote} > 1 ]]; 
     do
 
@@ -130,10 +139,10 @@ conform_repo ()
         # but not when we've received a github raw/master format path, for example
 
         local repo_local=$(makelocal "$repo_remote")
-        echo "$repo_local"
-        echo "XXXXXXXXXXXXXXXXXXXXXXXXXXX"
-        echo "$repo_infix"
-        echo "$repo_local" | sed "s^$repo_infix^^"
+        echo "REPO LOCAL PRE INFIX STRIP: $repo_local"
+        # ^ should be an unused character in most repo urls, but it's still a potential collision and we could escape the repo path first
+        repo_local=$(echo -n "$repo_local" | sed "s^$repo_infix^^")
+        echo "REPO LOCAL POST INFIX STRIP: $repo_local"
         exit
 
 #        don't need local?
