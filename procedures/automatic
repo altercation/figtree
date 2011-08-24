@@ -128,8 +128,9 @@ conform_repo ()
         # following repo_local works in cases where we have a "normal" repo file path
         # but not when we've received a github raw/master format path, for example
 
-        echo "XXXXXXXXXXXXXXXXXXXXXXXXXXX"
         local repo_local=$(makelocal "$repo_remote")
+        echo "$repo_local"
+        echo "XXXXXXXXXXXXXXXXXXXXXXXXXXX"
         echo "$repo_local" | sed "s^$repo_infix^^"
         exit
 
@@ -204,6 +205,10 @@ load_profile()
         # no update_modulepaths_from_profilepath needed here; it's taken care 
         # of in absolute since that means we've already successfully downloaded 
         # a repository
+echo "+++++++++++++++++++++++++++++++++++"
+        conform_repo $profile_path
+exit
+#TODO: conform repo not getting called below... why?
         [[ $(conform_repo "$profile_path") ]] && (load_profile "$(makelocal ${profile_path})" ${profile_type:-http} || return 1 ) || die_error "(shouldn't reach this) error cloning repo for $profile_path. May be due to a mismtatch between the successfully cloned repo and the expected subsequent local file path."
     else # assumed relative path (e.g. profiles/profilename)
         for module_root in ${MODULE_PATHS[@]}; do load_profile "${module_root%/}/${profile_path#/}" "relative" && return 0; done; return 1
