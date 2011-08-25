@@ -423,11 +423,8 @@ load_profile()
     # expects/uses state:
     # OVERLAY: current value of OVERLAY directory path
     # MODULE_PATHS: array of paths to use, in order, as module roots with relative paths
-    echo "hit b"
     local profile_path=${1%/} # strips any trailing slash
-    echo "hit c"
     local profile_type=${2:-} # only used internally in this function
-    echo "hit d"
     if [[ "${profile_path:0:1}" == "/" ]]; then # absolute local path
     echo "hit e"
         # add to module paths (thus if we've donwloaded a repo, we'll check locally next time)
@@ -444,6 +441,7 @@ load_profile()
                 die_error "should definitely not reach this error. there was a problem getting the local profile path from a remote repo."
         fi
     else # assumed relative path (e.g. profiles/profilename)
+    echo "hit g"
         for module_root in ${MODULE_PATHS[@]}; do load_profile "${module_root%/}/${profile_path#/}" "relative" && return 0; done; return 1
     fi
 }
