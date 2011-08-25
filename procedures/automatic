@@ -48,7 +48,7 @@ var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
-phase_preparation=(runtime_network runtime_repositories runtime_packages profile configure intro sysprep select_source)
+phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile intro sysprep select_source)
 phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
