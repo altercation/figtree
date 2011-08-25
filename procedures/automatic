@@ -159,6 +159,28 @@ worker_system_misc ()
     notify "Misc. system additions started..."
     system_misc
 }
+worker_prepare_disks ()
+{
+        echo ">>>>>????????????????////////////////"
+        echo ">>>>>????????????????////////////////"
+        echo ">>>>>????????????????////////////////"
+        echo ">>>>>????????????????////////////////"
+sleep 5
+        get_possible_fs
+        echo "$var_PARTITIONS" > $TMP_PARTITIONS
+        echo "$var_BLOCKDATA" > $TMP_BLOCKDEVICES
+        process_disks       || die_error "Could not process_disks"
+        if ! process_filesystems
+        then
+                show_warning 'Disk processing' "Could not process_filesystems"
+                txt='also failed to execute properly'
+                rollback_filesystems && txt='ended successfully'
+                die_error "Something failed while processing the filesystem.  A rollback was executed, which $txt"
+        fi
+        inform "Partitions and filesystems made successfully"
+
+        # TODO: fstab? auto-add to fstab with libs? auto mkdir's on target_dir?
+}
 
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
