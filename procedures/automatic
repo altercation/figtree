@@ -79,6 +79,9 @@ default_SOURCE=cd
 default_FILE_URL=file:///src/core/pkg
 default_SYNC_URL='http://mirrors.kernel.org/archlinux/$repo/os/$arch'
 
+#if net is install source, we should if/then for sync_url presence?
+
+
 
 #phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile intro sysprep select_source)
 #phase_basics=()

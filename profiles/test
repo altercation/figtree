@@ -34,7 +34,6 @@ depend_profile systems/_make/_model
 # Any values left blank/unset will receive default values
 #
 SOURCE=cd
-SOURCE=net
 FILE_URL=file:///src/core/pkg
 SYNC_URL=
 

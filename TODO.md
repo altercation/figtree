@@ -10,7 +10,7 @@ are the two that need to be changed. questions:
 process args just gets a lot of logic added to work through our profile heuristic. i should add a "load_profile" function so that process args is more single purpose.
 
 
-
+#if net is install source, we should if/then for sync_url presence?
 
 ADD: query-user function
 (dieter's ui libs must have something like this already)
