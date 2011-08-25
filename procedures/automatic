@@ -109,9 +109,9 @@ install_aur_packages()
             tar -xzvf "$PACKAGE.tar.gz"
             cd "$PACKAGE"
             echo "++++++++++++++ about to makepkg"
-            makepkg -s -i -c --asroot --noconfirm
+            makepkg -s -c --asroot # --install --noconfirm
             #echo "++++++++++++++ about to install using pacman"
-            #pacman --upgrade --noconfirm *.pkg.tar.xz
+            pacman --upgrade --noconfirm *.pkg.tar.xz
             cd $restore_dir
             rm -rf $DOWNLOADS_DIR/tmp/$PACKAGE-install
         done
