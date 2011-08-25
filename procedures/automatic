@@ -164,7 +164,10 @@ worker_install_packages()
 #    PACMAN=${PACMAN//pacman/yaourt}
 #    PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
     
+    echo "======================> up next: target_prepare_pacman"
     target_prepare_pacman core extra community
+    echo "======================> up next: installpkg"
+    echo "======================> using list of packages:\n$TARGET_PACKAGES"
     [[ -n "$TARGET_PACKAGES" ]] && installpkg || die_error "No packages listed for installation!"
     
     PACMAN=$PACMAN_BACKUP
