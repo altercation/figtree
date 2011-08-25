@@ -54,7 +54,7 @@ phase_preparation=(runtime_network runtime_repositories runtime_packages configu
 phase_basics=()
 #phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for ref/override
 phase_system=()
-phase_system+=(write_configs write_overlay system_extras) # archproto custom workers (see below)
+phase_system+=(write_configs write_overlay system_misc) # archproto custom workers (see below)
 phase_finish=(msg_report) # defaults
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
@@ -153,10 +153,10 @@ worker_write_overlay()
     write_overlay $OVERLAY_FILES
 }
 
-worker_system_extras()
+worker_system_misc ()
 {
-    notify "system_extras started"
-    system_extras
+    notify "system_misc started"
+    system_misc
 }
 
 # ----------------------------------------------------------------------
@@ -377,7 +377,7 @@ write_configs()
         # write changes using augeas or custom function
 }
 
-write_overlays()
+write_overlay()
 {
         dfunc
         echo "OVERLAY FILES TO WRITE"
@@ -393,10 +393,10 @@ write_overlays()
 # functions to support archproto profiles
 
 depend_profile() { load_profile "$1"; }
-add_packages() { dfunc; [[ -n "$1" ]] && TARGET_PACKAGES+=" $@"; dstate TARGET_PACKAGES; }
+add_package() { dfunc; [[ -n "$1" ]] && TARGET_PACKAGES+=" $@"; dstate TARGET_PACKAGES; }
 add_configs() { dfunc; [[ -n "$1" ]] && CONFIG_CHANGES+=" $@" dstate CONFIG_CHANGES; }
-add_overlays() { dfunc; [[ -n "$1" ]] && OVERLAY_FILES+=" $@" dstate OVERLAY_FILES; }
-system_extras() { dfunc; true; } # this can be overidden in a user profile (note that only final override executes)
+add_overlay() { dfunc; [[ -n "$1" ]] && OVERLAY_FILES+=" $@" dstate OVERLAY_FILES; }
+system_misc() { dfunc; true; } # this can be overidden in a user profile (note that only final override executes)
 
 
 #set_value /etc/rc.conf valuename value
