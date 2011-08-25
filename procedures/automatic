@@ -53,6 +53,7 @@ var_RUNTIME_PACKAGES="git yaourt" # use yaourt instead of pacman as systems may 
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 depend_procedure core automatic # most of automatic fits our needs
 
+echo "THIS IS HARDCORE"
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
 # the worker to call is configure_system. it's actually ok to call the second default function (post_configure target) several times
 # though maybe better to either redefine configure_system, move it to the end, or have another post-configure worker at the end of the phase_system
