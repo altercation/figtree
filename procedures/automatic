@@ -44,14 +44,12 @@ KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users 
 [[ "$module" != "http" ]] && AIF_PROCEDURE_PATH="$procedure" || AIF_PROCEDURE_PATH="$2"
 MODULE_PATHS[0]="${AIF_PROCEDURE_PATH%$ARCHPROTO_PROCEDURE_SUBPATH*}" # strip procedures/automatic and any trailing slash
 
-phase_preparation=(runtime_network runtime_repositories runtime_packages profile configure intro sysprep select_source)
+depend_procedure core automatic # most of automatic fits our needs
 phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
 var_RUNTIME_REPOSITORIES=(core "Server = http://mirrors.kernel.org/archlinux/core/os/${var_ARCH}" archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
 #var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas" # use yaourt instead of pacman as systems may require AUR packages
 var_RUNTIME_PACKAGES="git" # use yaourt instead of pacman as systems may require AUR packages
-var_RUNTIME_PACKAGES="git yaourt" # use yaourt instead of pacman as systems may require AUR packages
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
-depend_procedure core automatic # most of automatic fits our needs
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
 # the worker to call is configure_system. it's actually ok to call the second default function (post_configure target) several times
@@ -87,7 +85,11 @@ worker_configure ()
         var_UI_TYPE=${arg_ui_type:-cli}
         ui_init
         [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
+# load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
         # Check mandatory options
+#        [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
+#        [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
+#        [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
         # initialize internal variables based on variables set by the user (some of the vars are handled in other workers):
         var_RUNTIME_REPOSITORIES=$RUNTIME_REPOSITORIES
         var_RUNTIME_PACKAGES=$RUNTIME_PACKAGES
@@ -96,14 +98,8 @@ worker_configure ()
         var_BLOCKDATA=$BLOCKDATA
         HARDWARECLOCK=${HARDWARECLOCK:-localtime}
         TIMEZONE=${TIMEZONE:-Canada/Pacific}
-}
-
-worker_profile ()
-{
-    load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
-    [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
-    [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
-    [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
+echo "CURRENT..."
+load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
 }
 
 worker_install_packages()
