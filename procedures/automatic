@@ -49,7 +49,8 @@ var_DOWNLOADS_DIR="${RUNTIME_DIR}/${var_ARCHPROTO_MODULE_NAME}-downloads"
 var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
 [[ "$module" != "http" ]] && var_AIF_PROCEDURE_PATH="$procedure" || var_AIF_PROCEDURE_PATH="$2"
 var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_ARCHPROTO_PROCEDURE_SUBPATH*}"
-var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
+#var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
+var_RUNTIME_REPOSITORIES=(core "http://mirrors.kernel.org/archlinux/core/os/$var_ARCH" archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
@@ -194,33 +195,6 @@ worker_system_misc ()
 {
     notify "Misc. system additions started..."
     system_misc
-}
-#process_disks ()
-#{
-## test value:
-##        process_disk /dev/sda '100:ext2:+ 512:swap *:ext4' || return $?
-#        while read disk scheme
-#        do
-#                process_disk $disk "$scheme" || return $?
-#        done < $TMP_PARTITIONS
-#}
-
-worker_prepare_disks ()
-{
-        get_possible_fs
-        echo "$var_PARTITIONS" > $TMP_PARTITIONS
-        echo "$var_BLOCKDATA" > $TMP_BLOCKDEVICES
-        process_disks       || die_error "Could not process_disks"
-        if ! process_filesystems
-        then
-                show_warning 'Disk processing' "Could not process_filesystems"
-                txt='also failed to execute properly'
-                rollback_filesystems && txt='ended successfully'
-                die_error "Something failed while processing the filesystem.  A rollback was executed, which $txt"
-        fi
-        inform "Partitions and filesystems made successfully"
-
-        # TODO: fstab? auto-add to fstab with libs? auto mkdir's on target_dir?
 }
 
 # ----------------------------------------------------------------------

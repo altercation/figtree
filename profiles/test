@@ -76,7 +76,7 @@ TARGET_GROUPS=base
 # TARGET_GROUPS.  example: 'nano reiserfsprogs' (they are in base)
 TARGET_PACKAGES_EXCLUDE=
 # you can also specify separate packages to install (this is empty by default)
-TARGET_PACKAGES='openssh e2fsprogs'
+TARGET_PACKAGES='terminus-font openssh e2fsprogs'
 
 # FILESYSTEM CONFIGURATION
 # =============================================================================
