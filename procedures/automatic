@@ -46,7 +46,7 @@ KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users 
 [[ "$module" != "http" ]] && AIF_PROCEDURE_PATH="$procedure" || AIF_PROCEDURE_PATH="$2"; MODULE_PATHS[0]="${AIF_PROCEDURE_PATH%$ARCHPROTO_PROCEDURE_SUBPATH*}"
 #var_RUNTIME_REPOSITORIES=(core "Server = http://mirrors.kernel.org/archlinux/core/os/${var_ARCH}" archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_REPOSITORIES=(core "Server = http://mirrors.kernel.org/archlinux/core/os/${var_ARCH}" archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
-var_RUNTIME_PACKAGES="git" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
+var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
 phase_preparation=(runtime_network runtime_repositories runtime_packages profile configure intro sysprep select_source)
@@ -122,7 +122,8 @@ worker_runtime_packages ()
 {
         $PACMAN -Sy pacman --noconfirm || return 1 # update pacman first to avoid having to run twice
         $PACMAN -Sy base-devel --noconfirm || return 1 # update pacman first to avoid having to run twice
-        install_aur_packages package-query yaourt
+        $PACMAN -Sy archlinuxfr/yaourt --noconfirm || return 1
+        #install_aur_packages package-query yaourt
         #TODO: add test here
         PACMAN=yaourt
         for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
