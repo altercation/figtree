@@ -88,7 +88,6 @@ worker_testing ()
 echo "PARTITIONS = $PARTITIONS"
 echo "var_PARTITIONS = $var_PARTITIONS"
 echo "=======================> testing!"
-exit
 }
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
@@ -282,9 +281,9 @@ source_and_overlay()
     dfunc "$*"
     local revert_overlay=$var_OVERLAY_PATH
     var_OVERLAY_PATH="$(dirname "$1")/overlay"
-    source $1 && notify "Successfully processed values in profile:\n\"${1#$var_DOWNLOADS_DIR}\"" || die_error "Failed to process profile \"$1\"."
+    source "$1" && notify "ARCHPROTO PROFILE: Successfully processed profile:\n${1#$var_DOWNLOADS_DIR}" \
+                || die_error "ARCHPROTO PROFILE: Failed to process profile \"$1\"."
     var_OVERLAY_PATH=$revert_overlay
-    echo "-------------- $PARTITIONS ------------------123"
 } 
 
 make_local ()
@@ -417,7 +416,6 @@ update_modulepaths_from_profilepath()
 
 load_profile()
 {
-    echo "hello, user"
     dfunc "$*"
     # arguments:
     # $1 (assigned to profile_path): a path, either relative, absolute local or remote URL
