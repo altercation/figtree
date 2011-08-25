@@ -150,11 +150,6 @@ worker_configure ()
     set_values_with_default_fallbacks="LOCALE DAEMON_LOCALE HARDWARECLOCK TIMEZONE KEYMAP CONSOLEFONT CONSOLEMAP USECOLOR"
 }
 
-
-worker_profile ()
-{
-}
-
 worker_install_packages()
 {
     notify "Package installation started..."
