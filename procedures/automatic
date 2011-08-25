@@ -116,11 +116,10 @@ EOF
 worker_intro ()
 {
 notify "\
-===============================================================================\
-AIF archproto automatic procedure using initial profile:\
-$var_AIF_PROCEDURE_PATH\
-===============================================================================\
-"
+===============================================================================\n\
+AIF archproto automatic procedure using initial profile:\n\
+$var_AIF_PROCEDURE_PATH\n\
+===============================================================================\n"
 }
 
 worker_runtime_packages ()
