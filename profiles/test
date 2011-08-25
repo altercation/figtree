@@ -1,38 +1,98 @@
 #!/bin/bash
 
+# Profile Dependencies
+# One per "depend_profile" line
+# Loads the profile specified and processes it *prior* to running the profile 
+# it it being sourced by (this file), allowing you to override any values set 
+# in it in this file. This allows you to create a very sparse profile here that 
+# inherits most of its values and settings from a different profile or mutliple 
+# profiles. This cascades up through the list of profiles, so if you have 
+# a laptop specific profile, it might only set things like filesystem-specific 
+# variables (PARTITIONS, BLOCKDATA), hostname, etc. and inherit the rest from 
+# a master profile you use for all your machines.
+#
 depend_profile systems/_make/_model
 
-# the rest of this is ripped off from generic-install-on-sda
-
-SOURCE=cd #change to 'net' to do a network install
+# SOURCES
+# =============================================================================
+# Where we look for install packages. If you select "cd" here, any packages not 
+# found on the cd will be sourced from "net" by default.
+# TODO: test the above assumption!
+#
+# SOURCE=[cd|net]
+# change to 'net' to do a network install
+#
+# FILE_URL=file:///src/core/pkg
+# TODO: description here
+#
+# SYNC_URL:
+# optional, if you do netinstall use a repository string like 
+# ftp://ftp.belnet.be/mirror/archlinux.org/$repo/os/$arch (the same format as 
+# what you find in /etc/pacman.conf)
+#
+SOURCE=cd
 FILE_URL=file:///src/core/pkg
-#SYNC_URL= # optional, if you do netinstall use a repository string like ftp://ftp.belnet.be/mirror/archlinux.org/$repo/os/$arch (the same format as what you find in /etc/pacman.conf)
-HARDWARECLOCK=UTC # UTC is the better option, but some OS'es don't support it (i.e. Windows)
-TIMEZONE=Canada/Pacific
-# Do you want to have additional pacman repositories or packages available at runtime (during installation)?
-# RUNTIME_REPOSITORIES = array like this ('name1' 'location of repo 1' ['name2' 'location of repo2',..])
-#RUNTIME_REPOSITORIES=
-# space separated list
-#RUNTIME_PACKAGES=
+SYNC_URL=
 
-# packages to install
-TARGET_GROUPS=base       # all packages in this group will be installed (defaults to base if no group and no packages are specified)
-TARGET_PACKAGES_EXCLUDE= # Exclude these packages if they are member of one of the groups in TARGET_GROUPS.  example: 'nano reiserfsprogs' (they are in base)
-TARGET_PACKAGES='openssh e2fsprogs' # you can also specify separate packages to install (this is empty by default)
+# SYSTEM CONFIGURATION VALUES
+# =============================================================================
+# Many of these are used primarily (though not exclusively) to set values in 
+# /etc/rc.conf. See the Arch Linux wiki for details on rc.conf:
+# https://wiki.archlinux.org/index.php/Rc.conf
+#
+# HARDWARECLOCK:
+# UTC is the better option, but some OS'es don't support it (i.e. Windows)
+#
+#
+LOCALE="en_US.UTF-8"
+DAEMON_LOCALE="no"
+HARDWARECLOCK="UTC"
+TIMEZONE="Canada/Pacific"
+KEYMAP="us"
+CONSOLEFONT=
+CONSOLEMAP=
+USECOLOR="yes"
 
-#worker_configure_system () {
-#        preconfigure_target
-#        sed -i 's/^HOSTNAME="myhost"/HOSTNAME="arch-generic-install"/' $var_TARGET_DIR/etc/rc.conf
-#        postconfigure_target
-#}
+# RUNTIME_REPOSITORIES / RUNTIME_PACKAGES
+# =============================================================================
+# Do you want to have additional pacman repositories or packages available at 
+# runtime (during installation)? These are *not* set on the final system 
+# configuration but are instead used for the actual installation process.
+#
+# RUNTIME_REPOSITORIES = array like this:
+# ('name1' 'location of repo 1' ['name2' 'location of repo2',..])
+#
+# RUNTIME_PACKAGES="space separated list"
+#
+RUNTIME_REPOSITORIES=
+RUNTIME_PACKAGES=
 
+# INSTALL PACKAGES
+# =============================================================================
+# TARGET_GROUPS: all packages in this group will be installed (defaults to base 
+# if no group and no packages are specified)
+TARGET_GROUPS=base
+# Exclude these packages if they are member of one of the groups in 
+# TARGET_GROUPS.  example: 'nano reiserfsprogs' (they are in base)
+TARGET_PACKAGES_EXCLUDE=
+# you can also specify separate packages to install (this is empty by default)
+TARGET_PACKAGES='openssh e2fsprogs'
 
-# These variables are mandatory
-
+# FILESYSTEM CONFIGURATION
+# =============================================================================
+# These are mandatory
 GRUB_DEVICE=/dev/sda
-DEFAULTFS="/boot:32:ext2:+ swap:256:swap /:7500:ext3 /home:*:ext3"
 PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
 BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
 /dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
 /dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
+
+# FAILSAFE CHECK
+# =============================================================================
+# If archproto/automatic is run on a system with no /arch directory present in 
+# the root, it is assumed to be running on a live/test system (not off of the 
+# Arch Linux install ISO media) and stops running immediately. Set NOFAILSAFE 
+# to "1" if you wish to override this. Danger Danger.
+#
+# NOFAILSAFE=0 # change to 1 to skip failsafe check
 

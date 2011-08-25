@@ -12,7 +12,22 @@ process args just gets a lot of logic added to work through our profile heuristi
 
 
 
+ADD: query-user function
+(dieter's ui libs must have something like this already)
 
+
+understand how SYNC_URL is used vs. "RUNTIME_REPOSITORIES"
+
+
+why is:
+    HARDWARECLOCK=${HARDWARECLOCK:-UTC}
+        TIMEZONE=${TIMEZONE:-America/Los_Angeles}
+in worker config NOT var_HARDWARECLOCK? shouldn't all internal variable to the 
+procedure be var_ for consistency?
+
+Confirm that DEFAULTFS isn't used anymore, despite the places it's hanging 
+around
+DEFAULTFS="/boot:32:ext2:+ swap:256:swap /:7500:ext3 /home:*:ext3"
 
 
 

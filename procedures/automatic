@@ -40,19 +40,42 @@
 
 depend_procedure core automatic # most of automatic fits our needs, up top so we can override the phases and values it sets below
 
-ARCHPROTO_MODULE_NAME=archproto # in case we need to change our script name 
-ARCHPROTO_PROCEDURE_SUBPATH=/procedures/automatic
-DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$DOWNLOADS_DIR" ]] && rm -rf "$DOWNLOADS_DIR"; mkdir -p "$DOWNLOADS_DIR"
-KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
-[[ "$module" != "http" ]] && AIF_PROCEDURE_PATH="$procedure" || AIF_PROCEDURE_PATH="$2"; MODULE_PATHS[0]="${AIF_PROCEDURE_PATH%$ARCHPROTO_PROCEDURE_SUBPATH*}"
+# set these after the depend_procedure to ensure we override any values therein
+# we will further override or add to some of the values below (RUNTIME_...) after sourcing profiles in worker_configure
+var_ARCHPROTO_MODULE_NAME=archproto # in case we need to change our script name 
+var_ARCHPROTO_PROCEDURE_SUBPATH=/procedures/automatic
+var_DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$var_DOWNLOADS_DIR" ]] && rm -rf "$var_DOWNLOADS_DIR"; mkdir -p "$var_DOWNLOADS_DIR"
+var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
+[[ "$module" != "http" ]] && var_AIF_PROCEDURE_PATH="$procedure" || var_AIF_PROCEDURE_PATH="$2"; var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_ARCHPROTO_PROCEDURE_SUBPATH*}"
 var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
+# rc/config default values if not set previously or by user
+# note that in user created profiles these are specified by the same variable names without the "default_" prefix. See the _template profiles for details
+# these are not prefixed by "var_" so we remember that these are not used elsewhere in the procedure (other than one-time default assignment)
+# 
+# this is different from items with a var_ previx in an important way: defaul_ variables can be completely overriden, as I use them here
+# while var_ varialbes (such as var_RUNTIME_REPOSITORIES) that are set above in this procedure are retained (and possibly added to user values)
+# so, for example, var_RUNTIME_REPOSITORIES retains the value assigned above and takes any extra values the user has assigned to RUNTIME_REPOSITORIES
+# in their profiles
+default_LOCALE="en_US.UTF-8"
+default_DAEMON_LOCALE="no"
+default_HARDWARECLOCK="UTC"
+default_TIMEZONE="Canada/Pacific"
+default_KEYMAP="us"
+default_CONSOLEFONT=
+default_CONSOLEMAP=
+default_USECOLOR="yes"
+default_TESTVAL1="default value 1"
+default_TESTVAL1="default value 2"
+
 #phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile intro sysprep select_source)
 #phase_basics=()
 #phase_system=()
-phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile testing intro select_source)
+# we reorder phase_preparation so that, if for some reason we're running as a local procedure from install media, we set up the network first
+# and bring in the required runtime packages (primarily for our vcs remote sourcing)
+phase_preparation=(intro runtime_network runtime_repositories runtime_packages configure testing select_source)
 phase_basics=(set_clock prepare_disks) # defaults, here for ref/override
 phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for ref/override
 phase_system+=(write_configs write_overlay system_misc) # archproto custom workers (see below)
@@ -104,27 +127,32 @@ worker_runtime_packages ()
 
 worker_configure ()
 {
+    
+    notify "Starting system configuration and profile load sequence..."
+
     var_UI_TYPE=${arg_ui_type:-cli}
     ui_init
     [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
-    # Check mandatory options
-    # initialize internal variables based on variables set by the user (some of the vars are handled in other workers):
-    var_RUNTIME_REPOSITORIES=$RUNTIME_REPOSITORIES
-    var_RUNTIME_PACKAGES=$RUNTIME_PACKAGES
-    var_GRUB_DEVICE=$GRUB_DEVICE
-    var_PARTITIONS=$PARTITIONS
-    var_BLOCKDATA=$BLOCKDATA
-    HARDWARECLOCK=${HARDWARECLOCK:-localtime}
-    TIMEZONE=${TIMEZONE:-Canada/Pacific}
-}
 
-worker_profile ()
-{
-    notify "Starting profile load..."
-    load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
+    # here we import our profile(s) to allow default values to be overridden
+    load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $var_MODULE_PATHS"
+
+    # make sure we have values for the following (could these be set as defaults safely?)
     [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
     [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
     [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
+
+    var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
+    var_RUNTIME_PACKAGES+=" $RUNTIME_PACKAGES"
+    var_GRUB_DEVICE=$GRUB_DEVICE
+    var_PARTITIONS=$PARTITIONS
+    var_BLOCKDATA=$BLOCKDATA
+    set_values_with_default_fallbacks="LOCALE DAEMON_LOCALE HARDWARECLOCK TIMEZONE KEYMAP CONSOLEFONT CONSOLEMAP USECOLOR"
+}
+
+
+worker_profile ()
+{
 }
 
 worker_install_packages()
@@ -226,6 +254,16 @@ dfunc()
     d "ARCHPROTO FUNCTION: ${FUNCNAME[1]}() called at line ${BASH_LINENO[1]} by ${FUNCNAME[2]}${with_args}"
 }
 
+set_values_with_default_fallbacks ()
+{
+    dfunc "$*"
+    local valuelist=$@
+    for valname in $valuelist
+    do
+        defaultval=default_$valname; eval $valname=\'"${!valname:-$defaultval}"\'
+    done
+}
+
 process_args ()
 {
     dfunc
@@ -319,7 +357,7 @@ make_local ()
     # make a local path for the profile file for an initial file check and, failing that, cloning, for example:
     # REMOTE:                       http://github.com/altercation/archproto/procedures/automatic/systems/lenovo/x220
     # LOCAL:  /tmp/aif/archproto-downloads/github.com/altercation/archproto/procedures/automatic/systems/lenovo/x220
-    local full_path_local="$DOWNLOADS_DIR/${full_path_remote:$(expr "$full_path_remote" : 'https*://')}"
+    local full_path_local="$var_DOWNLOADS_DIR/${full_path_remote:$(expr "$full_path_remote" : 'https*://')}"
 
     # we can now use that profile path to clone the remote repo by cloning, failing, and trimming until we get down to the actual repo root.
     # this is a bit brute force and we could be smarter about it if we wanted to supply an actual template for the repo root, for example
@@ -328,7 +366,7 @@ make_local ()
     # that have unknown URL formats. brute force try/trim/iterate does this for now.
 
     local repo_remote="$full_path_remote" # initial repo_remote assignment
-    local repo_local="$DOWNLOADS_DIR/${repo_remote:$(expr "$repo_remote" : 'https*://')}"
+    local repo_local="$var_DOWNLOADS_DIR/${repo_remote:$(expr "$repo_remote" : 'https*://')}"
 
     while [[ -n "$repo_remote" && ${#repo_remote} > 1 ]]; do # loop till we trim too much, indicating profound failure
 
@@ -345,7 +383,7 @@ make_local ()
 
         # trim and retry
         repo_remote=$(dirname "$repo_remote")
-        repo_local="$DOWNLOADS_DIR/${repo_remote:$(expr "$repo_remote" : 'https*://')}"
+        repo_local="$var_DOWNLOADS_DIR/${repo_remote:$(expr "$repo_remote" : 'https*://')}"
     done; die_error "failed to download repo from path $1"
 }
 update_modulepaths_from_profilepath()
@@ -354,21 +392,21 @@ update_modulepaths_from_profilepath()
     # expects parameters:
     # $1: a local absolute path or http remote *profile* path we need to make some assumptions about either the depth of all profile paths or standard names 
     # such as procedure, systems, etc. this is the trickiest assumption we make and the only other option I see is to never allow a relative path, which is silly.
-    # requires state: $KNOWN_SUBDIRS
-    # modifies state: $MODULE_PATHS
+    # requires state: $var_KNOWN_SUBDIRS
+    # modifies state: $var_MODULE_PATHS
     local module_path=${1%profile} # strip profile
     module_path=${module_path%/} # strip trailing slash
     while [[ -n "$module_path" && ${#module_path} > 1 ]]; do
-        for known_subdir in ${KNOWN_SUBDIRS[@]}; do
+        for known_subdir in ${var_KNOWN_SUBDIRS[@]}; do
             if [[ "$(basename $module_path)" == "$known_subdir" ]]
             then
                 # we have a match and assume we are one level away from root || trim and loop
                 module_path="$(dirname $module_path)"
-                # now check to see if this path is already in MODULE_PATHS
-                for test_path in ${MODULE_PATHS[@]}; do [[ "$test_path" == "$module_path" ]] && return 0; done
-                # still here, add path to MODULE_PATHS
-                MODULE_PATHS=("$module_path" "${MODULE_PATHS[@]}")
-                d "ARCHPROTO STATECHK: MODULE_PATHS updated to: ${MODULE_PATHS[*]}"
+                # now check to see if this path is already in var_MODULE_PATHS
+                for test_path in ${var_MODULE_PATHS[@]}; do [[ "$test_path" == "$module_path" ]] && return 0; done
+                # still here, add path to var_MODULE_PATHS
+                var_MODULE_PATHS=("$module_path" "${var_MODULE_PATHS[@]}")
+                d "ARCHPROTO STATECHK: var_MODULE_PATHS updated to: ${var_MODULE_PATHS[*]}"
                 return 0
             fi
         done
@@ -377,7 +415,7 @@ update_modulepaths_from_profilepath()
     # if we are still here then we didn't find a "known subdir"... best to error out here, though another option is to just strip the last two / three 
     # path components. we could try to standardize all "known" subdir formats to: modulename/knownsubidr/category/specificprofile, eg:
     # archproto/systems/lenovo/x220 or archproto/environments/xmonad/es
-    die_error "failed to find known subdirectory (one of ${KNOWN_SUBDIRS[@]}) in path $1;"
+    die_error "failed to find known subdirectory (one of ${var_KNOWN_SUBDIRS[@]}) in path $1;"
 }
 
 load_profile()
