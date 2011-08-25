@@ -194,18 +194,15 @@ worker_system_misc ()
     notify "Misc. system additions started..."
     system_misc
 }
-process_disks ()
-{
-# test value:
-#        process_disk /dev/sda '100:ext2:+ 512:swap *:ext4' || return $?
-        while read disk scheme
-        do
-                echo "=================> disk is $disk"
-                echo "=================> scheme is $scheme"
-                sleep 3 
-                process_disk $disk "$scheme" || return $?
-        done < $TMP_PARTITIONS
-}
+#process_disks ()
+#{
+## test value:
+##        process_disk /dev/sda '100:ext2:+ 512:swap *:ext4' || return $?
+#        while read disk scheme
+#        do
+#                process_disk $disk "$scheme" || return $?
+#        done < $TMP_PARTITIONS
+#}
 
 worker_prepare_disks ()
 {
