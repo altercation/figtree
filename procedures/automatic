@@ -108,8 +108,10 @@ install_aur_packages()
             wget "http://aur.archlinux.org/packages/$PACKAGE/$PACKAGE.tar.gz"
             tar -xzvf "$PACKAGE.tar.gz"
             cd "$PACKAGE"
-            makepkg -s --asroot
-            pacman --upgrade --noconfirm *.pkg.tar.xz
+            echo "++++++++++++++ about to makepkg"
+            makepkg --asroot --noconfirm --install --syncdeps --noprogressbar
+            #echo "++++++++++++++ about to install using pacman"
+            #pacman --upgrade --noconfirm *.pkg.tar.xz
             cd $restore_dir
             rm -rf $DOWNLOADS_DIR/tmp/$PACKAGE-install
         done
