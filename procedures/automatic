@@ -99,20 +99,21 @@ worker_configure ()
 
 install_aur_packages()
 {
+        echo "IN AUR"; read answer
         local PACKAGE
         for PACKAGE in $*
         do
             rm -rf $DOWNLOADS_DIR/tmp/$PACKAGE*
             local restore_dir=`pwd`
             mkdir -p $DOWNLOADS_DIR/tmp/$PACKAGE-install && cd $DOWNLOADS_DIR/tmp/$PACKAGE-install
-            wget "http://aur.archlinux.org/packages/$PACKAGE/$PACKAGE.tar.gz"
-            tar -xzvf "$PACKAGE.tar.gz"
-            cd "$PACKAGE"
-            echo "++++++++++++++ about to makepkg"
+            wget "http://aur.archlinux.org/packages/$PACKAGE/$PACKAGE.tar.gz" &>/dev/null || die_error "failed to download $PACKAGE from AUR"
+            tar -xzvf "$PACKAGE.tar.gz" &>/dev/null || die_error "failed to untar $DOWNLOADS_DIR/tmp/$PACKAGE.tar.gz"
+            cd "$PACKAGE" &>/dev/null
+            echo "++++++++++++++ about to makepkg"; read answer
             makepkg -s -c --asroot # --install --noconfirm
-            #echo "++++++++++++++ about to install using pacman"
+            echo "++++++++++++++ about to install using pacman"; read answer
             pacman --upgrade --noconfirm *.pkg.tar.xz
-            cd $restore_dir
+            cd $restore_dir &>/dev/null
             rm -rf $DOWNLOADS_DIR/tmp/$PACKAGE-install
         done
 }
