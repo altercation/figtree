@@ -159,11 +159,8 @@ worker_configure ()
 worker_install_packages()
 {
     notify "Package installation started..."
-    exit
     # from dieter's examples in unofficial subdir of aif github repo
     # better to do this here rather than redefine PACMAN & PACMAN_TARGET?
-    true
-    return
 #    PACMAN_BACKUP=$PACMAN
 #    PACMAN_TARGET_BACKUP=$PACMAN_TARGET
 #    PACMAN=${PACMAN//pacman/yaourt}
@@ -175,8 +172,8 @@ worker_install_packages()
     echo "======================> using list of packages:\n$TARGET_PACKAGES"
     [[ -n "$TARGET_PACKAGES" ]] && installpkg || die_error "No packages listed for installation!"
     
-    PACMAN=$PACMAN_BACKUP
-    PACMAN_TARGET=$PACMAN_TARGET_BACKUP
+    #PACMAN=$PACMAN_BACKUP
+    #PACMAN_TARGET=$PACMAN_TARGET_BACKUP
 }
 
 worker_write_configs()
