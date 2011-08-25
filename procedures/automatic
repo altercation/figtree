@@ -180,9 +180,11 @@ worker_install_packages()
 #    PACMAN=${PACMAN//pacman/yaourt}
 #    PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
 
-    debug_report_values "var_PKG_SOURCE_TYPE var_FILE_URL var_PKG_SOURCE_TYPE var_SYNC_URL var_TARGET_DIR"
+    debug_report_values "var_PKG_SOURCE_TYPE var_FILE_URL var_SYNC_URL var_TARGET_DIR var_TARGET_PACKAGES"
 
     target_prepare_pacman core extra community && installpkg
+
+    debug_report_values "var_PKG_SOURCE_TYPE var_FILE_URL var_SYNC_URL var_TARGET_DIR var_TARGET_PACKAGES"
 
 #    target_prepare_pacman core extra community
 #    [[ -n "$TARGET_PACKAGES" ]] && installpkg || die_error "No packages listed for installation!"
