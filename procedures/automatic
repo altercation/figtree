@@ -426,13 +426,11 @@ load_profile()
     local profile_path=${1%/} # strips any trailing slash
     local profile_type=${2:-} # only used internally in this function
     if [[ "${profile_path:0:1}" == "/" ]]; then # absolute local path
-    echo "hit e"
         # add to module paths (thus if we've donwloaded a repo, we'll check locally next time)
         [[ "${profile_type}" != "xrelative" ]] && update_modulepaths_from_profilepath "$profile_path"
         [[ -d "${profile_path}" ]] && profile_path="$profile_path/profile"
         [[ -f "${profile_path}" ]] && source_and_overlay "$profile_path" || return 1
     elif [[ "${profile_path:0:4}" == "http" ]]; then # remote url, could be http or https with this match
-    echo "hit f"
         if make_local $profile_path profile_path_local
         then
                 d "ARCHPROTO PROFILES: preparing to load profile $profile_path_local"
@@ -441,8 +439,8 @@ load_profile()
                 die_error "should definitely not reach this error. there was a problem getting the local profile path from a remote repo."
         fi
     else # assumed relative path (e.g. profiles/profilename)
-    echo "hit g"
-        for module_root in ${MODULE_PATHS[@]}; do load_profile "${module_root%/}/${profile_path#/}" "relative" && return 0; done; return 1
+        echo "MODPATHS ARE ${MODULE_PAHTS[@]}"
+        for module_root in ${MODULE_PATHS[@]}; do load_profile "${module_root%/}/${profile_path#/}" "relative" && return 0; done; echo "WHY ARE WE HERE?" return 1
     fi
 }
 
