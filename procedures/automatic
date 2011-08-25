@@ -37,18 +37,19 @@
 # ----------------------------------------------------------------------
 
 
-depend_procedure core automatic # most of automatic fits our needs
+depend_procedure core automatic # most of automatic fits our needs, up top so we can override the phases and values it sets below
 
 ARCHPROTO_MODULE_NAME=archproto # in case we need to change our script name 
 ARCHPROTO_PROCEDURE_SUBPATH=/procedures/automatic
 DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$DOWNLOADS_DIR" ]] && rm -rf "$DOWNLOADS_DIR"; mkdir -p "$DOWNLOADS_DIR"
 KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
 [[ "$module" != "http" ]] && AIF_PROCEDURE_PATH="$procedure" || AIF_PROCEDURE_PATH="$2"; MODULE_PATHS[0]="${AIF_PROCEDURE_PATH%$ARCHPROTO_PROCEDURE_SUBPATH*}"
-phase_preparation=(runtime_network runtime_repositories runtime_packages profile configure intro sysprep select_source)
-phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
 var_RUNTIME_REPOSITORIES=(core "Server = http://mirrors.kernel.org/archlinux/core/os/${var_ARCH}" archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_PACKAGES="git" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
+
+phase_preparation=(runtime_network runtime_repositories runtime_packages profile configure intro sysprep select_source)
+phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
 # the worker to call is configure_system. it's actually ok to call the second default function (post_configure target) several times
@@ -94,6 +95,15 @@ worker_configure ()
         var_BLOCKDATA=$BLOCKDATA
         HARDWARECLOCK=${HARDWARECLOCK:-localtime}
         TIMEZONE=${TIMEZONE:-Canada/Pacific}
+}
+
+worker_runtime_packages ()
+{
+        for pkg in $var_RUNTIME_PACKAGES
+        do
+                $PACMAN -Sy --noconfirm $pkg || return 1
+        done
+        return 0
 }
 
 worker_profile ()
