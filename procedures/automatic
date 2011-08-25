@@ -159,6 +159,17 @@ worker_system_misc ()
     notify "Misc. system additions started..."
     system_misc
 }
+process_disks ()
+{
+        while read disk scheme
+        do
+                echo "=================> disk is $disk"
+                echo "=================> scheme is $scheme"
+                sleep 3 
+                process_disk $disk "$scheme" || return $?
+        done < $TMP_PARTITIONS
+}
+
 worker_prepare_disks ()
 {
         echo ">>>>>????????????????////////////////"
