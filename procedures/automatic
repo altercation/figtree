@@ -46,6 +46,14 @@ MODULE_PATHS[0]="${AIF_PROCEDURE_PATH%$ARCHPROTO_PROCEDURE_SUBPATH*}" # strip pr
 
 depend_procedure core automatic # most of automatic fits our needs
 phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
+phase_preparation=(\
+        runtime_repositories \
+        runtime_packages \
+        configure \
+        intro \
+        sysprep \
+        select_source \
+        runtime_network )
 var_RUNTIME_REPOSITORIES=(core "Server = http://mirrors.kernel.org/archlinux/core/os/${var_ARCH}" archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
 #var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas" # use yaourt instead of pacman as systems may require AUR packages
 var_RUNTIME_PACKAGES="git" # use yaourt instead of pacman as systems may require AUR packages
