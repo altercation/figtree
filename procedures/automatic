@@ -163,6 +163,48 @@ debug_report_values()
     read answer
 }
 
+# what the fuck is going wrong... silent failure from target_prepare_pacman test
+# I'm probably not giving it the goods, somehow
+target_prepare_pacman() {   
+        [ "$var_PKG_SOURCE_TYPE" = "cd" ] && local serverurl="${var_FILE_URL}"
+        [ "$var_PKG_SOURCE_TYPE" = "net" ] && local serverurl="${var_SYNC_URL}"
+
+        [ -z "$1" ] && repos=core
+        [ -n "$1" ] && repos="$@"
+        # Setup a pacman.conf in /tmp
+        cat << EOF > /tmp/pacman.conf
+[options]
+CacheDir = ${var_TARGET_DIR}/var/cache/pacman/pkg
+CacheDir = /src/core/pkg
+Architecture = auto
+EOF
+
+for repo in $repos
+do
+        #TODO: this is a VERY, VERY dirty hack.  we fall back to net for any non-core repo because we only have core on the CD. also user maybe didn't pick a mirror yet
+        if [ "$repo" != core ]
+        then
+                add_pacman_repo target ${repo} "Include = $var_MIRRORLIST" || return 1
+        else
+                # replace literal '$repo' in the serverurl string by "$repo" where $repo is our variable.
+                add_pacman_repo target ${repo} "Server = ${serverurl/\$repo/$repo}" || return 1
+        fi
+done
+        # Set up the necessary directories for pacman use
+        for dir in var/cache/pacman/pkg var/lib/pacman
+        do
+                if [ ! -d "${var_TARGET_DIR}/$dir" ]
+                then
+                        mkdir -m 755 -p "${var_TARGET_DIR}/$dir" || return 1
+                fi
+        done
+
+        inform "Refreshing package database..."
+        $PACMAN_TARGET -Sy >$LOG 2>&1 || return 1
+        return 0
+}
+
+ 
 worker_install_packages()
 {
     inform "Package installation started..."
@@ -173,11 +215,11 @@ worker_install_packages()
 #    PACMAN=${PACMAN//pacman/yaourt}
 #    PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
 
-    debug_report_values "var_PKG_SOURCE_TYPE var_FILE_URL var_SYNC_URL var_TARGET_DIR var_TARGET_PACKAGES"
+    debug_report_values "var_MIRRORLIST var_PKG_SOURCE_TYPE var_FILE_URL var_SYNC_URL var_TARGET_DIR var_TARGET_PACKAGES"
 
     # target_prepare_pacman core extra community && installpkg
 #    target_prepare_pacman core extra community && echo ">>>>>>>>>>>>>>>RETURNED $?" && installpkg
-    target_prepare_pacman core
+    target_prepare_pacman
     echo ">>>>>>>>>>>>>>>RETURNED $?"
     echo "press enter"
     read answer
