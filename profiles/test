@@ -31,6 +31,7 @@ depend_profile systems/_make/_model
 # what you find in /etc/pacman.conf)
 #
 SOURCE=cd
+SOURCE=net
 FILE_URL=file:///src/core/pkg
 SYNC_URL=
 
