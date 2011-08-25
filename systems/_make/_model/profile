@@ -17,5 +17,7 @@ notify "IN SAMPLE SYSTEM PROFILE"
 # some of these aren't entirely hardware specific
 # but best to just put them here
 add_packages "wireless_tools rfkill wpa_supplicant dialog wpa_actiond ifplugd netcfg wifi-select-git"
+config_changes ""
+overlay_files "/etc/rc.conf /etc/wpa_conf"
 
 notify "LEAVING SAMPLE SYSTEM PROFILE"

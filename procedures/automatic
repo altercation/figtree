@@ -47,7 +47,7 @@ MODULE_PATHS[0]="${AIF_PROCEDURE_PATH%$ARCHPROTO_PROCEDURE_SUBPATH*}" # strip pr
 depend_procedure core automatic # most of automatic fits our needs
 phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
 var_RUNTIME_REPOSITORIES=(archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
-var_RUNTIME_PACKAGES="augeas yaourt" # use yaourt instead of pacman as systems may require AUR packages
+var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas" # use yaourt instead of pacman as systems may require AUR packages
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
@@ -157,7 +157,7 @@ worker_system_extras()
 # functions to support archproto procedure itself
 
 d() { debug PROCEDURE "$1"; }
-dstate() { d "ARCHPROTO STATECHK: $1 IS CURRENTLY: ${!1}"; }
+dstate() { d "ARCHPROTO STATECHK: $1 is currently: ${!1}"; }
 dfunc()
 {
     # quick debug function, better info than "caller"
@@ -187,7 +187,7 @@ source_and_overlay()
     dfunc "$*"
     local revert_overlay=$OVERLAY
     OVERLAY="$(dirname '$1')/overlay"
-    source $1 && notify "Successfully sourced $1"
+    source $1 && notify "Successfully processed values in profile \"$1\"" || die_error "Failed to process profile \"$1\"."
     OVERLAY=$revert_overlay
 }
 
@@ -375,7 +375,194 @@ write_overlay_files()
 # functions to support archproto profiles
 
 depend_profile() { load_profile "$1"; }
-add_packages() { dfunc; [[ -n "$1" ]] && TARGET_PACKAGES+=" $@" || true; }
+add_packages() { dfunc; [[ -n "$1" ]] && TARGET_PACKAGES+=" $@"; dstate TARGET_PACKAGES; }
 add_config_changes() { dfunc; [[ -n "$1" ]] && CONFIG_CHANGES+=" $@"  || true; }
 add_overlay_files() { dfunc; [[ -n "$1" ]] && OVERLAY_FILES+=" $@"   || true; }
 system_extras() { dfunc; true; } # this can be overidden in a user profile (note that only final override executes)
+
+
+set_value /etc/rc.conf valuename value
+
+#set_config
+#unset_config
+#add_daemon
+#remove_daemon
+#add_module
+#remove_module
+#augeas_raw
+
+get_option_value file option
+set_option_value file option value
+
+# TODO: consider refactoring this with augeas
+get_config()
+{
+    local config_file="$1"; local config_name="$2"; local config_value="$3"; local config_line=$(egrep "^[[:space:]]*${config_name}" "${config_file}")
+    [[ -n $config_line ]] && (echo -n $config_line | sed "s/.*$config_name.*=[[:space:]]*\(.*\)[[:space:]]*$/\1/"; return 0) || (return 1)
+}
+
+get_config /tmp/rc.conf HOSTNAME
+get_config /tmp/rc.conf XHOSTNAME
+get_config /tmp/rc.conf DAEMONS
+exit
+
+
+
+set_config()
+{
+}
+
+
+rc_get_listitem()
+{
+    if [ -n "$1" ]; then
+        if [ "${1:0:1}" != "@" ] && grep -iq "^$2.*@$1[ )]" $RC; then
+            # given non@ daemon, found @daemon variant
+            # return @daemon variant
+            echo "@$1"
+            return 0
+        elif [ "${1:0:1}" != "@" ] && grep -iq "^$2.*$1[ )]" $RC; then
+            # given non@ daemon, found non@ match
+            # return submitted non@ value
+            echo "$1"
+            return 0
+        elif [ "${1:0:1}" = "@" ] && grep -iq "^$2.*$1[ )]" $RC; then
+            # given @daemon variant, found @daemon match
+            # return submitted @daemon value
+            echo $1
+            return 0
+        elif [ "${1:0:1}" = "@" ] && grep -iq "^$2.*${1:1}[ )]" $RC; then
+            # had @daemon submitted but found non@ variant
+            # return non@ variant
+            echo ${1:1}
+            return 0
+        else
+            #echo ""
+            return 1
+        fi
+    else
+        echo "requires argument"
+    fi
+}
+
+rc_set_listitem()
+{
+    # this could be refactored as a list operation and would no longer require 
+    # the get_daemon function
+    local LIST=`strip_quotes $2`
+    local LISTITEM_TARGET="$1"
+    if [ -n "$1" ]; then
+        # we may be setting using the @ or non @ variant of the daemon
+        # so use rc_get_daemon to check and return this
+        local LISTITEM_CURRENT=`rc_get_listitem $LISTITEM_TARGET`
+        if [ -z "$LISTITEM_CURRENT" ]; then
+            # no daemon; add with impunity
+            sed -i "s+\(^$LIST.*\))$+\1 $LISTITEM_TARGET)+" $RC
+            echo "added $LISTITEM_TARGET"
+            return 0
+        else
+            # found daemon, check if found daemon is the same as argument
+            # if found daemon!=argument daemon, replace current with argument
+            if [ "$LISTITEM_TARGET" != "$LISTITEM_CURRENT" ]; then
+                sed -i "s/\(^$LIST.*\)$LISTITEM_CURRENT\(.*\)$/\1$LISTITEM_TARGET\2/" $RC
+                echo "changed $LISTITEM_CURRENT to $LISTITEM_TARGET"
+                return 0
+            else
+                echo "$LISTITEM_TARGET already exists; no change"
+                return 0
+            fi
+        fi
+    else
+        echo "requires argument"
+        return 0
+    fi
+}
+
+rc_unset_listitem()
+{
+    if [ -n "$1" ]; then
+        local LISTITEM=`rc_get_listitem $1`
+        if [ -z $LISTITEM ]; then
+            # no daemon that matches @/non@ variants
+            echo "$1 not found"
+        else
+            # found daemon, remove
+            sed -i "s/\(^DAEMONS.*\)\s*$LISTITEM\s*\(.*\))$/\1 \2)/" $RC
+            echo "$1 removed"
+        fi
+    else
+        echo "requires argument"
+    fi
+}
+
+rc_get_daemon()     { echo `rc_get_listitem "$1"    DAEMONS`;  }
+rc_set_daemon()     { echo `rc_set_listitem "$1"    DAEMONS`;  }
+rc_unset_daemon()   { echo `rc_unset_listitem "$1"  DAEMONS`;  }
+rc_get_module()     { echo `rc_get_listitem "$1"    MODULES`;  }
+rc_set_module()     { echo `rc_set_listitem "$1"    MODULES`;  }
+rc_unset_module()   { echo `rc_unset_listitem "$1"  MODULES`;  }
+rc_get_network()    { echo `rc_get_listitem "$1"    NETWORKS`; }
+rc_set_network()    { echo `rc_set_listitem "$1"    NETWORKS`; }
+rc_unset_network()  { echo `rc_unset_listitem "$1"  NETWORKS`; }
+
+rc_get_option()
+{
+    local OPTION_NAME=`strip_quotes $1`
+    if (egrep -q "^[^#]*$OPTION_NAME" $RC); then
+        #found set option (uncommented)
+        echo `egrep "$OPTION_NAME\W" $RC | sed "s/.*$1[ =]\{1,\}\(.*\)$/\1/" | sed 's/"//g'`
+    elif (egrep -q "^\s*#\s*$OPTION_NAME" $RC); then
+        #found unset option (commented)
+        echo "COMMENTED_OUT"
+    else
+        #found no option
+        echo "NOT_PRESENT"
+    fi
+}
+
+rc_set_option()
+{
+    local OPTION_NAME=`strip_quotes $1`
+    local OPTION_VALUE=`strip_quotes $2`
+    local CURRENT_VALUE="`rc_get_option $OPTION_NAME`"
+
+    if [ "$CURRENT_VALUE" = "$OPTION_VALUE" ]; then
+        # already set to value
+        echo "Option $OPTION_NAME already set to $OPTION_VALUE; no action 
+        taken"
+        return 0
+    elif [ "$CURRENT_VALUE" = "COMMENTED_OUT" ]; then
+        # option commented out, uncomment last occurence
+        # TODO: there should be a better way to find last occurence with sed
+        # strangely, from the command line I can redirect straight into $RC
+        # but this fails from the script and I need to cp instead.
+        uncomment_last "$OPTION_NAME" "$RC"
+        #tac $RC | sed "0,/#\s*$OPTION_NAME[ =].*$/ s//$OPTION_NAME=\"$OPTION_VALUE\"/" | tac > /tmp/rc
+        #cp /tmp/rc $RC
+        #rm /tmp/rc
+        sed -i "s+\(^$OPTION_NAME[ =]\{1,\}\).*$+\1\"$OPTION_VALUE\"+" $RC
+        echo "Option $OPTION_NAME unset; uncommenting and setting value to $OPTION_VALUE"
+    elif [ "$CURRENT_VALUE" = "NOT_PRESENT" ]; then
+        # option not set, append new line
+        echo -e "\n$OPTION_NAME=\"$OPTION_VALUE\"" >> $RC
+        echo "Option $OPTION_NAME unset; appending new line with value $OPTION_VALUE"
+    else
+        # option present, alter in-line
+        sed -i "s+\(^$OPTION_NAME[ =]\{1,\}\).*$+\1\"$OPTION_VALUE\"+" $RC
+        echo "Option $OPTION_NAME set; changing value to $OPTION_VALUE"
+    fi
+}
+
+rc_unset_option()
+{
+    local OPTION_NAME=`strip_quotes $1`
+    if (egrep -q "^$OPTION_NAME\W" $RC); then
+        #found live option (uncommented)
+        sed -i "s/^\($OPTION_NAME[ =]\{1,\}.*\)$/# \1/" $RC
+        echo "Option $OPTION_NAME unset via comment-out"
+    else
+        echo "Option $OPTION_NAME not found for unset; no action taken"
+    fi
+}
+
+
