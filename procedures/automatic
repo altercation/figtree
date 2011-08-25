@@ -44,7 +44,7 @@ ARCHPROTO_PROCEDURE_SUBPATH=/procedures/automatic
 DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$DOWNLOADS_DIR" ]] && rm -rf "$DOWNLOADS_DIR"; mkdir -p "$DOWNLOADS_DIR"
 KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
 [[ "$module" != "http" ]] && AIF_PROCEDURE_PATH="$procedure" || AIF_PROCEDURE_PATH="$2"; MODULE_PATHS[0]="${AIF_PROCEDURE_PATH%$ARCHPROTO_PROCEDURE_SUBPATH*}"
-var_RUNTIME_REPOSITORIES=(core "Server = http://mirrors.kernel.org/archlinux/core/os/${var_ARCH}" archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
+#var_RUNTIME_REPOSITORIES=(core "Server = http://mirrors.kernel.org/archlinux/core/os/${var_ARCH}" archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_PACKAGES="git" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
