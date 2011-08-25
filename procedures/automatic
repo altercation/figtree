@@ -62,6 +62,8 @@ worker_testing ()
 {
 echo "PARTITIONS = $PARTITIONS"
 echo "var_PARTITIONS = $var_PARTITIONS"
+echo "=======================> testing!"
+exit
 }
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
