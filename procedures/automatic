@@ -49,8 +49,8 @@ var_DOWNLOADS_DIR="${RUNTIME_DIR}/${var_ARCHPROTO_MODULE_NAME}-downloads"
 var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
 [[ "$module" != "http" ]] && var_AIF_PROCEDURE_PATH="$procedure" || var_AIF_PROCEDURE_PATH="$2"
 var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_ARCHPROTO_PROCEDURE_SUBPATH*}"
-#var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
-var_RUNTIME_REPOSITORIES=(core "http://mirrors.kernel.org/archlinux/core/os/$var_ARCH" archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
+#var_RUNTIME_REPOSITORIES=(core "http://mirrors.kernel.org/archlinux/core/os/$var_ARCH" archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
+var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
@@ -159,6 +159,7 @@ worker_configure ()
 worker_install_packages()
 {
     notify "Package installation started..."
+    notify "============================================================>"
     # from dieter's examples in unofficial subdir of aif github repo
     # better to do this here rather than redefine PACMAN & PACMAN_TARGET?
 #    PACMAN_BACKUP=$PACMAN
@@ -166,11 +167,10 @@ worker_install_packages()
 #    PACMAN=${PACMAN//pacman/yaourt}
 #    PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
     
-    echo "======================> up next: target_prepare_pacman"
-    target_prepare_pacman core extra community
-    echo "======================> up next: installpkg"
-    echo "======================> using list of packages:\n$TARGET_PACKAGES"
-    [[ -n "$TARGET_PACKAGES" ]] && installpkg || die_error "No packages listed for installation!"
+    target_prepare_pacman core extra community && installpkg
+
+#    target_prepare_pacman core extra community
+#    [[ -n "$TARGET_PACKAGES" ]] && installpkg || die_error "No packages listed for installation!"
     
     #PACMAN=$PACMAN_BACKUP
     #PACMAN_TARGET=$PACMAN_TARGET_BACKUP
