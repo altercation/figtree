@@ -195,10 +195,6 @@ worker_system_misc ()
     notify "Misc. system additions started..."
     system_misc
 }
-process_disks ()
-{
-true
-}
 #process_disks ()
 #{
 ## test value:
