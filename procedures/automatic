@@ -162,6 +162,15 @@ debug_report_values()
     echo "enter to continue..."
     read answer
 }
+debug_report_next()
+{
+    echo "================================================================================"
+    echo "about to execute:"
+    echo "$*"
+    echo "================================================================================"
+    echo "enter to continue..."
+    read answer
+}
 
 # what the fuck is going wrong... silent failure from target_prepare_pacman test
 # I'm probably not giving it the goods, somehow
@@ -178,18 +187,21 @@ CacheDir = ${var_TARGET_DIR}/var/cache/pacman/pkg
 CacheDir = /src/core/pkg
 Architecture = auto
 EOF
-
+echo "debug a..........."
 for repo in $repos
 do
         #TODO: this is a VERY, VERY dirty hack.  we fall back to net for any non-core repo because we only have core on the CD. also user maybe didn't pick a mirror yet
         if [ "$repo" != core ]
         then
+                debug_report_next "add_pacman_repo target ${repo} \"Include = $var_MIRRORLIST\""
                 add_pacman_repo target ${repo} "Include = $var_MIRRORLIST" || return 1
         else
                 # replace literal '$repo' in the serverurl string by "$repo" where $repo is our variable.
+                debug_report_next "add_pacman_repo target ${repo} \"Server = ${serverurl/\$repo/$repo}\""
                 add_pacman_repo target ${repo} "Server = ${serverurl/\$repo/$repo}" || return 1
         fi
 done
+echo "debug b..........."
         # Set up the necessary directories for pacman use
         for dir in var/cache/pacman/pkg var/lib/pacman
         do
@@ -198,9 +210,10 @@ done
                         mkdir -m 755 -p "${var_TARGET_DIR}/$dir" || return 1
                 fi
         done
-
+echo "debug c..........."
         inform "Refreshing package database..."
-        $PACMAN_TARGET -Sy >$LOG 2>&1 || return 1
+        $PACMAN_TARGET -Sy >$LOG || return 1
+        #$PACMAN_TARGET -Sy >$LOG 2>&1 || return 1
         return 0
 }
 
