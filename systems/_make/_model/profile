@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Ethan Schoonover <es@ethanschoonover.com>
+#
+# lenovo x220 tablet
+# aif/archproto system profile
+#
+# notes:
+# you might not want to install all the xbindkeys, xinitrc, etc.
+# but they are enough to get the bezel buttons working
+
+notify "IN SAMPLE SYSTEM PROFILE"
+
+# ----------------------------------------------------------------------
+# NETWORKING
+# ----------------------------------------------------------------------
+# some of these aren't entirely hardware specific
+# but best to just put them here
+add_packages "wireless_tools rfkill wpa_supplicant dialog wpa_actiond ifplugd netcfg wifi-select-git"
+
+notify "LEAVING SAMPLE SYSTEM PROFILE"
