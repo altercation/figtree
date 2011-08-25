@@ -92,11 +92,11 @@ worker_configure ()
         var_BLOCKDATA=$BLOCKDATA
         HARDWARECLOCK=${HARDWARECLOCK:-localtime}
         TIMEZONE=${TIMEZONE:-Canada/Pacific}
-echo "YOU ARE HERE"
 }
 
 worker_profile ()
 {
+echo "YOU ARE HERE"
     load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
     [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
     [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
