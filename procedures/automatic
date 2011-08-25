@@ -85,7 +85,7 @@ worker_configure ()
         var_UI_TYPE=${arg_ui_type:-cli}
         ui_init
         [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
-        load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
+# load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
         # Check mandatory options
         [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
         [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
@@ -98,6 +98,8 @@ worker_configure ()
         var_BLOCKDATA=$BLOCKDATA
         HARDWARECLOCK=${HARDWARECLOCK:-localtime}
         TIMEZONE=${TIMEZONE:-Canada/Pacific}
+echo "CURRENT..."
+load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
 }
 
 worker_install_packages()
