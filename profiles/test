@@ -7,7 +7,7 @@ depend_profile systems/_make/_model
 SOURCE=cd #change to 'net' to do a network install
 FILE_URL=file:///src/core/pkg
 #SYNC_URL= # optional, if you do netinstall use a repository string like ftp://ftp.belnet.be/mirror/archlinux.org/$repo/os/$arch (the same format as what you find in /etc/pacman.conf)
-HARDWARECLOCK=localtime # UTC is the better option, but some OS'es don't support it (i.e. Windows)
+HARDWARECLOCK=UTC # UTC is the better option, but some OS'es don't support it (i.e. Windows)
 TIMEZONE=Canada/Pacific
 # Do you want to have additional pacman repositories or packages available at runtime (during installation)?
 # RUNTIME_REPOSITORIES = array like this ('name1' 'location of repo 1' ['name2' 'location of repo2',..])
@@ -20,22 +20,17 @@ TARGET_GROUPS=base       # all packages in this group will be installed (default
 TARGET_PACKAGES_EXCLUDE= # Exclude these packages if they are member of one of the groups in TARGET_GROUPS.  example: 'nano reiserfsprogs' (they are in base)
 TARGET_PACKAGES='openssh e2fsprogs' # you can also specify separate packages to install (this is empty by default)
 
-# you can optionally also override some functions...
-worker_intro () {
-        inform "Automatic procedure running the generic-install-on-sda example config.  THIS WILL ERASE AND OVERWRITE YOUR /DEV/SDA.  IF YOU DO NOT WANT THIS PRESS CTRL+C WITHIN 10 SECONDS"
-        sleep 10
-}
-
-worker_configure_system () {
-        preconfigure_target
-        sed -i 's/^HOSTNAME="myhost"/HOSTNAME="arch-generic-install"/' $var_TARGET_DIR/etc/rc.conf
-        postconfigure_target
-}
+#worker_configure_system () {
+#        preconfigure_target
+#        sed -i 's/^HOSTNAME="myhost"/HOSTNAME="arch-generic-install"/' $var_TARGET_DIR/etc/rc.conf
+#        postconfigure_target
+#}
 
 
 # These variables are mandatory
 
 GRUB_DEVICE=/dev/sda
+DEFAULTFS="/boot:32:ext2:+ swap:256:swap /:7500:ext3 /home:*:ext3"
 PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
 BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
 /dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
