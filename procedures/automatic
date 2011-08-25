@@ -49,11 +49,11 @@ var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial s
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
 #phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile intro sysprep select_source)
+#phase_basics=()
+#phase_system=()
 phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile intro select_source)
-#phase_basics=(set_clock prepare_disks) # defaults, here for ref/override
-phase_basics=()
-#phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for ref/override
-phase_system=()
+phase_basics=(set_clock prepare_disks) # defaults, here for ref/override
+phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for ref/override
 phase_system+=(write_configs write_overlay system_misc) # archproto custom workers (see below)
 phase_finish=(msg_report) # defaults
 
@@ -113,9 +113,9 @@ worker_profile ()
 {
     notify "Starting profile load..."
     load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
-#    [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
-#    [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
-#    [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
+    [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
+    [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
+    [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
 }
 
 worker_install_packages()
