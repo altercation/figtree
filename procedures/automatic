@@ -109,7 +109,7 @@ install_aur_packages()
             tar -xzvf "$PACKAGE.tar.gz"
             cd "$PACKAGE"
             echo "++++++++++++++ about to makepkg"
-            makepkg --asroot --noconfirm --install --syncdeps --noprogressbar
+            makepkg -s -i -c --asroot --noconfirm
             #echo "++++++++++++++ about to install using pacman"
             #pacman --upgrade --noconfirm *.pkg.tar.xz
             cd $restore_dir
