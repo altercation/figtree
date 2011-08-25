@@ -92,6 +92,7 @@ worker_configure ()
         var_BLOCKDATA=$BLOCKDATA
         HARDWARECLOCK=${HARDWARECLOCK:-localtime}
         TIMEZONE=${TIMEZONE:-Canada/Pacific}
+echo "YOU ARE HERE"
 }
 
 worker_profile ()
