@@ -161,22 +161,19 @@ worker_system_misc ()
 }
 process_disks ()
 {
-        while read disk scheme
-        do
-                echo "=================> disk is $disk"
-                echo "=================> scheme is $scheme"
-                sleep 3 
-                process_disk $disk "$scheme" || return $?
-        done < $TMP_PARTITIONS
+        process_disk /dev/sda '100:ext2:+ 512:swap *:ext4' || return $?
+#
+#        while read disk scheme
+#        do
+#                echo "=================> disk is $disk"
+#                echo "=================> scheme is $scheme"
+#                sleep 3 
+#                process_disk $disk "$scheme" || return $?
+#        done < $TMP_PARTITIONS
 }
 
 worker_prepare_disks ()
 {
-        echo ">>>>>????????????????////////////////"
-        echo ">>>>>????????????????////////////////"
-        echo ">>>>>????????????????////////////////"
-        echo ">>>>>????????????????////////////////"
-sleep 5
         get_possible_fs
         echo "$var_PARTITIONS" > $TMP_PARTITIONS
         echo "$var_BLOCKDATA" > $TMP_BLOCKDEVICES
