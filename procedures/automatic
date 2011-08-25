@@ -46,8 +46,9 @@ MODULE_PATHS[0]="${AIF_PROCEDURE_PATH%$ARCHPROTO_PROCEDURE_SUBPATH*}" # strip pr
 
 depend_procedure core automatic # most of automatic fits our needs
 phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
-var_RUNTIME_REPOSITORIES=(archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
-var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas" # use yaourt instead of pacman as systems may require AUR packages
+var_RUNTIME_REPOSITORIES=(core "Server = http://mirrors.kernel.org/archlinux/core/os/${var_ARCH}" archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
+#var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas" # use yaourt instead of pacman as systems may require AUR packages
+var_RUNTIME_PACKAGES="git" # use yaourt instead of pacman as systems may require AUR packages
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
