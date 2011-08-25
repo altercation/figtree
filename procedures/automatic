@@ -415,6 +415,7 @@ update_modulepaths_from_profilepath()
 
 load_profile()
 {
+    echo "hello, user"
     dfunc "$*"
     # arguments:
     # $1 (assigned to profile_path): a path, either relative, absolute local or remote URL
@@ -422,14 +423,19 @@ load_profile()
     # expects/uses state:
     # OVERLAY: current value of OVERLAY directory path
     # MODULE_PATHS: array of paths to use, in order, as module roots with relative paths
+    echo "hit b"
     local profile_path=${1%/} # strips any trailing slash
+    echo "hit c"
     local profile_type=${2:-} # only used internally in this function
+    echo "hit d"
     if [[ "${profile_path:0:1}" == "/" ]]; then # absolute local path
+    echo "hit e"
         # add to module paths (thus if we've donwloaded a repo, we'll check locally next time)
         [[ "${profile_type}" != "xrelative" ]] && update_modulepaths_from_profilepath "$profile_path"
         [[ -d "${profile_path}" ]] && profile_path="$profile_path/profile"
         [[ -f "${profile_path}" ]] && source_and_overlay "$profile_path" || return 1
     elif [[ "${profile_path:0:4}" == "http" ]]; then # remote url, could be http or https with this match
+    echo "hit f"
         if make_local $profile_path profile_path_local
         then
                 d "ARCHPROTO PROFILES: preparing to load profile $profile_path_local"
