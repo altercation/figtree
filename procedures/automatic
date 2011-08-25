@@ -48,8 +48,14 @@ var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
-phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile intro sysprep select_source)
+#phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile intro sysprep select_source)
+phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile intro select_source)
+#phase_basics=(set_clock prepare_disks) # defaults, here for ref/override
+phase_basics=()
+#phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for ref/override
+phase_system=()
 phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
+phase_finish=(msg_report) # defaults
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
 # the worker to call is configure_system. it's actually ok to call the second default function (post_configure target) several times
@@ -83,7 +89,7 @@ worker_runtime_packages ()
 {
     $PACMAN -Sy pacman --noconfirm || return 1 # update pacman first to avoid having to run twice
     for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
-    PACMAN=yaourt
+    #PACMAN=yaourt
     return 0
 }
 
@@ -107,9 +113,9 @@ worker_profile ()
 {
     notify "Starting profile load..."
     load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
-    [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
-    [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
-    [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
+#    [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
+#    [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
+#    [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
 }
 
 worker_install_packages()
@@ -120,10 +126,10 @@ worker_install_packages()
     # better to do this here rather than redefine PACMAN & PACMAN_TARGET?
     true
     return
-    PACMAN_BACKUP=$PACMAN
-    PACMAN_TARGET_BACKUP=$PACMAN_TARGET
-    PACMAN=${PACMAN//pacman/yaourt}
-    PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
+#    PACMAN_BACKUP=$PACMAN
+#    PACMAN_TARGET_BACKUP=$PACMAN_TARGET
+#    PACMAN=${PACMAN//pacman/yaourt}
+#    PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
     
     target_prepare_pacman core extra community
     [[ -n "$TARGET_PACKAGES" ]] && installpkg || die_error "No packages listed for installation!"
@@ -390,8 +396,8 @@ write_overlay_files()
 
 depend_profile() { load_profile "$1"; }
 add_packages() { dfunc; [[ -n "$1" ]] && TARGET_PACKAGES+=" $@"; dstate TARGET_PACKAGES; }
-add_config_changes() { dfunc; [[ -n "$1" ]] && CONFIG_CHANGES+=" $@"  || true; }
-add_overlay_files() { dfunc; [[ -n "$1" ]] && OVERLAY_FILES+=" $@"   || true; }
+add_configs() { dfunc; [[ -n "$1" ]] && CONFIG_CHANGES+=" $@" dstate CONFIG_CHANGES; }
+add_overlays() { dfunc; [[ -n "$1" ]] && OVERLAY_FILES+=" $@" dstate OVERLAY_FILES; }
 system_extras() { dfunc; true; } # this can be overidden in a user profile (note that only final override executes)
 
 
