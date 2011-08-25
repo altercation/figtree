@@ -52,11 +52,17 @@ var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 #phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile intro sysprep select_source)
 #phase_basics=()
 #phase_system=()
-phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile intro select_source)
+phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile testing intro select_source)
 phase_basics=(set_clock prepare_disks) # defaults, here for ref/override
 phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for ref/override
 phase_system+=(write_configs write_overlay system_misc) # archproto custom workers (see below)
 phase_finish=(msg_report) # defaults
+
+worker_testing ()
+{
+echo "PARTITION = $PARTITION"
+echo "var_PARTITION = $var_PARTITION"
+}
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
 # the worker to call is configure_system. it's actually ok to call the second default function (post_configure target) several times
