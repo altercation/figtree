@@ -238,7 +238,7 @@ worker_prepare_disks ()
 # ----------------------------------------------------------------------
 # functions to support archproto procedure itself
 
-d() { debug PROCEDURE "$1"; echo ">>>>>> $1" }
+d() { debug PROCEDURE "$1"; }
 dstate() { d "ARCHPROTO STATECHK: $1 is currently: ${!1}"; }
 dfunc()
 {
