@@ -44,7 +44,7 @@ KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users 
 [[ "$module" != "http" ]] && AIF_PROCEDURE_PATH="$procedure" || AIF_PROCEDURE_PATH="$2"
 MODULE_PATHS[0]="${AIF_PROCEDURE_PATH%$ARCHPROTO_PROCEDURE_SUBPATH*}" # strip procedures/automatic and any trailing slash
 
-phase_preparation=(configure runtime_network runtime_repositories runtime_packages profile intro sysprep select_source)
+#phase_preparation=(configure runtime_network runtime_repositories runtime_packages profile intro sysprep select_source)
 phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
 var_RUNTIME_REPOSITORIES=(core "Server = http://mirrors.kernel.org/archlinux/core/os/${var_ARCH}" archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
 #var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas" # use yaourt instead of pacman as systems may require AUR packages
