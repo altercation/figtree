@@ -176,7 +176,12 @@ worker_install_packages()
     debug_report_values "var_PKG_SOURCE_TYPE var_FILE_URL var_SYNC_URL var_TARGET_DIR var_TARGET_PACKAGES"
 
     # target_prepare_pacman core extra community && installpkg
-    target_prepare_pacman core extra community && echo ">>>>>>>>>>>>>>>RETURNED $?" && installpkg
+#    target_prepare_pacman core extra community && echo ">>>>>>>>>>>>>>>RETURNED $?" && installpkg
+    target_prepare_pacman core
+    echo ">>>>>>>>>>>>>>>RETURNED $?"
+    echo "press enter"
+    read answer
+    installpkg
 
     debug_report_values "var_PKG_SOURCE_TYPE var_FILE_URL var_SYNC_URL var_TARGET_DIR var_TARGET_PACKAGES"
 
