@@ -36,6 +36,7 @@
 # procedure specific definitions
 # ----------------------------------------------------------------------
 
+[[ "$NOFAILSAFE" != "1" && ! -e /arch ]] && die_error "FAILSAFE TRIPPED: no /arch directory present, looks like an installed system\nOverride this by: \`export NOFAILSAFE=1\`"
 
 depend_procedure core automatic # most of automatic fits our needs, up top so we can override the phases and values it sets below
 
