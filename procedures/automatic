@@ -101,20 +101,23 @@ install_aur_packages()
 {
         local PACKAGE
         for PACKAGE in $*
-        rm -rf $DOWNLOADS_DIR/tmp/$PACKAGE*
-        local restore_dir=`pwd`
-        mkdir -p $DOWNLOADS_DIR/tmp/$PACKAGE-install && cd $DOWNLOADS_DIR/tmp/$PACKAGE-install
-        wget "http://aur.archlinux.org/packages/$PACKAGE/$PACKAGE.tar.gz"
-        tar -xzvf "$PACKAGE.tar.gz"
-        cd "$PACKAGE"
-        makepkg -s --asroot
-        pacman --upgrade --noconfirm *.pkg.tar.xz
-        cd $restore_dir
-        rm -rf $DOWNLOADS_DIR/tmp/$PACKAGE-install
+        do
+            rm -rf $DOWNLOADS_DIR/tmp/$PACKAGE*
+            local restore_dir=`pwd`
+            mkdir -p $DOWNLOADS_DIR/tmp/$PACKAGE-install && cd $DOWNLOADS_DIR/tmp/$PACKAGE-install
+            wget "http://aur.archlinux.org/packages/$PACKAGE/$PACKAGE.tar.gz"
+            tar -xzvf "$PACKAGE.tar.gz"
+            cd "$PACKAGE"
+            makepkg -s --asroot
+            pacman --upgrade --noconfirm *.pkg.tar.xz
+            cd $restore_dir
+            rm -rf $DOWNLOADS_DIR/tmp/$PACKAGE-install
+        done
 }
 worker_runtime_packages ()
 {
         install_aur_package package-query yaourt
+        # TODO: add test here
         PACMAN=yaourt
         $PACMAN -Sy pacman --noconfirm || return 1 # update pacman first to avoid having to run twice
         for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
