@@ -99,10 +99,11 @@ worker_configure ()
 
 worker_runtime_packages ()
 {
-        for pkg in $var_RUNTIME_PACKAGES
-        do
-                $PACMAN -Sy --noconfirm $pkg || return 1
-        done
+        # for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
+        # brute force... just do it twice as I've had many problems with dependencies not getting installed
+        # it will skip the installed packages anyhow
+        $PACMAN -Sy pacman --noconfirm || return 1
+        for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
         return 0
 }
 
