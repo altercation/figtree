@@ -211,6 +211,7 @@ source_and_overlay()
     OVERLAY_PATH="$(dirname "$1")/overlay"
     source $1 && notify "Successfully processed values in profile \"$1\"" || die_error "Failed to process profile \"$1\"."
     OVERLAY_PATH=$revert_overlay
+    echo "-------------- $PARTITIONS ------------------123"
 } 
 
 make_local ()
