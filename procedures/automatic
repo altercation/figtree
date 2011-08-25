@@ -76,59 +76,36 @@ EOF
 
 worker_intro ()
 {
-        notify "AIF archproto automatic procedure using initial profile $archproto_PROFILE"
+    notify "AIF archproto automatic procedure using initial profile $archproto_PROFILE"
+}
+
+worker_runtime_packages ()
+{
+    $PACMAN -Sy pacman --noconfirm || return 1 # update pacman first to avoid having to run twice
+    for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
+    PACMAN=yaourt
+    return 0
 }
 
 worker_configure ()
 {
-        echo "YOU ARE IN CONFIGURE ------------------------->"
-        notify "configure started"
-        var_UI_TYPE=${arg_ui_type:-cli}
-        ui_init
-        [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
-        # Check mandatory options
-        # initialize internal variables based on variables set by the user (some of the vars are handled in other workers):
-        var_RUNTIME_REPOSITORIES=$RUNTIME_REPOSITORIES
-        var_RUNTIME_PACKAGES=$RUNTIME_PACKAGES
-        var_GRUB_DEVICE=$GRUB_DEVICE
-        var_PARTITIONS=$PARTITIONS
-        var_BLOCKDATA=$BLOCKDATA
-        HARDWARECLOCK=${HARDWARECLOCK:-localtime}
-        TIMEZONE=${TIMEZONE:-Canada/Pacific}
-}
-
-install_aur_packages()
-{
-# NOT USED
-        echo "IN AUR"; read answer
-        local PACKAGE
-        for PACKAGE in $*
-        do
-            rm -rf $DOWNLOADS_DIR/tmp/$PACKAGE*
-            local restore_dir=`pwd`
-            mkdir -p $DOWNLOADS_DIR/tmp/$PACKAGE-install && cd $DOWNLOADS_DIR/tmp/$PACKAGE-install
-            wget "http://aur.archlinux.org/packages/$PACKAGE/$PACKAGE.tar.gz" &>/dev/null || die_error "failed to download $PACKAGE from AUR"
-            tar -xzvf "$PACKAGE.tar.gz" &>/dev/null || die_error "failed to untar $DOWNLOADS_DIR/tmp/$PACKAGE.tar.gz"
-            cd "$PACKAGE" &>/dev/null
-            echo "++++++++++++++ about to makepkg"; read answer
-            makepkg -s -c --asroot # --install --noconfirm
-            echo "++++++++++++++ about to install using pacman"; read answer
-            pacman --upgrade --noconfirm *.pkg.tar.xz
-            cd $restore_dir &>/dev/null
-            rm -rf $DOWNLOADS_DIR/tmp/$PACKAGE-install
-        done
-}
-worker_runtime_packages ()
-{
-        $PACMAN -Sy pacman --noconfirm || return 1 # update pacman first to avoid having to run twice
-        for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
-        PACMAN=yaourt
-        return 0
+    var_UI_TYPE=${arg_ui_type:-cli}
+    ui_init
+    [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
+    # Check mandatory options
+    # initialize internal variables based on variables set by the user (some of the vars are handled in other workers):
+    var_RUNTIME_REPOSITORIES=$RUNTIME_REPOSITORIES
+    var_RUNTIME_PACKAGES=$RUNTIME_PACKAGES
+    var_GRUB_DEVICE=$GRUB_DEVICE
+    var_PARTITIONS=$PARTITIONS
+    var_BLOCKDATA=$BLOCKDATA
+    HARDWARECLOCK=${HARDWARECLOCK:-localtime}
+    TIMEZONE=${TIMEZONE:-Canada/Pacific}
 }
 
 worker_profile ()
 {
-    echo "YOU ARE IN PROFILE ------------------------->"
+    notify "Starting profile load..."
     load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $MODULE_PATHS"
     [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
     [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
@@ -137,7 +114,8 @@ worker_profile ()
 
 worker_install_packages()
 {
-    notify "install_packages started"
+    notify "Package installation started..."
+    exit
     # from dieter's examples in unofficial subdir of aif github repo
     # better to do this here rather than redefine PACMAN & PACMAN_TARGET?
     true
@@ -156,23 +134,23 @@ worker_install_packages()
 
 worker_change_configvalues()
 {
-        notify "change_configvalues started"
-        write_config_changes $CONFIG_CHANGES
+    notify "change_configvalues started"
+    write_config_changes $CONFIG_CHANGES
 }
 
 worker_write_overlayfiles()
 {
-        notify "write_overlayfiles started"
-        # This is more problematic as we have to include the correct prefix path
-        # and make sure to source it properly if local/remote, etc.
-        # the add overlay files function will have to correctly assign a full path
-        write_overlayfiles $OVERLAY_FILES
+    notify "write_overlayfiles started"
+    # This is more problematic as we have to include the correct prefix path
+    # and make sure to source it properly if local/remote, etc.
+    # the add overlay files function will have to correctly assign a full path
+    write_overlayfiles $OVERLAY_FILES
 }
 
 worker_system_extras()
 {
-        notify "system_extras started"
-        system_extras
+    notify "system_extras started"
+    system_extras
 }
 
 # ----------------------------------------------------------------------
