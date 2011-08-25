@@ -60,8 +60,8 @@ phase_finish=(msg_report) # defaults
 
 worker_testing ()
 {
-echo "PARTITION = $PARTITION"
-echo "var_PARTITION = $var_PARTITION"
+echo "PARTITIONS = $PARTITIONS"
+echo "var_PARTITIONS = $var_PARTITIONS"
 }
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
