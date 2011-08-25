@@ -138,19 +138,19 @@ worker_install_packages()
     PACMAN_TARGET=$PACMAN_TARGET_BACKUP
 }
 
-worker_change_configvalues()
+worker_write_configs()
 {
     notify "change_configvalues started"
-    write_config_changes $CONFIG_CHANGES
+    write_configs $CONFIG_CHANGES
 }
 
-worker_write_overlayfiles()
+worker_write_overlay()
 {
-    notify "write_overlayfiles started"
+    notify "write_overlay started"
     # This is more problematic as we have to include the correct prefix path
     # and make sure to source it properly if local/remote, etc.
     # the add overlay files function will have to correctly assign a full path
-    write_overlayfiles $OVERLAY_FILES
+    write_overlay $OVERLAY_FILES
 }
 
 worker_system_extras()
@@ -368,20 +368,18 @@ load_profile()
     fi
 }
 
-write_config_changes()
+write_configs()
 {
         dfunc
-        true
         echo "CONFIG CHANGES TO BE WRITTEN:"
         echo "$CONFIG_CHANGES"
         # iterate through array of config changes
         # write changes using augeas or custom function
 }
 
-write_overlay_files()
+write_overlays()
 {
         dfunc
-        true
         echo "OVERLAY FILES TO WRITE"
         echo "$OVERLAY_FILES"
         # iterate over list of overlay files
