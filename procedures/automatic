@@ -116,7 +116,7 @@ install_aur_packages()
 }
 worker_runtime_packages ()
 {
-        install_aur_package package-query yaourt
+        install_aur_packages package-query yaourt
         # TODO: add test here
         PACMAN=yaourt
         $PACMAN -Sy pacman --noconfirm || return 1 # update pacman first to avoid having to run twice
