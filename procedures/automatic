@@ -194,15 +194,15 @@ worker_system_misc ()
 }
 process_disks ()
 {
-        process_disk /dev/sda '100:ext2:+ 512:swap *:ext4' || return $?
-#
-#        while read disk scheme
-#        do
-#                echo "=================> disk is $disk"
-#                echo "=================> scheme is $scheme"
-#                sleep 3 
-#                process_disk $disk "$scheme" || return $?
-#        done < $TMP_PARTITIONS
+# test value:
+#        process_disk /dev/sda '100:ext2:+ 512:swap *:ext4' || return $?
+        while read disk scheme
+        do
+                echo "=================> disk is $disk"
+                echo "=================> scheme is $scheme"
+                sleep 3 
+                process_disk $disk "$scheme" || return $?
+        done < $TMP_PARTITIONS
 }
 
 worker_prepare_disks ()
@@ -282,7 +282,7 @@ source_and_overlay()
     dfunc "$*"
     local revert_overlay=$var_OVERLAY_PATH
     var_OVERLAY_PATH="$(dirname "$1")/overlay"
-    source $1 && notify "Successfully processed values in profile:\n\"$1\"" || die_error "Failed to process profile \"$1\"."
+    source $1 && notify "Successfully processed values in profile:\n\"${1#$var_DOWNLOADS_DIR}\"" || die_error "Failed to process profile \"$1\"."
     var_OVERLAY_PATH=$revert_overlay
     echo "-------------- $PARTITIONS ------------------123"
 } 
