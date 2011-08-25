@@ -77,7 +77,18 @@ default_TESTVAL1="default value 2"
 # again, these will be overridden by equivalent (sans default_) variables assigned in profiles
 default_SOURCE=cd
 default_FILE_URL=file:///src/core/pkg
-default_SYNC_URL='http://mirrors.kernel.org/archlinux/$repo/os/$arch'
+default_SYNC_URL= #'http://mirrors.kernel.org/archlinux/$repo/os/$arch'
+
+if [ -d /repo/core ]; then
+        TARGET_REPOSITORIES=(core 'file:///repo/$repo/$arch')
+else
+        MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
+        TARGET_REPOSITORIES=(core $var_MIRRORLIST) # $var_MIRRORLIST is set by AIF
+fi
+
+# Filesystem defaults
+# not critical
+# default_PART_ACCESS=dev # can be set to 'uuid', 'dev', 'label', or leave empty for 'dev'
 
 #if net is install source, we should if/then for sync_url presence?
 
@@ -132,6 +143,7 @@ worker_runtime_packages ()
     $PACMAN -Sy pacman --noconfirm || return 1 # update pacman first to avoid having to run twice
     for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
     #PACMAN=yaourt
+    # TODO: change PACMAN and PACMAN_TARGET
     return 0
 }
 
@@ -189,52 +201,6 @@ worker_select_source ()
         var_SYNC_URL=${SYNC_URL:-}
 }
 
-# what the fuck is going wrong... silent failure from target_prepare_pacman test
-# I'm probably not giving it the goods, somehow
-target_prepare_pacman() {   
-        [ "$var_PKG_SOURCE_TYPE" = "cd" ] && local serverurl="${var_FILE_URL}"
-        [ "$var_PKG_SOURCE_TYPE" = "net" ] && local serverurl="${var_SYNC_URL}"
-
-        [ -z "$1" ] && repos=core
-        [ -n "$1" ] && repos="$@"
-        # Setup a pacman.conf in /tmp
-        cat << EOF > /tmp/pacman.conf
-[options]
-CacheDir = ${var_TARGET_DIR}/var/cache/pacman/pkg
-CacheDir = /src/core/pkg
-Architecture = auto
-EOF
-echo "debug a..........."
-for repo in $repos
-do
-        #TODO: this is a VERY, VERY dirty hack.  we fall back to net for any non-core repo because we only have core on the CD. also user maybe didn't pick a mirror yet
-        if [ "$repo" != core ]
-        then
-                debug_report_next "add_pacman_repo target ${repo} \"Include = $var_MIRRORLIST\""
-                add_pacman_repo target ${repo} "Include = $var_MIRRORLIST" || return 1
-        else
-                # replace literal '$repo' in the serverurl string by "$repo" where $repo is our variable.
-                debug_report_next "add_pacman_repo target ${repo} \"Server = ${serverurl/\$repo/$repo}\""
-                add_pacman_repo target ${repo} "Server = ${serverurl/\$repo/$repo}" || return 1
-        fi
-done
-echo "debug b..........."
-        # Set up the necessary directories for pacman use
-        for dir in var/cache/pacman/pkg var/lib/pacman
-        do
-                if [ ! -d "${var_TARGET_DIR}/$dir" ]
-                then
-                        mkdir -m 755 -p "${var_TARGET_DIR}/$dir" || return 1
-                fi
-        done
-echo "debug c..........."
-        inform "Refreshing package database..."
-        $PACMAN_TARGET -Sy >$LOG || return 1
-        #$PACMAN_TARGET -Sy >$LOG 2>&1 || return 1
-        return 0
-}
-
- 
 worker_install_packages()
 {
     inform "Package installation started..."
