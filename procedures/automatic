@@ -282,7 +282,7 @@ source_and_overlay()
     dfunc "$*"
     local revert_overlay=$var_OVERLAY_PATH
     var_OVERLAY_PATH="$(dirname "$1")/overlay"
-    source $1 && notify "Successfully processed values in profile \"$1\"" || die_error "Failed to process profile \"$1\"."
+    source $1 && notify "Successfully processed values in profile:\n\"$1\"" || die_error "Failed to process profile \"$1\"."
     var_OVERLAY_PATH=$revert_overlay
     echo "-------------- $PARTITIONS ------------------123"
 } 
