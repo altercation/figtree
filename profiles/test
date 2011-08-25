@@ -1,0 +1,5 @@
+#!/bin/bash
+
+depend_profile systems/_make/_model
+
+add_overlay "/etc/xyz.conf"

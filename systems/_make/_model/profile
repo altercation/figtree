@@ -10,14 +10,17 @@
 # but they are enough to get the bezel buttons working
 
 notify "IN SAMPLE SYSTEM PROFILE"
+notify "--------------------------------------------------"
 
 # ----------------------------------------------------------------------
 # NETWORKING
 # ----------------------------------------------------------------------
 # some of these aren't entirely hardware specific
 # but best to just put them here
-add_package "wireless_tools rfkill wpa_supplicant dialog wpa_actiond ifplugd netcfg wifi-select-git"
+#add_package "wireless_tools rfkill wpa_supplicant dialog wpa_actiond ifplugd netcfg wifi-select-git"
+add_package "terminus-font"
 add_configs ""
-add_overlay "/etc/rc.conf /etc/wpa_conf"
+add_overlay "/etc/rc.conf"
 
+notify "--------------------------------------------------"
 notify "LEAVING SAMPLE SYSTEM PROFILE"

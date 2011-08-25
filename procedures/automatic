@@ -204,12 +204,13 @@ process_args ()
 
 source_and_overlay()
 {
+    # TODO: consider refactoring this to an array
     dfunc "$*"
-    local revert_overlay=$OVERLAY
-    OVERLAY="$(dirname '$1')/overlay"
+    local revert_overlay=$OVERLAY_PATH
+    OVERLAY_PATH="$(dirname "$1")/overlay"
     source $1 && notify "Successfully processed values in profile \"$1\"" || die_error "Failed to process profile \"$1\"."
-    OVERLAY=$revert_overlay
-}
+    OVERLAY_PATH=$revert_overlay
+} 
 
 make_local ()
 {
@@ -371,20 +372,25 @@ load_profile()
 write_configs()
 {
         dfunc
-        echo "CONFIG CHANGES TO BE WRITTEN:"
-        echo "$CONFIG_CHANGES"
         # iterate through array of config changes
         # write changes using augeas or custom function
 }
 
 write_overlay()
 {
+        # TODO: consider just moving/copying *all* files in overlay without any specification, or perhaps allow a special overlay value of "*"
+        # TODO: we might need to set certain permissions, but i'd rather leave this for the misc step
+        #       i could also make the system_misc function or worker process an array of commands; here we use installs permissions arg
         dfunc
-        echo "OVERLAY FILES TO WRITE"
-        echo "$OVERLAY_FILES"
-        # iterate over list of overlay files
-        # write files using current file permissions
-        # backup original file?
+        echo "TARGET=$var_TARGET_DIR"
+        for overlay_file in $OVERLAY_FILES
+        do
+                from_path="${overlay_file/\/\///}" # TODO: this substitution performs differently in script vs command line; command line requires last slash to be escaped; here not
+                to_path="$var_TARGET_DIR/${overlay_file#*\/\/}"
+                # TODO: test if permissions are retained via --preserve-context
+                # TODO: confirm backups are created correctly
+                install -C -D -S ".archproto.old" --preserve-context -v -T "$from_path" "$to_path" || die_error "failed to overlay file from \"$from_path\" to \"$to_path\""
+        done
 }
 
 # ----------------------------------------------------------------------
@@ -393,11 +399,21 @@ write_overlay()
 # functions to support archproto profiles
 
 depend_profile() { load_profile "$1"; }
-add_package() { dfunc; [[ -n "$1" ]] && TARGET_PACKAGES+=" $@"; dstate TARGET_PACKAGES; }
-add_configs() { dfunc; [[ -n "$1" ]] && CONFIG_CHANGES+=" $@" dstate CONFIG_CHANGES; }
-add_overlay() { dfunc; [[ -n "$1" ]] && OVERLAY_FILES+=" $@" dstate OVERLAY_FILES; }
-system_misc() { dfunc; true; } # this can be overidden in a user profile (note that only final override executes)
-
+add_package() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$*"; dstate TARGET_PACKAGES; }
+add_configs() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+="$*"; dstate CONFIG_CHANGES; }
+add_overlay()
+{
+    dfunc
+    if [[ -n "$*" ]]
+    then
+        for overlay_file in $*
+        do
+            OVERLAY_FILES+=" $OVERLAY_PATH//${overlay_file#/}" # strip any leading slash (should have one) and add a double slash
+        done
+    fi
+    dstate OVERLAY_FILES;
+}
+system_misc() { dfunc; } # this can be overidden in a user profile (note that only final override executes)
 
 #set_value /etc/rc.conf valuename value
 
@@ -408,7 +424,6 @@ system_misc() { dfunc; true; } # this can be overidden in a user profile (note t
 #add_module
 #remove_module
 #augeas_raw
-
 
 # TODO: consider refactoring this with augeas
 get_config()
