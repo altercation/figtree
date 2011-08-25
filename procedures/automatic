@@ -45,7 +45,7 @@ DOWNLOADS_DIR="${RUNTIME_DIR}/${ARCHPROTO_MODULE_NAME}-downloads"; [[ -e "$DOWNL
 KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
 [[ "$module" != "http" ]] && AIF_PROCEDURE_PATH="$procedure" || AIF_PROCEDURE_PATH="$2"; MODULE_PATHS[0]="${AIF_PROCEDURE_PATH%$ARCHPROTO_PROCEDURE_SUBPATH*}"
 var_RUNTIME_REPOSITORIES=(core "Server = http://mirrors.kernel.org/archlinux/core/os/${var_ARCH}" archlinuxfr "Server = http://repo.archlinux.fr/${var_ARCH}")
-var_RUNTIME_PACKAGES="git" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
+var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
 phase_preparation=(runtime_network runtime_repositories runtime_packages profile configure intro sysprep select_source)
@@ -99,10 +99,21 @@ worker_configure ()
 
 worker_runtime_packages ()
 {
-        # for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
-        # brute force... just do it twice as I've had many problems with dependencies not getting installed
-        # it will skip the installed packages anyhow
-        $PACMAN -Sy pacman --noconfirm || return 1
+#        local PACKAGE=yaourt
+#        rm -rf $DOWNLOADS_DIR/tmp/$PACKAGE*
+#        local restore_dir=`pwd`
+#        mkdir -p $DOWNLOADS_DIR/tmp/$PACKAGE-install && cd $DOWNLOADS_DIR/tmp/$PACKAGE-install
+#        wget "http://aur.archlinux.org/packages/$PACKAGE/$PACKAGE.tar.gz"
+#        tar -xzvf "$PACKAGE.tar.gz"
+#        cd "$PACKAGE"
+#        makepkg -s --asroot
+#        pacman --upgrade --noconfirm *.pkg.tar.xz
+#        cd $restore_dir
+#        rm -rf $DOWNLOADS_DIR/tmp/$PACKAGE-install
+#
+#        PACMAN=yaourt
+
+        $PACMAN -Sy pacman --noconfirm || return 1 # update pacman first to avoid having to run twice
         for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
         return 0
 }
