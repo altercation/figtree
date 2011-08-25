@@ -54,7 +54,7 @@ phase_preparation=(runtime_network runtime_repositories runtime_packages configu
 phase_basics=()
 #phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for ref/override
 phase_system=()
-phase_system+=(change_configvalues write_overlayfiles system_extras) # archproto custom workers (see below)
+phase_system+=(write_configs write_overlay system_extras) # archproto custom workers (see below)
 phase_finish=(msg_report) # defaults
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
