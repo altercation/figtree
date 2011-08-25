@@ -140,13 +140,13 @@ worker_install_packages()
 
 worker_write_configs()
 {
-    notify "change_configvalues started"
+    notify "Configuration write started"
     write_configs $CONFIG_CHANGES
 }
 
 worker_write_overlay()
 {
-    notify "write_overlay started"
+    notify "Overlay write started..."
     # This is more problematic as we have to include the correct prefix path
     # and make sure to source it properly if local/remote, etc.
     # the add overlay files function will have to correctly assign a full path
@@ -155,7 +155,7 @@ worker_write_overlay()
 
 worker_system_misc ()
 {
-    notify "system_misc started"
+    notify "Misc. system additions started..."
     system_misc
 }
 
