@@ -30,6 +30,9 @@ depend_profile systems/_make/_model
 # ftp://ftp.belnet.be/mirror/archlinux.org/$repo/os/$arch (the same format as 
 # what you find in /etc/pacman.conf)
 #
+# If you are unsure what to put here, just leave them blank or comment out.
+# Any values left blank/unset will receive default values
+#
 SOURCE=cd
 SOURCE=net
 FILE_URL=file:///src/core/pkg

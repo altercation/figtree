@@ -73,6 +73,13 @@ default_USECOLOR="yes"
 default_TESTVAL1="default value 1"
 default_TESTVAL1="default value 2"
 
+# Install source defaults
+# again, these will be overridden by equivalent (sans default_) variables assigned in profiles
+default_SOURCE=cd
+default_FILE_URL=file:///src/core/pkg
+default_SYNC_URL='http://mirrors.kernel.org/archlinux/$repo/os/$arch'
+
+
 #phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile intro sysprep select_source)
 #phase_basics=()
 #phase_system=()
@@ -172,6 +179,13 @@ debug_report_next()
     read answer
 }
 
+worker_select_source ()
+{
+        var_PKG_SOURCE_TYPE=${SOURCE:-cd}
+        var_FILE_URL=${FILE_URL:-file:///src/core/pkg}
+        var_SYNC_URL=${SYNC_URL:-}
+}
+
 # what the fuck is going wrong... silent failure from target_prepare_pacman test
 # I'm probably not giving it the goods, somehow
 target_prepare_pacman() {   
@@ -228,7 +242,7 @@ worker_install_packages()
 #    PACMAN=${PACMAN//pacman/yaourt}
 #    PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
 
-    debug_report_values "var_MIRRORLIST var_PKG_SOURCE_TYPE var_FILE_URL var_SYNC_URL var_TARGET_DIR var_TARGET_PACKAGES"
+    debug_report_values "SOURCE FILE_URL SYNC_URL var_RUNTIME_REPOSITORIES var_MIRRORLIST var_PKG_SOURCE_TYPE var_FILE_URL var_SYNC_URL var_TARGET_DIR var_TARGET_PACKAGES"
 
     # target_prepare_pacman core extra community && installpkg
 #    target_prepare_pacman core extra community && echo ">>>>>>>>>>>>>>>RETURNED $?" && installpkg
@@ -238,7 +252,7 @@ worker_install_packages()
     read answer
     installpkg
 
-    debug_report_values "var_MIRRORLIST var_PKG_SOURCE_TYPE var_FILE_URL var_SYNC_URL var_TARGET_DIR var_TARGET_PACKAGES"
+    debug_report_values "SOURCE FILE_URL SYNC_URL var_RUNTIME_REPOSITORIES var_MIRRORLIST var_PKG_SOURCE_TYPE var_FILE_URL var_SYNC_URL var_TARGET_DIR var_TARGET_PACKAGES"
 
 #    target_prepare_pacman core extra community
 #    [[ -n "$TARGET_PACKAGES" ]] && installpkg || die_error "No packages listed for installation!"
