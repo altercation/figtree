@@ -123,12 +123,12 @@ install_aur_packages()
 worker_runtime_packages ()
 {
         $PACMAN -Sy pacman --noconfirm || return 1 # update pacman first to avoid having to run twice
-        $PACMAN -Sy base-devel --noconfirm || return 1 # update pacman first to avoid having to run twice
-        $PACMAN -Sy archlinuxfr/yaourt --noconfirm || return 1
+#        $PACMAN -Sy base-devel --noconfirm || return 1 # update pacman first to avoid having to run twice
+#        $PACMAN -Sy archlinuxfr/yaourt --noconfirm || return 1
         #install_aur_packages package-query yaourt
         #TODO: add test here
-        PACMAN=yaourt
         for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
+        PACMAN=yaourt
         return 0
 }
 
