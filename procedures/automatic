@@ -61,7 +61,8 @@ var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_ARCHPROTO_PROCEDURE_SUBPATH*}
 #for yaourt, which doesn't work due to not supporting pacman arguments we require, so I'm using a lib function
 #var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_REPOSITORIES=
-var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
+#var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
+var_RUNTIME_PACKAGES="git" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
 var_TARGET_GROUPS="base base-devel "
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
