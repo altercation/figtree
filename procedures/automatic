@@ -344,7 +344,7 @@ set_profile_or_default_values ()
                 then # array
                     eval eval $valname="(\${default_$valname[*]})"
                 else # normal variable
-                    eval eval $valname=\'$defaultval\'
+                    eval $valname=\'${!defaultval}\'
                 fi
                 inform "Using default procedure defined value for $valname"
         else
