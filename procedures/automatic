@@ -202,9 +202,6 @@ worker_configure ()
     ui_init
     [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
 
-    # unset MIRRORS since we will let profiles set it and we want to use our default_MIRRORS value otherwise
-    MIRRORS=
-
     # here we import our profile(s) to allow default values to be overridden
     load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $var_MODULE_PATHS"
 
@@ -347,7 +344,7 @@ set_profile_or_default_values ()
                 then # array
                     eval eval $valname="(\${default_$valname[*]})"
                 else # normal variable
-                    eval eval $valname=\"\$default_$valname\"
+                    eval eval $valname=\'$defaultval\'
                 fi
                 inform "Using default procedure defined value for $valname"
         else
