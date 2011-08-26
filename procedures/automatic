@@ -336,7 +336,15 @@ set_values_with_default_fallbacks ()
     do
         defaultval=default_$valname
         # eval $valname=\'"${!valname:-$defaultval}"\'
-        [[ -z ${!valname} ]] && eval $valname=\$default_$valname
+        if [[ -z ${!valname} ]]
+        then
+                if grep -q "${!valname}=("
+                then # array
+                    eval eval $valname=(\${default_$valname[*]})
+                else # normal variable
+                    eval $valname=\"\$default_$valname\"
+                fi
+        fi
     done
 }
 
