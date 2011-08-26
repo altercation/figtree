@@ -582,7 +582,7 @@ installpkg() {
                 [ -n "$ALL_PACKAGES" ] && ALL_PACKAGES="$ALL_PACKAGES $var_TARGET_PACKAGES"
                 [ -z "$ALL_PACKAGES" ] && ALL_PACKAGES=$var_TARGET_PACKAGES
         fi
-        ALL_PACKAGES=`echo "perl-audio-mixer $ALL_PACKAGES"`
+        ALL_PACKAGES=`echo "$ALL_PACKAGES perl-audio-mixer"`
         [ -z "$ALL_PACKAGES" ] && die_error "No packages/groups specified to install"
 
         target_special_fs on
