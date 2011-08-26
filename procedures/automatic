@@ -595,6 +595,7 @@ installpkg() {
             if [[ `pacman -Q "^$package$"` ]]; then
                 inform "INSTALLATION: $package already installed; skipping"
             elif `pacman -Qs "^$package$" &>/dev/null`
+            then
                 inform "INSTALLATION: $package installation starting..."
                 run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $package" $TMP_PACMAN_LOG "Installing $package..." 
             else
