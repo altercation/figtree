@@ -569,7 +569,7 @@ installaur()
         pacman -Qs make
         $PACMAN_TARGET -Qs make
         echo "===================================================="
-        read answer
+        #read answer
 
         run_controlled pacman_installaur "$PACMAN_TARGET --noconfirm -S *.pkg.tar.xz" $TMP_PACMAN_LOG "Installing $aur_package..." 
         cd $restore_dir
