@@ -73,15 +73,23 @@ RUNTIME_PACKAGES=
 
 # INSTALL PACKAGES
 # =============================================================================
-# TARGET_GROUPS: all packages in this group will be installed (defaults to base 
-# if no group and no packages are specified)
-TARGET_GROUPS=base
+# TARGET_GROUPS: all packages in this group will be installed. This defaults to 
+# both base and base-devel (base-devel is added by archproto) if no group and 
+# no packages are specified)
+# example: TARGET_GROUPS=base
+TARGET_GROUPS=
 # Exclude these packages if they are member of one of the groups in 
 # TARGET_GROUPS.  example: 'nano reiserfsprogs' (they are in base)
 TARGET_PACKAGES_EXCLUDE=
 # you can also specify separate packages to install (this is empty by default)
 # example: TARGET_PACKAGES='terminus-font openssh'
-TARGET_PACKAGES='terminus-font'
+# -----------------------------------------------------------------------------
+# IMPORTANT NOTE:
+# USING TARGET_PACKAGES IS FINE BUT IF YOU WANT TO STACK YOUR AIF PROFILES, USE 
+# THE ARCHPROTO SPECIFIC FUNCTIONS such as add_package
+# example: add_package "terminus-font mplayer"
+# -----------------------------------------------------------------------------
+TARGET_PACKAGES=
 
 # FILESYSTEM CONFIGURATION
 # =============================================================================

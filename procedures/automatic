@@ -60,6 +60,7 @@ var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications us
 var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_ARCHPROTO_PROCEDURE_SUBPATH*}"
 var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
+var_TARGET_GROUPS="base base-devel "
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
 # rc/config default values if not set previously or by user
@@ -162,6 +163,7 @@ worker_configure ()
     var_GRUB_DEVICE=$GRUB_DEVICE
     var_PARTITIONS=$PARTITIONS
     var_BLOCKDATA=$BLOCKDATA
+    var_TARGET_GROUPS+=" $TARGET_GROUPS" # TODO: smarter add to avoid duplicates
     set_profile_or_default_values "LOCALE DAEMON_LOCALE HARDWARECLOCK TIMEZONE KEYMAP CONSOLEFONT CONSOLEMAP USECOLOR"
 }
 
@@ -555,21 +557,6 @@ installaur()
 
         #$PACMAN_TARGET --noconfirm -S *.pkg.tar.xz
 
-        echo "==================================================>>"
-        echo "IN DIR $PWD"
-        echo "==================================================>>"
-        echo "LS:"
-        ls
-        echo "==================================================>>"
-        echo "pacman -p -S *.pkg.tar.xz"
-        pacman -p -S *.pkg.tar.xz
-        echo "==================================================>>"
-        echo "pacman -p -S $aur_package*.pkg.tar.xz"
-        pacman -p -S $aur_package*.pkg.tar.xz
-        echo "==================================================>>"
-        echo "press enter..."
-        read
-
         run_controlled pacman_installaur "$PACMAN_TARGET --noconfirm -S *.pkg.tar.xz" $TMP_PACMAN_LOG "Installing $aur_package..." 
         cd $restore_dir
         rm -rf $var_TEMP_DIR/${aur_package}-install
@@ -632,6 +619,3 @@ installpkg() {
 
         return $CONTROLLED_EXIT
 }
-
-
-
