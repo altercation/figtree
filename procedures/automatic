@@ -209,7 +209,9 @@ worker_configure ()
     [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
     [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
     [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
-    [ -z "$TARGET_REPOSITORIES" ] && die_error "You did not specify \$TARGET_REPOSITORIES"
+
+    # we set default values above so can skip this check
+    # [ -z "$TARGET_REPOSITORIES" ] && die_error "You did not specify \$TARGET_REPOSITORIES"
 
     var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
     var_RUNTIME_PACKAGES+=" $RUNTIME_PACKAGES"
