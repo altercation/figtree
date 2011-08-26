@@ -258,9 +258,6 @@ set_profile_or_default_values ()
     for valname in $valuelist
     do
         defaultval=default_$valname
-        # eval $valname=\'"${!valname:-$defaultval}"\'
-        echo "defaultval=$defaultval==${!defaultval}"
-        echo "valname=$valname==${!valname}"
         if [[ -z ${!valname} ]]
         then
                 if declare | grep -q "$valname=("
@@ -582,7 +579,7 @@ installpkg() {
                 [ -n "$ALL_PACKAGES" ] && ALL_PACKAGES="$ALL_PACKAGES $var_TARGET_PACKAGES"
                 [ -z "$ALL_PACKAGES" ] && ALL_PACKAGES=$var_TARGET_PACKAGES
         fi
-        ALL_PACKAGES=`echo "$ALL_PACKAGES perl-audio-mixer"`
+        ALL_PACKAGES=`echo "$ALL_PACKAGES perl-audio-mixer"` # DEBUG XXX
         [ -z "$ALL_PACKAGES" ] && die_error "No packages/groups specified to install"
 
         target_special_fs on
@@ -600,7 +597,6 @@ installpkg() {
             else
                 installaur "$package" || return 1
             fi
-        exit
         done
 
         local _result=''
