@@ -547,6 +547,7 @@ installaur()
     then
 
 echo "$aur_package not found by packman -Qs"
+pacman -Qs "^$aur_package$"
 exit
 
         rm -rf $var_TEMP_DIR/$aur_package*
