@@ -165,6 +165,7 @@ worker_configure ()
     [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
     [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
     [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
+    [ -z "$TARGET_REPOSITORIES" ] && die_error "You did not specify \$TARGET_REPOSITORIES"
 
     var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
     var_RUNTIME_PACKAGES+=" $RUNTIME_PACKAGES"
@@ -186,6 +187,7 @@ debug_report_values()
     echo "enter to continue..."
     read answer
 }
+
 debug_report_next()
 {
     echo "================================================================================"
@@ -198,9 +200,9 @@ debug_report_next()
 
 worker_select_source ()
 {
-        var_PKG_SOURCE_TYPE=${SOURCE:-cd}
-        var_FILE_URL=${FILE_URL:-file:///src/core/pkg}
-        var_SYNC_URL=${SYNC_URL:-}
+        true
+        # set above, though maybe should be here?
+        # TODO: consider moving the assignment here and using defaults with optional user profile overrides
 }
 
 worker_install_packages()
