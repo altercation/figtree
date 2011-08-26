@@ -559,19 +559,7 @@ installaur()
         tar -xzvf "${aur_package}.tar.gz"
         cd "$aur_package"
         makepkg -s --asroot
-
-        #$PACMAN_TARGET --noconfirm -S *.pkg.tar.xz
-        echo "===================================================="
-        echo "current dir is $PWD and ls is:"
-        ls
-        echo "===================================================="
-        echo "pacman -Qs make"
-        pacman -Qs make
-        $PACMAN_TARGET -Qs make
-        echo "===================================================="
-        #read answer
-
-        run_controlled pacman_installaur "$PACMAN_TARGET --noconfirm -S *.pkg.tar.xz" $TMP_PACMAN_LOG "Installing $aur_package..." 
+        run_controlled pacman_installaur "$PACMAN_TARGET --noconfirm -U *.pkg.tar.xz" $TMP_PACMAN_LOG "Installing $aur_package..." 
         cd $restore_dir
         rm -rf $var_TEMP_DIR/${aur_package}-install
     else
