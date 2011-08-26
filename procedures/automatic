@@ -74,16 +74,6 @@ default_HOSTNAME=""
 default_NETWORK_PERSIST="no"
 default_NETWORKS=(main)
 
-# Install source defaults
-# $var_MIRRORLIST is set by AIF in base procedure unless it's been overridden somewhere
-if [ -d /repo/core ]; then
-        default_MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
-        default_TARGET_REPOSITORIES=(core 'file:///repo/$repo/$arch' extra $var_MIRRORLIST community $var_MIRRORLIST)
-else
-        default_MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
-        default_TARGET_REPOSITORIES=(core $var_MIRRORLIST extra $var_MIRRORLIST community $var_MIRRORLIST) 
-fi
-
 #phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile intro sysprep select_source)
 #phase_basics=()
 #phase_system=()
@@ -246,7 +236,17 @@ debug_report_next()
 
 worker_select_source ()
 {
-    set_profile_or_default_values "MIRROR TARGET_REPOSITORIES"
+    debug_report_values "default_MIRROR default_TARGET_REPOSITORIES MIRROR TARGET_REPOSITORIES"
+    if [[ -z TARGET_REPOSITORIES ]]
+    then
+        if [ -d /repo/core ]; then
+                MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
+                TARGET_REPOSITORIES=(core 'file:///repo/$repo/$arch' extra $var_MIRRORLIST community $var_MIRRORLIST)
+        else
+                MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
+                TARGET_REPOSITORIES=(core $var_MIRRORLIST extra $var_MIRRORLIST community $var_MIRRORLIST) 
+        fi
+    fi
     debug_report_values "default_MIRROR default_TARGET_REPOSITORIES MIRROR TARGET_REPOSITORIES"
 }
 
