@@ -53,8 +53,8 @@ depend_procedure core automatic # most of automatic fits our needs, up top so we
 # we will further override or add to some of the values below (RUNTIME_...) after sourcing profiles in worker_configure
 var_ARCHPROTO_MODULE_NAME=archproto # in case we need to change our script name 
 var_ARCHPROTO_PROCEDURE_SUBPATH=/procedures/automatic
-var_DOWNLOADS_DIR="${RUNTIME_DIR}/${var_ARCHPROTO_MODULE_NAME}-downloads"
-[[ -e "$var_DOWNLOADS_DIR" ]] && rm -rf "$var_DOWNLOADS_DIR"; mkdir -p "$var_DOWNLOADS_DIR"
+var_TEMP_DIR="${RUNTIME_DIR}/${var_ARCHPROTO_MODULE_NAME}-temp"
+[[ -e "$var_TEMP_DIR" ]] && rm -rf "$var_TEMP_DIR"; mkdir -p "$var_TEMP_DIR"
 var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
 [[ "$module" != "http" ]] && var_AIF_PROCEDURE_PATH="$procedure" || var_AIF_PROCEDURE_PATH="$2"
 var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_ARCHPROTO_PROCEDURE_SUBPATH*}"
@@ -297,7 +297,7 @@ source_and_overlay()
     dfunc "$*"
     local revert_overlay=$var_OVERLAY_PATH
     var_OVERLAY_PATH="$(dirname "$1")/overlay"
-    source "$1" && inform "ARCHPROTO PROFILE: Successfully processed profile:\n${1#$var_DOWNLOADS_DIR}" \
+    source "$1" && inform "ARCHPROTO PROFILE: Successfully processed profile:\n${1#$var_TEMP_DIR}" \
                 || die_error "ARCHPROTO PROFILE: Failed to process profile \"$1\"."
     var_OVERLAY_PATH=$revert_overlay
 } 
@@ -368,8 +368,8 @@ make_local ()
 
     # make a local path for the profile file for an initial file check and, failing that, cloning, for example:
     # REMOTE:                       http://github.com/altercation/archproto/procedures/automatic/systems/lenovo/x220
-    # LOCAL:  /tmp/aif/archproto-downloads/github.com/altercation/archproto/procedures/automatic/systems/lenovo/x220
-    local full_path_local="$var_DOWNLOADS_DIR/${full_path_remote:$(expr "$full_path_remote" : 'https*://')}"
+    # LOCAL:  /tmp/aif/archproto-temp/github.com/altercation/archproto/procedures/automatic/systems/lenovo/x220
+    local full_path_local="$var_TEMP_DIR/${full_path_remote:$(expr "$full_path_remote" : 'https*://')}"
 
     # we can now use that profile path to clone the remote repo by cloning, failing, and trimming until we get down to the actual repo root.
     # this is a bit brute force and we could be smarter about it if we wanted to supply an actual template for the repo root, for example
@@ -378,7 +378,7 @@ make_local ()
     # that have unknown URL formats. brute force try/trim/iterate does this for now.
 
     local repo_remote="$full_path_remote" # initial repo_remote assignment
-    local repo_local="$var_DOWNLOADS_DIR/${repo_remote:$(expr "$repo_remote" : 'https*://')}"
+    local repo_local="$var_TEMP_DIR/${repo_remote:$(expr "$repo_remote" : 'https*://')}"
 
     while [[ -n "$repo_remote" && ${#repo_remote} > 1 ]]; do # loop till we trim too much, indicating profound failure
 
@@ -395,7 +395,7 @@ make_local ()
 
         # trim and retry
         repo_remote=$(dirname "$repo_remote")
-        repo_local="$var_DOWNLOADS_DIR/${repo_remote:$(expr "$repo_remote" : 'https*://')}"
+        repo_local="$var_TEMP_DIR/${repo_remote:$(expr "$repo_remote" : 'https*://')}"
     done; die_error "failed to download repo from path $1"
 }
 update_modulepaths_from_profilepath()
@@ -542,8 +542,26 @@ set_config()
 
 installaur()
 {
-# helper for our custom installpkg
-:
+    # helper for our custom installpkg
+    aur_package="$1"
+    if [[ `pacman -Q "^$aur_package$"` ]]; then
+        notify "$aur_package already installed; skipping"
+    elif ! `pacman -Qs "^$aur_package$" &>/dev/null`
+    then
+        rm -rf $var_TEMP_DIR/$aur_package*
+        local restore_dir=`pwd`
+        mkdir -p $var_TEMP_DIR/${aur_package}-install && cd $var_TEMP_DIR/${aur_package}-install
+        wget "http://aur.archlinux.org/packages/${aur_package}/${aur_package}.tar.gz"
+        tar -xzvf "${aur_package}.tar.gz"
+        cd "$aur_package"
+        makepkg -s --asroot
+        #$PACMAN_TARGET --noconfirm -S *.pkg.tar.xz
+        run_controlled pacman_installaur "$PACMAN_TARGET --noconfirm -S *.pkg.tar.xz" $TMP_PACMAN_LOG "Installing $aur_package..." 
+        cd $restore_dir
+        rm -rf $var_TEMP_DIR/${aur_package}-install
+    else
+        die_error "SHOULDN'T BE HERE: installaur passed a package that pacman can find"
+    fi
 }
 
 # perform package installation to the target system
@@ -572,12 +590,17 @@ installpkg() {
         # notify "Package installation will begin now.  You can watch the output in the progress window. Please be patient."
         notify "Package installation will being now."
 
-        echo "TMP_PACMAN_LOG: $TMP_PACMAN_LOG"
-        echo "ALL_PACKAGES: $ALL_PACKAGES"
-        exit
-        for thispackage in $ALL_PACKAGES
+        for package in $ALL_PACKAGES
         do
-            run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $ALL_PACKAGES" $TMP_PACMAN_LOG "Installing... Please Wait" 
+            if [[ `pacman -Q "^$package$"` ]]; then
+                inform "INSTALLATION: $package already installed; skipping"
+            elif `pacman -Qs "^$package$" &>/dev/null`
+                inform "INSTALLATION: $package installation starting..."
+                run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $package" $TMP_PACMAN_LOG "Installing $package..." 
+            else
+                inform "INSTALLATION-AUR: $package installation from AUR starting..."
+                installaur "$package" || return 1
+            fi
         done
 
         local _result=''
