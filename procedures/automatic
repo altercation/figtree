@@ -218,7 +218,7 @@ worker_configure ()
     var_GRUB_DEVICE=$GRUB_DEVICE
     var_PARTITIONS=$PARTITIONS
     var_BLOCKDATA=$BLOCKDATA
-    set_values_with_default_fallbacks="LOCALE DAEMON_LOCALE HARDWARECLOCK TIMEZONE KEYMAP CONSOLEFONT CONSOLEMAP USECOLOR"
+    set_profile_or_default_values "LOCALE DAEMON_LOCALE HARDWARECLOCK TIMEZONE KEYMAP CONSOLEFONT CONSOLEMAP USECOLOR"
 }
 
 debug_report_values()
@@ -246,7 +246,7 @@ debug_report_next()
 
 worker_select_source ()
 {
-    set_values_with_default_fallbacks="MIRROR TARGET_REPOSITORIES"
+    set_profile_or_default_values "MIRROR TARGET_REPOSITORIES"
     debug_report_values "default_MIRROR default_TARGET_REPOSITORIES MIRROR TARGET_REPOSITORIES"
 }
 
@@ -328,7 +328,7 @@ dfunc()
     d "ARCHPROTO FUNCTION: ${FUNCNAME[1]}() called at line ${BASH_LINENO[1]} by ${FUNCNAME[2]}${with_args}"
 }
 
-set_values_with_default_fallbacks ()
+set_profile_or_default_values ()
 {
     dfunc "$*"
     local valuelist=$@
@@ -336,14 +336,19 @@ set_values_with_default_fallbacks ()
     do
         defaultval=default_$valname
         # eval $valname=\'"${!valname:-$defaultval}"\'
+        echo "defaultval=$defaultval==${!defaultval}"
+        echo "valname=$valname==${!valname}"
         if [[ -z ${!valname} ]]
         then
-                if grep -q "${!valname}=("
+                if declare | grep -q "$valname=("
                 then # array
-                    eval eval $valname=(\${default_$valname[*]})
+                    eval eval $valname="(\${default_$valname[*]})"
                 else # normal variable
-                    eval $valname=\"\$default_$valname\"
+                    eval eval $valname=\"\$default_$valname\"
                 fi
+                inform "Using default procedure defined value for $valname"
+        else
+                inform "Using profile defined value for $valname"
         fi
     done
 }
