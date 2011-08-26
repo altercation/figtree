@@ -164,6 +164,8 @@ worker_configure ()
     var_PARTITIONS=$PARTITIONS
     var_BLOCKDATA=$BLOCKDATA
     var_TARGET_GROUPS+=" $TARGET_GROUPS" # TODO: smarter add to avoid duplicates
+    echo "$var_TARGET_GROUPS +++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    read answer
     set_profile_or_default_values "LOCALE DAEMON_LOCALE HARDWARECLOCK TIMEZONE KEYMAP CONSOLEFONT CONSOLEMAP USECOLOR"
 }
 
