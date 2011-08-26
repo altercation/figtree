@@ -215,6 +215,21 @@ worker_system_misc ()
     system_misc
 }
 
+process_args ()
+{
+    dfunc
+    var_AUTOMATIC_PROFILE=
+    while [[ -n $1 ]]
+    do
+        case $1 in
+            -c) [[ -n "$2" ]] && var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
+            -r) [[ -n "$2" ]] && var_REPO_TYPE=$2 || die_error "You must specify a repository type of git, hg, or svn with the -r flag." ;;
+            *) usage && exit 5 ;;
+        esac
+        shift 2
+    done
+}
+
 # ----------------------------------------------------------------------
 # ----------------------------------------------------------------------
 # library functions
@@ -228,9 +243,9 @@ worker_system_misc ()
 # separate lib and creating a remote lib sourcing function in future
 
 # ----------------------------------------------------------------------
-# lib-archproto
+# lib-utilities
 # ----------------------------------------------------------------------
-# functions to support archproto procedure itself
+# gneral utility functions
 
 d() { debug PROCEDURE "$1"; }
 dstate() { d "ARCHPROTO STATECHK: $1 is currently: ${!1}"; }
@@ -298,21 +313,12 @@ set_profile_or_default_values ()
     done
 }
 
-process_args ()
-{
-    dfunc
-    var_AUTOMATIC_PROFILE=
-    while [[ -n $1 ]]
-    do
-        case $1 in
-            -c) [[ -n "$2" ]] && var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
-            -r) [[ -n "$2" ]] && var_REPO_TYPE=$2 || die_error "You must specify a repository type of git, hg, or svn with the -r flag." ;;
-            *) usage && exit 5 ;;
-        esac
-        shift 2
-    done
-}
 
+# ----------------------------------------------------------------------
+# lib-fileprocessing
+# ----------------------------------------------------------------------
+# functions related to loading and processing configuration profiles
+#
 source_and_overlay()
 {
     # TODO: consider refactoring this to an array
@@ -420,6 +426,7 @@ make_local ()
         repo_local="$var_TEMP_DIR/${repo_remote:$(expr "$repo_remote" : 'https*://')}"
     done; die_error "failed to download repo from path $1"
 }
+
 update_modulepaths_from_profilepath()
 {
     dfunc "$*"
@@ -481,6 +488,41 @@ load_profile()
     fi
 }
 
+select_profile ()
+{
+    true
+    # for future use in an interative procedure
+}
+
+# ----------------------------------------------------------------------
+# lib-profiles
+# ----------------------------------------------------------------------
+# functions to support archproto profiles
+
+depend_profile() {
+    #TODO: check array of previously loaded profiles; prevent infinite recursion
+    load_profile "$1";
+}
+add_package() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$*"; dstate TARGET_PACKAGES; }
+add_configs() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+="$*"; dstate CONFIG_CHANGES; }
+add_overlay()
+{
+    dfunc
+    if [[ -n "$*" ]]
+    then
+        for overlay_file in $*
+        do
+            var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}" # strip any leading slash (should have one) and add a double slash
+        done
+    fi
+    dstate var_OVERLAY_FILES;
+}
+system_misc() { dfunc; } # this can be overidden in a user profile (note that only final override executes)
+
+# ----------------------------------------------------------------------
+# lib-config
+# ----------------------------------------------------------------------
+# functions to work with configuration files and values
 write_configs()
 {
         dfunc
@@ -511,33 +553,8 @@ write_overlay()
         done
 }
 
-# ----------------------------------------------------------------------
-# lib-profiles
-# ----------------------------------------------------------------------
-# functions to support archproto profiles
-
-depend_profile() {
-    #TODO: check array of previously loaded profiles; prevent infinite recursion
-    load_profile "$1";
-}
-add_package() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$*"; dstate TARGET_PACKAGES; }
-add_configs() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+="$*"; dstate CONFIG_CHANGES; }
-add_overlay()
-{
-    dfunc
-    if [[ -n "$*" ]]
-    then
-        for overlay_file in $*
-        do
-            var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}" # strip any leading slash (should have one) and add a double slash
-        done
-    fi
-    dstate var_OVERLAY_FILES;
-}
-system_misc() { dfunc; } # this can be overidden in a user profile (note that only final override executes)
-
-# TODO: consider refactoring these with augeas
-get_config()
+# TODO: consider refactoring these configuration functions with augeas
+config_value_get()
 {
     # get_config /dir/sub/filename valuename [returnvariable] (returns value via echo or returnvariable if present)
     local  __returnvarname=${3:-}; local config_file="$1"; local config_name="$2"; local config_value=
@@ -551,16 +568,28 @@ get_config()
 # TODO: could make this (possibly too) clever by looking for commented out 
 # lines and reusing those, but it's probably better to spend that effort 
 # looking at augeas as a replacement
-set_config()
+config_value_set()
 {
     # set_config /config/file/path config_item_name config_item_value
     local config_file="$1"; local config_name="$2"; local config_value="$3"
     [[ ! -f "$config_file" ]] && show_warning "Missing config file" "Config file \"$config_file\" not found; skipping" && return 1
-    get_config "$1" "$2" current_value && sed -i "s+\(^\s*${config_name}=\).*$+\1\"${config_value}\"+" "${config_file}" \
+    config_value_get "$1" "$2" current_value && sed -i "s+\(^\s*${config_name}=\).*$+\1\"${config_value}\"+" "${config_file}" \
     || echo -e "\n${config_name}=\"${config_value}\" # automatically appended" >> "$config_file"
 }
 
+config ()
+{
+    method=$1
+    shift 1
+    case $method in
+        set|add) config_value_set $@ ;;
+        unset|remove|delete) config_value_unset $@ ;;
+    esac
+}
+
 set_config /tmp/testconf NEWVAL "a value"
+config set /tmp/testconf NEWVAL "a newer value"
+config set /tmp/testconf NEWVAL2 "another newer value"
 exit
 
 daemon add @daemonname
