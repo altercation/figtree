@@ -14,6 +14,10 @@
 # this allows a modular approach to creating arch aif profiles which can easily 
 # be stacked into master profile scripts
 
+# packages in archproto profiles will be sourced from the official arch repositories and, if not found,
+# will be sourced from AUR automatically (there should be no overlap between the official repos and
+# the AUR, by policy, so all package names should be unique).
+
 # archproto/automatic
 # aif procedure to install a various prototype configurations
 # including hardware prototypes for specific makes/models,
@@ -174,13 +178,17 @@ worker_configure ()
 
 worker_select_source ()
 {
+    # if the user has specified MIRROT & TARGET_REPOSITORIES, set here
+    # we could also allow them to specify cd/net (TODO: SOURCE has been retired, apparently. ask dieter about this.)
+    if [[ -z $MIRROR ]]
+    then
+                MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
+    fi
     if [[ -z $TARGET_REPOSITORIES ]]
     then
         if [ -d /repo/core ]; then
-                MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
                 TARGET_REPOSITORIES=(core 'file:///repo/$repo/$arch' extra $var_MIRRORLIST community $var_MIRRORLIST)
         else
-                MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
                 TARGET_REPOSITORIES=(core $var_MIRRORLIST extra $var_MIRRORLIST community $var_MIRRORLIST) 
         fi
     fi
@@ -256,6 +264,16 @@ debug_report_next()
     echo "================================================================================"
     echo "enter to continue..."
     read answer
+}
+
+strip_punct()
+{
+    local stripped="$*"; stripped="${stripped#[[:punct:]]}"; stripped="${stripped%[[:punct:]]}"; echo -n "$stripped"
+}
+
+unquote()
+{
+    local stripped="$*"; stripped="${stripped#\"}"; stripped="${stripped%\"}"; echo -n "$stripped"
 }
 
 set_profile_or_default_values ()
@@ -518,8 +536,41 @@ add_overlay()
 }
 system_misc() { dfunc; } # this can be overidden in a user profile (note that only final override executes)
 
-#set_value /etc/rc.conf valuename value
+# TODO: consider refactoring these with augeas
+get_config()
+{
+    # get_config /dir/sub/filename valuename [returnvariable] (returns value via echo or returnvariable if present)
+    local  __returnvarname=${3:-}; local config_file="$1"; local config_name="$2"; local config_value=
+    [[ ! -f "$config_file" ]] && die_error "Shouldn't reach this error: get_config failed to find config file \"$config_file\"; this should be checked in caller."
+    local config_line=$(egrep "^[[:space:]]*${config_name}" "${config_file}")
+    [[ -n $config_line ]] && config_value=`echo -n $config_line | sed "s/.*$config_name.*=[[:space:]]*\(.*\)[[:space:]]*$/\1/"` || return 1
+    config_value="$(unquote "$config_value")"
+    [[ ! "$__returnvarname" ]] && echo -n "$config_value" || eval $__returnvarname=\"$config_value\"
+}
 
+# TODO: could make this (possibly too) clever by looking for commented out 
+# lines and reusing those, but it's probably better to spend that effort 
+# looking at augeas as a replacement
+set_config()
+{
+    # set_config /config/file/path config_item_name config_item_value
+    local config_file="$1"; local config_name="$2"; local config_value="$3"
+    [[ ! -f "$config_file" ]] && show_warning "Missing config file" "Config file \"$config_file\" not found; skipping" && return 1
+    get_config "$1" "$2" current_value && sed -i "s+\(^\s*${config_name}=\).*$+\1\"${config_value}\"+" "${config_file}" \
+    || echo -e "\n${config_name}=\"${config_value}\" # automatically appended" >> "$config_file"
+}
+
+set_config /tmp/testconf NEWVAL "a value"
+exit
+
+daemon add @daemonname
+daemon remove
+daemon disable
+daemon background
+config add /dir/sub/file value
+config remove /dir/sub/file
+config remove
+#set_value /etc/rc.conf valuename value
 #set_config
 #unset_config
 #add_daemon
@@ -528,21 +579,10 @@ system_misc() { dfunc; } # this can be overidden in a user profile (note that on
 #remove_module
 #augeas_raw
 
-# TODO: consider refactoring this with augeas
-get_config()
-{
-    local config_file="$1"; local config_name="$2"; local config_value="$3"; local config_line=$(egrep "^[[:space:]]*${config_name}" "${config_file}")
-    [[ -n $config_line ]] && (echo -n $config_line | sed "s/.*$config_name.*=[[:space:]]*\(.*\)[[:space:]]*$/\1/"; return 0) || (return 1)
-}
-set_config()
-{
-:
-}
-#daemon_functions:
-#add set
-#remove
-#background
-#disable
+# ----------------------------------------------------------------------
+# lib-software
+# ----------------------------------------------------------------------
+# functions that override or augment aif core lib-software.sh
 
 installaur()
 {
@@ -563,12 +603,13 @@ installaur()
         cd $restore_dir
         rm -rf $var_TEMP_DIR/${aur_package}-install
     else
-        die_error "SHOULDN'T BE HERE: installaur passed a package that pacman can find"
+        die_error "SHOULDN'T BE HERE: installaur() has been passed a package that pacman can find as well: $aur_package"
     fi
 }
 
 # perform package installation to the target system
-# overriding the function in core lib-software.sh
+# overriding this function from aif core's lib-software.sh so that we can fail 
+# over to AUR install without having to specify if a package is AUR or not
 installpkg() {
         ALL_PACKAGES=
         [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
@@ -585,13 +626,12 @@ installpkg() {
                 [ -n "$ALL_PACKAGES" ] && ALL_PACKAGES="$ALL_PACKAGES $var_TARGET_PACKAGES"
                 [ -z "$ALL_PACKAGES" ] && ALL_PACKAGES=$var_TARGET_PACKAGES
         fi
-        ALL_PACKAGES=`echo "$ALL_PACKAGES perl-audio-mixer"` # DEBUG XXX
+        ALL_PACKAGES=`echo "$ALL_PACKAGES"`
         [ -z "$ALL_PACKAGES" ] && die_error "No packages/groups specified to install"
 
         target_special_fs on
 
-        # notify "Package installation will begin now.  You can watch the output in the progress window. Please be patient."
-        notify "Package installation will being now."
+        notify "Installing packages..."
         
         for package in $ALL_PACKAGES
         do

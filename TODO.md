@@ -1,3 +1,8 @@
+1. rename to final release name
+2. test on mercurial, svn
+3. test on other git servers
+4. add wget/ftp support?
+
 current:
 
 process_args (in automatic)
