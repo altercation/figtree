@@ -58,7 +58,9 @@ var_TEMP_DIR="${RUNTIME_DIR}/${var_ARCHPROTO_MODULE_NAME}-temp"
 var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
 [[ "$module" != "http" ]] && var_AIF_PROCEDURE_PATH="$procedure" || var_AIF_PROCEDURE_PATH="$2"
 var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_ARCHPROTO_PROCEDURE_SUBPATH*}"
-var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
+#for yaourt, which doesn't work due to not supporting pacman arguments we require, so I'm using a lib function
+#var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
+var_RUNTIME_REPOSITORIES=
 var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
 var_TARGET_GROUPS="base base-devel "
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
@@ -130,7 +132,7 @@ $var_AIF_PROCEDURE_PATH\n\
 worker_runtime_packages ()
 {
     $PACMAN -Sy pacman --noconfirm || return 1 # update pacman first to avoid having to run twice
-    for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
+    for pkg in $var_RUNTIME_PACKAGES; do inform "Installing $pkg for use by installer..."; $PACMAN -Sy --noconfirm --needed $pkg &>/dev/null || return 1; done
 #    PACMAN="pacman --config /tmp/pacman.conf"
 #    PACMAN_TARGET="yaourt --root /mnt"
 #    echo "PACMAN_TARGET is $PACMAN_TARGET"
