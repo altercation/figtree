@@ -131,10 +131,7 @@ worker_runtime_packages ()
     $PACMAN -Sy pacman --noconfirm || return 1 # update pacman first to avoid having to run twice
     for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
     PACMAN=yaourt
-    PACMAN=${PACMAN_TARGET/pacman//yaourt}
-    echo "p $PACMAN pt $PACMAN_TARGET"
-    exit
-    # TODO: change PACMAN and PACMAN_TARGET
+    PACMAN_TARGET="${PACMAN_TARGET/pacman//yaourt}"
     return 0
 }
 
