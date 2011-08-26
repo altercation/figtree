@@ -130,8 +130,8 @@ worker_runtime_packages ()
 {
     $PACMAN -Sy pacman --noconfirm || return 1 # update pacman first to avoid having to run twice
     for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
-    PACMAN=yaourt
-    PACMAN_TARGET="${PACMAN_TARGET//pacman/yaourt}"
+    PACMAN="pacman --config /tmp/pacman.conf"
+    PACMAN_TARGET="yaourt --root /mnt"
     echo "PACMAN_TARGET is $PACMAN_TARGET"
     exit
     return 0
@@ -177,29 +177,6 @@ worker_select_source ()
                 TARGET_REPOSITORIES=(core $var_MIRRORLIST extra $var_MIRRORLIST community $var_MIRRORLIST) 
         fi
     fi
-}
-
-debug_report_values()
-{
-    echo "================================================================================"
-    local valuelist=$@
-    for valname in $valuelist
-    do
-        echo "$valname=${!valname}"
-    done
-    echo "================================================================================"
-    echo "enter to continue..."
-    read answer
-}
-
-debug_report_next()
-{
-    echo "================================================================================"
-    echo "about to execute:"
-    echo "$*"
-    echo "================================================================================"
-    echo "enter to continue..."
-    read answer
 }
 
 worker_write_configs()
@@ -249,6 +226,29 @@ dfunc()
     # from (calling function and line number)
     [[ $1 ]] && local with_args=" with arguments \"$@\"" || local with_args=""
     d "ARCHPROTO FUNCTION: ${FUNCNAME[1]}() called at line ${BASH_LINENO[1]} by ${FUNCNAME[2]}${with_args}"
+}
+
+debug_report_values()
+{
+    echo "================================================================================"
+    local valuelist=$@
+    for valname in $valuelist
+    do
+        echo "$valname=${!valname}"
+    done
+    echo "================================================================================"
+    echo "enter to continue..."
+    read answer
+}
+
+debug_report_next()
+{
+    echo "================================================================================"
+    echo "about to execute:"
+    echo "$*"
+    echo "================================================================================"
+    echo "enter to continue..."
+    read answer
 }
 
 set_profile_or_default_values ()
@@ -494,7 +494,10 @@ write_overlay()
 # ----------------------------------------------------------------------
 # functions to support archproto profiles
 
-depend_profile() { load_profile "$1"; }
+depend_profile() {
+    #TODO: check array of previously loaded profiles; prevent infinite recursion
+    load_profile "$1";
+}
 add_package() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$*"; dstate TARGET_PACKAGES; }
 add_configs() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+="$*"; dstate CONFIG_CHANGES; }
 add_overlay()
@@ -527,3 +530,67 @@ get_config()
     local config_file="$1"; local config_name="$2"; local config_value="$3"; local config_line=$(egrep "^[[:space:]]*${config_name}" "${config_file}")
     [[ -n $config_line ]] && (echo -n $config_line | sed "s/.*$config_name.*=[[:space:]]*\(.*\)[[:space:]]*$/\1/"; return 0) || (return 1)
 }
+set_config()
+{
+}
+daemon_functions:
+add set
+remove
+background
+disable
+
+installaur()
+{
+# helper for our custom installpkg
+}
+
+# perform package installation to the target system
+# overriding the function in core lib-software.sh
+installpkg() {
+        ALL_PACKAGES=
+        [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
+        if [ -n "$var_TARGET_PACKAGES_EXCLUDE" ]
+        then
+                for excl in $var_TARGET_PACKAGES_EXCLUDE
+                do
+                        ALL_PACKAGES=${ALL_PACKAGES//$excl/}
+                done
+        fi
+
+        if [ -n "$var_TARGET_PACKAGES" ]
+        then
+                [ -n "$ALL_PACKAGES" ] && ALL_PACKAGES="$ALL_PACKAGES $var_TARGET_PACKAGES"
+                [ -z "$ALL_PACKAGES" ] && ALL_PACKAGES=$var_TARGET_PACKAGES
+        fi
+        ALL_PACKAGES=`echo $ALL_PACKAGES`
+        [ -z "$ALL_PACKAGES" ] && die_error "No packages/groups specified to install"
+
+        target_special_fs on
+
+        # notify "Package installation will begin now.  You can watch the output in the progress window. Please be patient."
+        notify "Package installation will being now."
+
+        echo "TMP_PACMAN_LOG: $TMP_PACMAN_LOG"
+        echo "ALL_PACKAGES: $ALL_PACKAGES"
+        exit
+        run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $ALL_PACKAGES" $TMP_PACMAN_LOG "Installing... Please Wait" 
+
+        local _result=''
+        if [ $CONTROLLED_EXIT -ne 0 ]; then
+                _result="Installation Failed (see errors below)"
+                echo -e "\nPackage Installation FAILED." >>$TMP_PACMAN_LOG
+        else
+                _result="Installation Complete"
+                echo -e "\nPackage Installation Complete." >>$TMP_PACMAN_LOG
+        fi
+
+        show_warning "$_result" "$TMP_PACMAN_LOG" text || return 1
+
+        target_special_fs off
+        sync
+
+        return $CONTROLLED_EXIT
+}
+
+
+
