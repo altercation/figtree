@@ -545,12 +545,6 @@ installaur()
         notify "$aur_package already installed; skipping"
     elif ! `pacman -Qs "^$aur_package$" &>/dev/null`
     then
-
-echo "$aur_package not found by packman -Qs"
-echo $(pacman -Qs "^$aur_package$")
-echo ">>>>>"
-exit
-
         rm -rf $var_TEMP_DIR/$aur_package*
         local restore_dir=`pwd`
         mkdir -p $var_TEMP_DIR/${aur_package}-install && cd $var_TEMP_DIR/${aur_package}-install
@@ -558,7 +552,9 @@ exit
         tar -xzvf "${aur_package}.tar.gz"
         cd "$aur_package"
         makepkg -s --asroot
+
         #$PACMAN_TARGET --noconfirm -S *.pkg.tar.xz
+
         echo "==================================================>>"
         echo "IN DIR $PWD"
         echo "==================================================>>"
@@ -612,7 +608,7 @@ installpkg() {
         do
             if [[ `pacman -Q "^$package$" &>/dev/null` ]]; then
                 inform "INSTALLATION: $package already installed; skipping"
-            elif `pacman -Qs "^$package$" &>/dev/null`
+            elif `pacman -Ss "^$package$" &>/dev/null`
             then
                 run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $package" $TMP_PACMAN_LOG "Installing $package..." 
             else
