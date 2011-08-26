@@ -134,7 +134,7 @@ $var_AIF_PROCEDURE_PATH\n\
 
 worker_runtime_packages ()
 {
-    $PACMAN -Sy pacman --noconfirm || return 1 # update pacman first to avoid having to run twice
+    inform "Checking for pacman updates..."; $PACMAN -Sy pacman --noconfirm &>/dev/null || return 1 # update pacman first to avoid having to run twice
     for pkg in $var_RUNTIME_PACKAGES; do inform "Installing $pkg for use by installer..."; $PACMAN -Sy --noconfirm --needed $pkg &>/dev/null || return 1; done
 #    PACMAN="pacman --config /tmp/pacman.conf"
 #    PACMAN_TARGET="yaourt --root /mnt"
