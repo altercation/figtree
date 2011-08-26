@@ -132,6 +132,8 @@ worker_runtime_packages ()
     for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
     PACMAN=yaourt
     PACMAN_TARGET="${PACMAN_TARGET//pacman/yaourt}"
+    echo "PACMAN_TARGET is $PACMAN_TARGET"
+    exit
     return 0
 }
 
