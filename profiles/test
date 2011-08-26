@@ -33,9 +33,10 @@ depend_profile systems/_make/_model
 # If you are unsure what to put here, just leave them blank or comment out.
 # Any values left blank/unset will receive default values
 #
-SOURCE=cd
-FILE_URL=file:///src/core/pkg
-SYNC_URL=
+# THESE ARE NO LONGER USED IN AIF DEVELOPMENT BRANCH!!!!
+# SOURCE=cd
+# FILE_URL=file:///src/core/pkg
+# SYNC_URL=
 
 # SYSTEM CONFIGURATION VALUES
 # =============================================================================

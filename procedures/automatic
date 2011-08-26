@@ -75,9 +75,11 @@ default_TESTVAL1="default value 2"
 
 # Install source defaults
 # again, these will be overridden by equivalent (sans default_) variables assigned in profiles
-default_SOURCE=cd
-default_FILE_URL=file:///src/core/pkg
-default_SYNC_URL= #'http://mirrors.kernel.org/archlinux/$repo/os/$arch'
+#
+# OK: these are *NOT* used in develop branch anymore...
+#default_SOURCE=net
+#default_FILE_URL=file:///src/core/pkg
+#default_SYNC_URL= #'http://mirrors.kernel.org/archlinux/$repo/os/$arch'
 
 if [ -d /repo/core ]; then
         TARGET_REPOSITORIES=(core 'file:///repo/$repo/$arch')
@@ -215,7 +217,7 @@ worker_install_packages()
 
     # target_prepare_pacman core extra community && installpkg
 #    target_prepare_pacman core extra community && echo ">>>>>>>>>>>>>>>RETURNED $?" && installpkg
-    target_prepare_pacman
+    target_prepare_pacman core extra community
     echo ">>>>>>>>>>>>>>>RETURNED $?"
     echo "press enter"
     read answer
