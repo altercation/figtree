@@ -75,28 +75,14 @@ default_NETWORK_PERSIST="no"
 default_NETWORKS=(main)
 
 # Install source defaults
-# again, these will be overridden by equivalent (sans default_) variables assigned in profiles
-#
-# OK: these are *NOT* used in develop branch anymore...
-#default_SOURCE=net
-#default_FILE_URL=file:///src/core/pkg
-#default_SYNC_URL= #'http://mirrors.kernel.org/archlinux/$repo/os/$arch'
-
+# $var_MIRRORLIST is set by AIF in base procedure unless it's been overridden somewhere
 if [ -d /repo/core ]; then
-        MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
-        TARGET_REPOSITORIES=(core 'file:///repo/$repo/$arch' extra $var_MIRRORLIST community $var_MIRRORLIST)
+        default_MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
+        default_TARGET_REPOSITORIES=(core 'file:///repo/$repo/$arch' extra $var_MIRRORLIST community $var_MIRRORLIST)
 else
-        MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
-        TARGET_REPOSITORIES=(core $var_MIRRORLIST extra $var_MIRRORLIST community $var_MIRRORLIST) # $var_MIRRORLIST is set by AIF in base procedure unless it's been overridden somewhere
+        default_MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
+        default_TARGET_REPOSITORIES=(core $var_MIRRORLIST extra $var_MIRRORLIST community $var_MIRRORLIST) 
 fi
-
-# Filesystem defaults
-# not critical
-# default_PART_ACCESS=dev # can be set to 'uuid', 'dev', 'label', or leave empty for 'dev'
-
-#if net is install source, we should if/then for sync_url presence?
-
-
 
 #phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile intro sysprep select_source)
 #phase_basics=()
@@ -256,12 +242,10 @@ debug_report_next()
     read answer
 }
 
-#worker_select_source ()
-#{
-#        true
-#        # set above, though maybe should be here?
-#        # TODO: consider moving the assignment here and using defaults with optional user profile overrides
-#}
+worker_select_source ()
+{
+    set_values_with_default_fallbacks="MIRROR TARGET_REPOSITORIES"
+}
 
 worker_install_packages()
 {
