@@ -70,8 +70,9 @@ default_KEYMAP="us"
 default_CONSOLEFONT=
 default_CONSOLEMAP=
 default_USECOLOR="yes"
-default_TESTVAL1="default value 1"
-default_TESTVAL1="default value 2"
+default_HOSTNAME=""
+default_NETWORK_PERSIST="no"
+default_NETWORKS=(main)
 
 # Install source defaults
 # again, these will be overridden by equivalent (sans default_) variables assigned in profiles
@@ -81,8 +82,9 @@ default_TESTVAL1="default value 2"
 #default_FILE_URL=file:///src/core/pkg
 #default_SYNC_URL= #'http://mirrors.kernel.org/archlinux/$repo/os/$arch'
 
-if [ -d /XXX/repo/core ]; then
-        TARGET_REPOSITORIES=(core 'file:///repo/$repo/$arch')
+if [ -d /repo/core ]; then
+        MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
+        TARGET_REPOSITORIES=(core 'file:///repo/$repo/$arch' extra $var_MIRRORLIST community $var_MIRRORLIST)
 else
         MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
         TARGET_REPOSITORIES=(core $var_MIRRORLIST extra $var_MIRRORLIST community $var_MIRRORLIST) # $var_MIRRORLIST is set by AIF in base procedure unless it's been overridden somewhere
