@@ -2,9 +2,17 @@
 
 # Ethan Schoonover <es@ethanschoonover.com>
 
-# command line tests:
+# Please see the http://ethanschoonover.com/archproto for details and usage
+
+# command line tests (don't forget -d for debugging):
 # aif -p http://github.com/altercation/archproto/raw/master/procedures/automatic -c systems/lenovo/x220
 # aif -p archproto/automatic -c https://github.com/altercation/archproto/systems/lenovo/x220/profile
+# aif -p archproto/automatic -c systems/lenovo/x220/profile
+
+# archproto is an aif module to install a "nested" series of scope limited 
+# (hardware, environment, user) aif profiles which may be local or remote.
+# this allows a modular approach to creating arch aif profiles which can easily 
+# be stacked into master profile scripts
 
 # archproto/automatic
 # aif procedure to install a various prototype configurations
@@ -36,7 +44,8 @@
 # procedure specific definitions
 # ----------------------------------------------------------------------
 
-[[ "$NOFAILSAFE" != "1" && ! -e /arch ]] && die_error "FAILSAFE TRIPPED: no /arch directory present, looks like an installed system\nOverride this by: \`export NOFAILSAFE=1\`"
+[[ "$NOFAILSAFE" != "1" && ! -e /arch ]] \
+    && die_error "FAILSAFE TRIPPED: no /arch directory present, looks like an installed system\nOverride this by: \`export NOFAILSAFE=1\`"
 
 depend_procedure core automatic # most of automatic fits our needs, up top so we can override the phases and values it sets below
 
@@ -49,7 +58,6 @@ var_DOWNLOADS_DIR="${RUNTIME_DIR}/${var_ARCHPROTO_MODULE_NAME}-downloads"
 var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
 [[ "$module" != "http" ]] && var_AIF_PROCEDURE_PATH="$procedure" || var_AIF_PROCEDURE_PATH="$2"
 var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_ARCHPROTO_PROCEDURE_SUBPATH*}"
-# var_RUNTIME_REPOSITORIES=(core "http://mirrors.kernel.org/archlinux/core/os/$var_ARCH" archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
@@ -104,62 +112,6 @@ read -r -d '' var_ARGS_USAGE <<-'EOF'
                     and aif will automatically source the system profile from:
 EOF
 
-
-
-## perform package installation to the target system
-#installpkg() {
-#        ALL_PACKAGES=
-#        [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
-#        if [ -n "$var_TARGET_PACKAGES_EXCLUDE" ]
-#        then
-#                for excl in $var_TARGET_PACKAGES_EXCLUDE
-#                do
-#                        ALL_PACKAGES=${ALL_PACKAGES//$excl/}
-#                done
-#        fi
-#
-#        if [ -n "$var_TARGET_PACKAGES" ]
-#        then
-#                [ -n "$ALL_PACKAGES" ] && ALL_PACKAGES="$ALL_PACKAGES $var_TARGET_PACKAGES"
-#                [ -z "$ALL_PACKAGES" ] && ALL_PACKAGES=$var_TARGET_PACKAGES
-#        fi
-#        ALL_PACKAGES=`echo $ALL_PACKAGES`
-#        [ -z "$ALL_PACKAGES" ] && die_error "No packages/groups specified to install"
-#
-#        target_special_fs on
-#
-#        notify "Package installation will begin now.  You can watch the output in the progress window. Please be patient."
-#
-#        run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $ALL_PACKAGES" $TMP_PACMAN_LOG "Installing... Please Wait" 
-#
-#        local _result=''
-#        if [ $CONTROLLED_EXIT -ne 0 ]; then
-#                _result="Installation Failed (see errors below)"
-#                echo -e "\nPackage Installation FAILED." >>$TMP_PACMAN_LOG
-#        else
-#                _result="Installation Complete"
-#                echo -e "\nPackage Installation Complete." >>$TMP_PACMAN_LOG
-#        fi
-#
-#        show_warning "$_result" "$TMP_PACMAN_LOG" text || return 1
-#
-#        target_special_fs off
-#        sync
-#
-#        return $CONTROLLED_EXIT
-#}
-#
-
-
-
-
-
-
-
-
-
-
-
 # ----------------------------------------------------------------------
 # procedure workers
 # ----------------------------------------------------------------------
@@ -178,14 +130,16 @@ worker_runtime_packages ()
 {
     $PACMAN -Sy pacman --noconfirm || return 1 # update pacman first to avoid having to run twice
     for pkg in $var_RUNTIME_PACKAGES; do $PACMAN -Sy --noconfirm --needed $pkg || return 1; done
-    #PACMAN=yaourt
+    PACMAN=yaourt
+    PACMAN=${PACMAN_TARGET/pacman//yaourt}
+    echo "p $PACMAN pt $PACMAN_TARGET"
+    exit
     # TODO: change PACMAN and PACMAN_TARGET
     return 0
 }
 
 worker_configure ()
 {
-    
     inform "Starting system configuration and profile load sequence..."
 
     var_UI_TYPE=${arg_ui_type:-cli}
@@ -200,7 +154,8 @@ worker_configure ()
     [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
     [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
 
-    # we set default values above so can skip this check
+    # we set default values for select_source following worker_configure, so 
+    # can skip this check. Retained here for reference.
     # [ -z "$TARGET_REPOSITORIES" ] && die_error "You did not specify \$TARGET_REPOSITORIES"
 
     var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
@@ -209,6 +164,20 @@ worker_configure ()
     var_PARTITIONS=$PARTITIONS
     var_BLOCKDATA=$BLOCKDATA
     set_profile_or_default_values "LOCALE DAEMON_LOCALE HARDWARECLOCK TIMEZONE KEYMAP CONSOLEFONT CONSOLEMAP USECOLOR"
+}
+
+worker_select_source ()
+{
+    if [[ -z $TARGET_REPOSITORIES ]]
+    then
+        if [ -d /repo/core ]; then
+                MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
+                TARGET_REPOSITORIES=(core 'file:///repo/$repo/$arch' extra $var_MIRRORLIST community $var_MIRRORLIST)
+        else
+                MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
+                TARGET_REPOSITORIES=(core $var_MIRRORLIST extra $var_MIRRORLIST community $var_MIRRORLIST) 
+        fi
+    fi
 }
 
 debug_report_values()
@@ -232,50 +201,6 @@ debug_report_next()
     echo "================================================================================"
     echo "enter to continue..."
     read answer
-}
-
-worker_select_source ()
-{
-    if [[ -z $TARGET_REPOSITORIES ]]
-    then
-        if [ -d /repo/core ]; then
-                MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
-                TARGET_REPOSITORIES=(core 'file:///repo/$repo/$arch' extra $var_MIRRORLIST community $var_MIRRORLIST)
-        else
-                MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
-                TARGET_REPOSITORIES=(core $var_MIRRORLIST extra $var_MIRRORLIST community $var_MIRRORLIST) 
-        fi
-    fi
-}
-
-worker_install_packages()
-{
-    inform "Package installation started..."
-    # from dieter's examples in unofficial subdir of aif github repo
-    # better to do this here rather than redefine PACMAN & PACMAN_TARGET?
-#    PACMAN_BACKUP=$PACMAN
-#    PACMAN_TARGET_BACKUP=$PACMAN_TARGET
-#    PACMAN=${PACMAN//pacman/yaourt}
-#    PACMAN_TARGET=${PACMAN_TARGET//pacman/yaourt}
-
-    debug_report_values "TARGET_REPOSITORIES MIRROR SOURCE FILE_URL SYNC_URL var_RUNTIME_REPOSITORIES var_MIRRORLIST var_PKG_SOURCE_TYPE var_FILE_URL var_SYNC_URL var_TARGET_DIR var_TARGET_PACKAGES"
-
-    # target_prepare_pacman core extra community && installpkg
-#    target_prepare_pacman core extra community && echo ">>>>>>>>>>>>>>>RETURNED $?" && installpkg
-    #target_prepare_pacman core extra community
-    target_prepare_pacman
-    echo ">>>>>>>>>>>>>>>RETURNED $?"
-    echo "press enter"
-    read answer
-    installpkg
-
-    debug_report_values "TARGET_REPOSITORIES MIRROR SOURCE FILE_URL SYNC_URL var_RUNTIME_REPOSITORIES var_MIRRORLIST var_PKG_SOURCE_TYPE var_FILE_URL var_SYNC_URL var_TARGET_DIR var_TARGET_PACKAGES"
-
-#    target_prepare_pacman core extra community
-#    [[ -n "$TARGET_PACKAGES" ]] && installpkg || die_error "No packages listed for installation!"
-    
-    #PACMAN=$PACMAN_BACKUP
-    #PACMAN_TARGET=$PACMAN_TARGET_BACKUP
 }
 
 worker_write_configs()
