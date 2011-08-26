@@ -62,8 +62,10 @@ var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_ARCHPROTO_PROCEDURE_SUBPATH*}
 #var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_REPOSITORIES=
 #var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
-var_RUNTIME_PACKAGES="git" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
-var_TARGET_GROUPS="base base-devel "
+#var_RUNTIME_PACKAGES="git" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
+# added in base-devel in case we download anything that requires it from AUR
+var_RUNTIME_PACKAGES="git gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config"
+var_TARGET_GROUPS="base"
 var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
 
 # rc/config default values if not set previously or by user

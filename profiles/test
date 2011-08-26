@@ -74,8 +74,7 @@ RUNTIME_PACKAGES=
 # INSTALL PACKAGES
 # =============================================================================
 # TARGET_GROUPS: all packages in this group will be installed. This defaults to 
-# both base and base-devel (base-devel is added by archproto) if no group and 
-# no packages are specified)
+# base if no group and no packages are specified.
 # example: TARGET_GROUPS=base
 TARGET_GROUPS=
 # Exclude these packages if they are member of one of the groups in 
