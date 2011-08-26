@@ -167,8 +167,6 @@ worker_configure ()
     var_PARTITIONS=$PARTITIONS
     var_BLOCKDATA=$BLOCKDATA
     var_TARGET_GROUPS+=" $TARGET_GROUPS" # TODO: smarter add to avoid duplicates
-    echo "$var_TARGET_GROUPS +++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-    read answer
     set_profile_or_default_values "LOCALE DAEMON_LOCALE HARDWARECLOCK TIMEZONE KEYMAP CONSOLEFONT CONSOLEMAP USECOLOR"
 }
 
@@ -561,6 +559,15 @@ installaur()
         makepkg -s --asroot
 
         #$PACMAN_TARGET --noconfirm -S *.pkg.tar.xz
+        echo "===================================================="
+        echo "current dir is $PWD and ls is:"
+        ls
+        echo "===================================================="
+        echo "pacman -Qs make"
+        pacman -Qs make
+        $PACMAN_TARGET -Qs make
+        echo "===================================================="
+        read answer
 
         run_controlled pacman_installaur "$PACMAN_TARGET --noconfirm -S *.pkg.tar.xz" $TMP_PACMAN_LOG "Installing $aur_package..." 
         cd $restore_dir
