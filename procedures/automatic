@@ -81,11 +81,11 @@ default_TESTVAL1="default value 2"
 #default_FILE_URL=file:///src/core/pkg
 #default_SYNC_URL= #'http://mirrors.kernel.org/archlinux/$repo/os/$arch'
 
-if [ -d /repo/core ]; then
+if [ -d /XXX/repo/core ]; then
         TARGET_REPOSITORIES=(core 'file:///repo/$repo/$arch')
 else
         MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
-        TARGET_REPOSITORIES=(core $var_MIRRORLIST) # $var_MIRRORLIST is set by AIF
+        TARGET_REPOSITORIES=(core $var_MIRRORLIST) # $var_MIRRORLIST is set by AIF in base procedure unless it's been overridden somewhere
 fi
 
 # Filesystem defaults
@@ -125,6 +125,62 @@ read -r -d '' var_ARGS_USAGE <<-'EOF'
 
                     and aif will automatically source the system profile from:
 EOF
+
+
+
+## perform package installation to the target system
+#installpkg() {
+#        ALL_PACKAGES=
+#        [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
+#        if [ -n "$var_TARGET_PACKAGES_EXCLUDE" ]
+#        then
+#                for excl in $var_TARGET_PACKAGES_EXCLUDE
+#                do
+#                        ALL_PACKAGES=${ALL_PACKAGES//$excl/}
+#                done
+#        fi
+#
+#        if [ -n "$var_TARGET_PACKAGES" ]
+#        then
+#                [ -n "$ALL_PACKAGES" ] && ALL_PACKAGES="$ALL_PACKAGES $var_TARGET_PACKAGES"
+#                [ -z "$ALL_PACKAGES" ] && ALL_PACKAGES=$var_TARGET_PACKAGES
+#        fi
+#        ALL_PACKAGES=`echo $ALL_PACKAGES`
+#        [ -z "$ALL_PACKAGES" ] && die_error "No packages/groups specified to install"
+#
+#        target_special_fs on
+#
+#        notify "Package installation will begin now.  You can watch the output in the progress window. Please be patient."
+#
+#        run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $ALL_PACKAGES" $TMP_PACMAN_LOG "Installing... Please Wait" 
+#
+#        local _result=''
+#        if [ $CONTROLLED_EXIT -ne 0 ]; then
+#                _result="Installation Failed (see errors below)"
+#                echo -e "\nPackage Installation FAILED." >>$TMP_PACMAN_LOG
+#        else
+#                _result="Installation Complete"
+#                echo -e "\nPackage Installation Complete." >>$TMP_PACMAN_LOG
+#        fi
+#
+#        show_warning "$_result" "$TMP_PACMAN_LOG" text || return 1
+#
+#        target_special_fs off
+#        sync
+#
+#        return $CONTROLLED_EXIT
+#}
+#
+
+
+
+
+
+
+
+
+
+
 
 # ----------------------------------------------------------------------
 # procedure workers
@@ -198,12 +254,12 @@ debug_report_next()
     read answer
 }
 
-worker_select_source ()
-{
-        true
-        # set above, though maybe should be here?
-        # TODO: consider moving the assignment here and using defaults with optional user profile overrides
-}
+#worker_select_source ()
+#{
+#        true
+#        # set above, though maybe should be here?
+#        # TODO: consider moving the assignment here and using defaults with optional user profile overrides
+#}
 
 worker_install_packages()
 {
