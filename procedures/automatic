@@ -592,7 +592,7 @@ installpkg() {
 
         for package in $ALL_PACKAGES
         do
-            if [[ `pacman -Q "^$package$"` ]]; then
+            if [[ `pacman -Q "^$package$" &>/dev/null` ]]; then
                 inform "INSTALLATION: $package already installed; skipping"
             elif `pacman -Qs "^$package$" &>/dev/null`
             then
