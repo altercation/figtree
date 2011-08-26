@@ -236,7 +236,6 @@ debug_report_next()
 
 worker_select_source ()
 {
-    debug_report_values "default_MIRROR default_TARGET_REPOSITORIES MIRROR TARGET_REPOSITORIES"
     if [[ -z $TARGET_REPOSITORIES ]]
     then
         if [ -d /repo/core ]; then
@@ -247,7 +246,6 @@ worker_select_source ()
                 TARGET_REPOSITORIES=(core $var_MIRRORLIST extra $var_MIRRORLIST community $var_MIRRORLIST) 
         fi
     fi
-    debug_report_values "default_MIRROR default_TARGET_REPOSITORIES MIRROR TARGET_REPOSITORIES"
 }
 
 worker_install_packages()
@@ -264,7 +262,8 @@ worker_install_packages()
 
     # target_prepare_pacman core extra community && installpkg
 #    target_prepare_pacman core extra community && echo ">>>>>>>>>>>>>>>RETURNED $?" && installpkg
-    target_prepare_pacman core extra community
+    #target_prepare_pacman core extra community
+    target_prepare_pacman
     echo ">>>>>>>>>>>>>>>RETURNED $?"
     echo "press enter"
     read answer
