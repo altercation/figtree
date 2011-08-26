@@ -237,7 +237,7 @@ debug_report_next()
 worker_select_source ()
 {
     debug_report_values "default_MIRROR default_TARGET_REPOSITORIES MIRROR TARGET_REPOSITORIES"
-    if [[ -z TARGET_REPOSITORIES ]]
+    if [[ -z $TARGET_REPOSITORIES ]]
     then
         if [ -d /repo/core ]; then
                 MIRROR='ftp://mirrors.kernel.org/archlinux/$repo/os/$arch'
