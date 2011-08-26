@@ -532,16 +532,18 @@ get_config()
 }
 set_config()
 {
+:
 }
-daemon_functions:
-add set
-remove
-background
-disable
+#daemon_functions:
+#add set
+#remove
+#background
+#disable
 
 installaur()
 {
 # helper for our custom installpkg
+:
 }
 
 # perform package installation to the target system
