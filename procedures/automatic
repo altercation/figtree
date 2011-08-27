@@ -553,8 +553,7 @@ write_overlay()
         done
 }
 
-# TODO: consider refactoring these configuration functions with augeas
-config_value_get()
+get_value()
 {
     # get_config /dir/sub/filename valuename [returnvariable] (returns value via echo or returnvariable if present)
     local  __returnvarname=${3:-}; local config_file="$1"; local config_name="$2"; local config_value=
@@ -568,31 +567,36 @@ config_value_get()
 # TODO: could make this (possibly too) clever by looking for commented out 
 # lines and reusing those, but it's probably better to spend that effort 
 # looking at augeas as a replacement
-config_value_set()
+config_value()
 {
     # set_config /config/file/path config_item_name config_item_value
-    local config_file="$1"; shift; local config_name="$1"; shift; local config_value="$*"
+    local config_method="$1"; shift; local config_file="$1"; shift; local config_name="$1"; shift; local config_value="$*"
     [[ ! -f "$config_file" ]] && d "Missing config file" "Config file \"$config_file\" not found; skipping" && return 1
-    
     [[ "${config_value:0:1}" == "(" ]] && local quote= || quote='\"'
-    echo "for $config_value ... QUOTE IS CURRENTLY $quote"
-    if config_value_get "$config_file" "$config_name" current_value
+    if get_value "$config_file" "$config_name" current_value
     then
-        sed -i "s+\(^\s*${config_name}=\).*$+\1${quote}${config_value}${quote}+" "${config_file}"
+        case $config_method in
+            set)   sed -i "s+\(^\s*${config_name}=\).*$+\1${quote}${config_value}${quote}+" "${config_file}" ;;
+            unset) sed -i "s+\(^\s*${config_name}=.*$\)+#\1 # automatically commented out+" "${config_file}" ;;
+        esac
     else
-        echo -e "\n${config_name}=${quote:1:1}${config_value}${quote:1:1} # automatically appended" >> "$config_file"
+        case $config_method in
+            set)   echo -e "\n${config_name}=${quote:1:1}${config_value}${quote:1:1} # automatically appended" >> "$config_file" ;;
+            unset) : ;;
+        esac
     fi
 }
-config_list_set()
+
+config_list ()
 {
-    local config_file="$1"; shift; local config_name="$1"; shift; local config_list="$*"
+    local config_method="$1"; shift; local config_file="$1"; shift; local config_name="$1"; shift; local config_list="$*"
     [[ ! -f "$config_file" ]] && d "Missing config file" "Config file \"$config_file\" not found; skipping" && return 1
-    config_value_get "$config_file" "$config_name" current_list && current_list=$(strip_punct "$current_list") || return 1
+    get_value "$config_file" "$config_name" current_list && current_list=$(strip_punct "$current_list") || return 1
     for config_list_item in $config_list; do
         local new_list=
         for current_list_item in $current_list; do
             if [[ "$(strip_punct $config_list_item)" == "$(strip_punct $current_list_item)" ]]; then
-                new_list+="$config_list_item "
+                [[ "$config_method" == "set" ]] && new_list+="$config_list_item "
                 config_list_item=
             else
                 new_list+="$current_list_item "
@@ -602,93 +606,32 @@ config_list_set()
         current_list=$new_list
     done
     new_list="(${current_list% })"
-    echo "--${new_list[*]}--"
-    config_value_set "$config_file" "$config_name" "$new_list"
-}
-config_list_unset()
-{
-    local config_file="$1"; shift; local config_name="$1"; shift; local config_list="$*"
-    [[ ! -f "$config_file" ]] && d "Missing config file" "Config file \"$config_file\" not found; skipping" && return 1
-    config_value_get "$config_file" "$config_name" current_list && current_list=$(strip_punct "$current_list") || return 1
-    for config_list_item in $config_list; do
-        local new_list=
-        for current_list_item in $current_list; do
-            if [[ "$(strip_punct $config_list_item)" == "$(strip_punct $current_list_item)" ]]; then
-                # TODO: refactor this so we don't have two functions here
-                # new_list+="$config_list_item "
-                config_list_item=
-            else
-                new_list+="$current_list_item "
-            fi
-        done
-        new_list+="$config_list_item"
-        current_list=$new_list
-    done
-    new_list="(${current_list% })"
-    echo "--${new_list[*]}--"
-    config_value_set "$config_file" "$config_name" "$new_list"
+    config_value set "$config_file" "$config_name" "$new_list"
 }
 
+config_switch ()
+{
 # config set /config/file/path CONFIG_ITME_NAME config value here
-# final value string can be quoted *or* unquoted (if contains variables that you 
-# wish to retain as variable names, be sure to single quote)
-#
-# TODO: refactor the heck out of this
-config ()
-{
+# daemons add @daemonname !daemontoblacklist normaldaemon
     local method=$1; shift
-    local file_path="${var_TARGET_DIR}${1}"; shift
+    local target_value=$(echo -n ${FUNCNAME[1]} | tr a-z A-Z)
+    if [[ "$target_value" == "CONFIG" ]]
+    then
+        local target_function="config_value"
+        local file_path="${var_TARGET_DIR}${1}"; shift
+        local target_value="$1"; shift
+    else
+        local target_function="config_list"
+        local file_path="$var_TARGET_DIR/etc/rc.conf"
+    fi
     case $method in
-        set|add) config_value_set $file_path $* && inform "CONFIG SET: $*" || show_warning "FAILED CONFIG SET: $*" ;;
-        unset|remove|delete) config_value_unset $file_path $* && inform "CONFIG UNSET: $*" || show_warning "FAILED CONFIG UNSET: $*" ;;
+        set|add) $target_function set $file_path $target_value $* && inform "$target_value SET: $*" || show_warning "Config Write Error" "FAILED $target_value SET: $*" ;;
+        unset|remove|delete) "$target_function" unset $file_path $target_value $* && inform "$target_value UNSET: $*" || show_warning "FAILED $target_value UNSET: $*" ;;
     esac
 }
-daemons ()
-{
-    local method=$1; shift
-    local file_path="$var_TARGET_DIR/etc/rc.conf"
-    local array_name=DAEMONS
-    case $method in
-        set|add) config_list_set $file_path $array_name $* && inform "$array_name SET: $*" || show_warning "FAILED $array_name SET: $*" ;;
-        unset|remove|delete) config_list_unset $file_path $array_name $* && inform "$array_name UNSET: $*" || show_warning "FAILED $array_name UNSET: $*" ;;
-    esac
-}
-modules ()
-{
-    local method=$1; shift
-    local file_path="$var_TARGET_DIR/etc/rc.conf"
-    local array_name=MODULES
-    case $method in
-        set|add) config_list_set $file_path $array_name $* && inform "$array_name SET: $*" || show_warning "FAILED $array_name SET: $*" ;;
-        unset|remove|delete) config_list_unset $file_path $array_name $* && inform "$array_name UNSET: $*" || show_warning "FAILED $array_name UNSET: $*" ;;
-    esac
-}
-
-#config set /tmp/testconf NEWTEST a rather long value
-#config set /tmp/testconf VAL1 a rather long value
-#config_list_set /tmp/testconf DAEMONS !olddaemon @olddaemon2
-#config_list_unset /tmp/testconf DAEMONS olddaemon @olddaemon2
-daemons add @areallynewdaemon
-
-#config_list_set /tmp/testconf DAEMONS newitem olddaemon3 @newitem !olddaemon
-
-exit
-
-daemon add @daemonname
-daemon remove
-daemon disable
-daemon background
-config add /dir/sub/file value
-config remove /dir/sub/file
-config remove
-#set_value /etc/rc.conf valuename value
-#set_config
-#unset_config
-#add_daemon
-#remove_daemon
-#add_module
-#remove_module
-#augeas_raw
+config () { config_switch "$@"; }
+daemons () { config_switch "$@"; }
+modules () { config_switch "$@"; }
 
 # ----------------------------------------------------------------------
 # lib-software
