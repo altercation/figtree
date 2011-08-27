@@ -531,6 +531,7 @@ package() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$*"; dstate TARGET_PACKAGE
 config () { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate CONFIG_CHANGES; }
 daemons() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_daemons $*"); dstate CONFIG_CHANGES; }
 modules() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstate CONFIG_CHANGES; }
+networks(){ dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_networks $*"); dstate CONFIG_CHANGES; }
 overlay() { dfunc; [[ -n "$*" ]] && for overlay_file in $*; do var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}"; done; dstate var_OVERLAY_FILES; }
 addmisc() { dfunc; [[ -n "$*" ]] && MISC_COMMANDS+=("$*"); dstate MISC_COMMANDS; }
 
@@ -642,6 +643,7 @@ config_switch ()
 _config () { config_switch "$@"; }
 _daemons () { config_switch "$@"; }
 _modules () { config_switch "$@"; }
+_networks () { config_switch "$@"; }
 
 # ----------------------------------------------------------------------
 # lib-software
