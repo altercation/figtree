@@ -100,7 +100,7 @@ default_NETWORKS=(main)
 phase_preparation=(intro runtime_network runtime_repositories runtime_packages configure select_source)
 phase_basics=(set_clock prepare_disks) # defaults, here for ref/override
 phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for ref/override
-phase_system+=(write_configs write_overlay system_misc) # archproto custom workers (see below)
+phase_system+=(write_configs write_overlay misc_commands) # archproto custom workers (see below)
 phase_finish=(msg_report) # defaults
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
@@ -197,22 +197,36 @@ worker_select_source ()
 worker_write_configs()
 {
     inform "Configuration write started"
-    write_configs $CONFIG_CHANGES
+    dfunc; for config_command in $CONFIG_CHANGES; do $config_command; done
 }
 
 worker_write_overlay()
 {
     inform "Overlay write started..."
-    # This is more problematic as we have to include the correct prefix path
-    # and make sure to source it properly if local/remote, etc.
-    # the add overlay files function will have to correctly assign a full path
-    write_overlay $var_OVERLAY_FILES
+    # TODO: consider just moving/copying *all* files in overlay without any specification, or perhaps allow a special overlay value of "*"
+    # TODO: we might need to set certain permissions, but i'd rather leave this for the misc step
+    #       i could also make the system_misc function or worker process an array of commands; here we use installs permissions arg
+    dfunc
+    echo "TARGET=$var_TARGET_DIR"
+    for overlay_file in $var_OVERLAY_FILES
+    do
+            # TODO: the following substitution performs differently in script vs command line;
+            # command line *requires* last slash to be escaped like this:
+            # from_path="${overlay_file/\/\//\/}"
+            # script *requires* last slash to *not* be escaped, so we use that here
+            from_path="${overlay_file/\/\///}"
+            to_path="$var_TARGET_DIR/${overlay_file#*\/\/}"
+            # TODO: test if permissions are retained via --preserve-context
+            # TODO: confirm backups are created correctly
+            install -C -D -S ".archproto.old" --preserve-context -v -T "$from_path" "$to_path" \
+            || die_error "failed to overlay file from \"$from_path\" to \"$to_path\""
+    done
 }
 
-worker_system_misc ()
+worker_misc_commands ()
 {
     inform "Misc. system additions started..."
-    system_misc
+    dfunc; for misc_command in $MISC_COMMANDS; do $misc_command; done
 }
 
 process_args ()
@@ -474,12 +488,25 @@ load_profile()
         # add to module paths (thus if we've donwloaded a repo, we'll check locally next time)
         [[ "${profile_type}" != "xrelative" ]] && update_modulepaths_from_profilepath "$profile_path"
         [[ -d "${profile_path}" ]] && profile_path="$profile_path/profile"
-        [[ -f "${profile_path}" ]] && source_and_overlay "$profile_path" || return 1
+        if [[ -f "${profile_path}" ]]
+        then
+            if $(echo -n "$var_LOADED_PROFILES" | grep -q "$profile_path")
+            then
+                show_warning "Profile load loop!" "The following profile has 
+                been previously sourced; sourcing again will result in a loop; 
+                skipping: $profile_path"
+            else
+                var_LOADED_PROFILES+="$profile_path "
+                source_and_overlay "$profile_path" && return 0 || return 1
+            fi
+        else
+            return 1
+        fi
     elif [[ "${profile_path:0:4}" == "http" ]]; then # remote url, could be http or https with this match
         if make_local $profile_path profile_path_local
         then
-                d "ARCHPROTO PROFILES: preparing to load profile $profile_path_local"
-                load_profile "$profile_path_local" ${profile_type:-http} || return 1
+                    d "ARCHPROTO PROFILES: preparing to load profile $profile_path_local"
+                    load_profile "$profile_path_local" ${profile_type:-http} || return 1
         else
                 die_error "should definitely not reach this error. there was a problem getting the local profile path from a remote repo."
         fi
@@ -503,55 +530,42 @@ depend_profile() {
     #TODO: check array of previously loaded profiles; prevent infinite recursion
     load_profile "$1";
 }
-add_package() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$*"; dstate TARGET_PACKAGES; }
-add_configs() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+="$*"; dstate CONFIG_CHANGES; }
-add_overlay()
-{
-    dfunc
-    if [[ -n "$*" ]]
-    then
-        for overlay_file in $*
-        do
-            var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}" # strip any leading slash (should have one) and add a double slash
-        done
-    fi
-    dstate var_OVERLAY_FILES;
-}
-system_misc() { dfunc; } # this can be overidden in a user profile (note that only final override executes)
+package() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$*"; dstate TARGET_PACKAGES; }
+config () { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate CONFIG_CHANGES; }
+daemons() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_daemons $*"); dstate CONFIG_CHANGES; }
+modules() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstate CONFIG_CHANGES; }
+overlay() { dfunc; [[ -n "$*" ]] && for overlay_file in $*; do var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}"; done; dstate var_OVERLAY_FILES; }
+addmisc() { dfunc; [[ -n "$*" ]] && MISC_COMMANDS+=("$*"); dstate MISC_COMMANDS; }
+
 
 # ----------------------------------------------------------------------
 # lib-config
 # ----------------------------------------------------------------------
 # functions to work with configuration files and values
-write_configs()
-{
-        dfunc
-        # iterate through array of config changes
-        # write changes using augeas or custom function
-}
+#write_configs() { dfunc; for config_command in $CONFIG_CHANGES; do $config_command; done }
 
-write_overlay()
-{
-        # TODO: consider just moving/copying *all* files in overlay without any specification, or perhaps allow a special overlay value of "*"
-        # TODO: we might need to set certain permissions, but i'd rather leave this for the misc step
-        #       i could also make the system_misc function or worker process an array of commands; here we use installs permissions arg
-        dfunc
-        echo "TARGET=$var_TARGET_DIR"
-        for overlay_file in $var_OVERLAY_FILES
-        do
-                # TODO: the following substitution performs differently in script vs command line;
-                # command line *requires* last slash to be escaped like this:
-                # from_path="${overlay_file/\/\//\/}"
-                # script *requires* last slash to *not* be escaped, so we use that here
-                from_path="${overlay_file/\/\///}"
-
-                to_path="$var_TARGET_DIR/${overlay_file#*\/\/}"
-                # TODO: test if permissions are retained via --preserve-context
-                # TODO: confirm backups are created correctly
-                install -C -D -S ".archproto.old" --preserve-context -v -T "$from_path" "$to_path" \
-                || die_error "failed to overlay file from \"$from_path\" to \"$to_path\""
-        done
-}
+#write_overlay()
+#{
+#        # TODO: consider just moving/copying *all* files in overlay without any specification, or perhaps allow a special overlay value of "*"
+#        # TODO: we might need to set certain permissions, but i'd rather leave this for the misc step
+#        #       i could also make the system_misc function or worker process an array of commands; here we use installs permissions arg
+#        dfunc
+#        echo "TARGET=$var_TARGET_DIR"
+#        for overlay_file in $var_OVERLAY_FILES
+#        do
+#                # TODO: the following substitution performs differently in script vs command line;
+#                # command line *requires* last slash to be escaped like this:
+#                # from_path="${overlay_file/\/\//\/}"
+#                # script *requires* last slash to *not* be escaped, so we use that here
+#                from_path="${overlay_file/\/\///}"
+#
+#                to_path="$var_TARGET_DIR/${overlay_file#*\/\/}"
+#                # TODO: test if permissions are retained via --preserve-context
+#                # TODO: confirm backups are created correctly
+#                install -C -D -S ".archproto.old" --preserve-context -v -T "$from_path" "$to_path" \
+#                || die_error "failed to overlay file from \"$from_path\" to \"$to_path\""
+#        done
+#}
 
 get_value()
 {
@@ -629,9 +643,9 @@ config_switch ()
         unset|remove|delete) "$target_function" unset $file_path $target_value $* && inform "$target_value UNSET: $*" || show_warning "FAILED $target_value UNSET: $*" ;;
     esac
 }
-config () { config_switch "$@"; }
-daemons () { config_switch "$@"; }
-modules () { config_switch "$@"; }
+_config () { config_switch "$@"; }
+_daemons () { config_switch "$@"; }
+_modules () { config_switch "$@"; }
 
 # ----------------------------------------------------------------------
 # lib-software
