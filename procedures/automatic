@@ -1,31 +1,32 @@
 #!/bin/bash
 
+# figtree; an Arch Linux AIF module to create conFIG TREEs from local or remote profiles
 # Ethan Schoonover <es@ethanschoonover.com>
 
-# Please see the http://ethanschoonover.com/archproto for details and usage
+# Please see the http://ethanschoonover.com/figtree for details and usage
 
 # command line tests (don't forget -d for debugging):
-# aif -p http://github.com/altercation/archproto/raw/master/procedures/automatic -c systems/lenovo/x220
-# aif -p archproto/automatic -c https://github.com/altercation/archproto/systems/lenovo/x220/profile
-# aif -p archproto/automatic -c systems/lenovo/x220/profile
+# aif -p http://github.com/altercation/figtree/raw/master/procedures/automatic -c systems/lenovo/x220
+# aif -p figtree/automatic -c https://github.com/altercation/figtree/systems/lenovo/x220/profile
+# aif -p figtree/automatic -c systems/lenovo/x220/profile
 
-# archproto is an aif module to install a "nested" series of scope limited 
+# figtree is an aif module to install a "nested" series of scope limited 
 # (hardware, environment, user) aif profiles which may be local or remote.
 # this allows a modular approach to creating arch aif profiles which can easily 
 # be stacked into master profile scripts
 
-# packages in archproto profiles will be sourced from the official arch repositories and, if not found,
+# packages in figtree profiles will be sourced from the official arch repositories and, if not found,
 # will be sourced from AUR automatically (there should be no overlap between the official repos and
 # the AUR, by policy, so all package names should be unique).
 
-# archproto/automatic
+# figtree/automatic
 # aif procedure to install a various prototype configurations
 # including hardware prototypes for specific makes/models,
 # environment prototypes for common wm/de configurations
 # application set prototypes (e.g. lightweight-cli apps)
 # user protytpes
 
-# also takes a user customized aif profile using archproto specific functions
+# also takes a user customized aif profile using figtree specific functions
 
 # defined herein:
 #
@@ -55,13 +56,13 @@ depend_procedure core automatic # most of automatic fits our needs, up top so we
 
 # set these after the depend_procedure to ensure we override any values therein
 # we will further override or add to some of the values below (RUNTIME_...) after sourcing profiles in worker_configure
-var_ARCHPROTO_MODULE_NAME=archproto # in case we need to change our script name 
-var_ARCHPROTO_PROCEDURE_SUBPATH=/procedures/automatic
-var_TEMP_DIR="${RUNTIME_DIR}/${var_ARCHPROTO_MODULE_NAME}-temp"
+var_MODULE_NAME=figtree # in case we need to change our script name 
+var_PROCEDURE_SUBPATH=/procedures/automatic
+var_TEMP_DIR="${RUNTIME_DIR}/${var_MODULE_NAME}-temp"
 [[ -e "$var_TEMP_DIR" ]] && rm -rf "$var_TEMP_DIR"; mkdir -p "$var_TEMP_DIR"
-var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for archproto/aif
+var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for figtree/aif
 [[ "$module" != "http" ]] && var_AIF_PROCEDURE_PATH="$procedure" || var_AIF_PROCEDURE_PATH="$2"
-var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_ARCHPROTO_PROCEDURE_SUBPATH*}"
+var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}"
 #for yaourt, which doesn't work due to not supporting pacman arguments we require, so I'm using a lib function
 #var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_REPOSITORIES=
@@ -100,7 +101,7 @@ default_NETWORKS=(main)
 phase_preparation=(intro runtime_network runtime_repositories runtime_packages configure select_source)
 phase_basics=(set_clock prepare_disks) # defaults, here for ref/override
 phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for ref/override
-phase_system+=(write_configs write_overlay misc_commands) # archproto custom workers (see below)
+phase_system+=(write_configs write_overlay misc_commands) # figtree custom workers (see below)
 phase_finish=(msg_report) # defaults
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
@@ -115,9 +116,9 @@ phase_finish=(msg_report) # defaults
 
 read -r -d '' var_ARGS_USAGE <<-'EOF'
 -s <make/model>:    Specify a make/model prototype AIF system profile to install. If specified as simply "make/model" the path of the 
-                    archproto module as specified in the -p parameter will be used. This allows for specifying the following:
+                    figtree module as specified in the -p parameter will be used. This allows for specifying the following:
 
-                        aif -p archproto/automatic -s lenovo/x120e
+                        aif -p figtree/automatic -s lenovo/x120e
 
                     and aif will automatically source the system profile from:
 EOF
@@ -131,7 +132,7 @@ worker_intro ()
 
 notify "\
 ===============================================================================\n\
-AIF archproto automatic procedure using initial profile:\n\
+AIF figtree automatic procedure using initial profile:\n\
 $var_AIF_PROCEDURE_PATH\n\
 ===============================================================================\n"
 }
@@ -219,7 +220,7 @@ worker_write_overlay()
             to_path="$var_TARGET_DIR/${overlay_file#*\/\/}"
             # TODO: test if permissions are retained via --preserve-context
             # TODO: confirm backups are created correctly
-            install -C -D -S ".archproto.old" --preserve-context -v -T "$from_path" "$to_path" \
+            install -C -D -S ".figtree.old" --preserve-context -v -T "$from_path" "$to_path" \
             || die_error "failed to overlay file from \"$from_path\" to \"$to_path\""
     done
 }
@@ -266,14 +267,14 @@ strip_punct() { local stripped="$*"; stripped="${stripped#[[:punct:]]}"; strippe
 unquote() { local stripped="$*"; stripped="${stripped#\"}"; stripped="${stripped%\"}"; echo -n "$stripped"; }
 
 d() { debug PROCEDURE "$1"; }
-dstate() { d "ARCHPROTO STATECHK: $1 is currently: ${!1}"; }
+dstate() { d "STATECHK: $1 is currently: ${!1}"; }
 dfunc()
 {
     # quick debug function, better info than "caller"
     # called without parameters at top of function; reports where it was called 
     # from (calling function and line number)
     [[ $1 ]] && local with_args=" with arguments \"$@\"" || local with_args=""
-    d "ARCHPROTO FUNCTION: ${FUNCNAME[1]}() called at line ${BASH_LINENO[1]} by ${FUNCNAME[2]}${with_args}"
+    d "FUNCTION: ${FUNCNAME[1]}() called at line ${BASH_LINENO[1]} by ${FUNCNAME[2]}${with_args}"
 }
 
 debug_report_values()
@@ -334,8 +335,9 @@ source_and_overlay()
     dfunc "$*"
     local revert_overlay=$var_OVERLAY_PATH
     var_OVERLAY_PATH="$(dirname "$1")/overlay"
-    source "$1" && inform "ARCHPROTO PROFILE: Successfully processed profile:\n${1#$var_TEMP_DIR}" \
-                || die_error "ARCHPROTO PROFILE: Failed to process profile \"$1\"."
+    inform "Sourcing profile:\n${1#$var_TEMP_DIR}"
+    source "$1" && inform "Successfully processed profile:\n${1#$var_TEMP_DIR}" \
+                || die_error "Failed to process profile \"$1\"."
     var_OVERLAY_PATH=$revert_overlay
 } 
 
@@ -391,8 +393,8 @@ make_local ()
     # strip infix out of remote path, allowing us to just use makelocal after this
     # all paths passed to this function must be treated as suspect as any of them
     # could be raw format paths. for example, this converts the following github url:
-    # PRE INFIX STRIP:  http://github.com/altercation/archproto/raw/master/procedures/automatic/systems/lenovo/x220
-    # POST INFIX STRIP: http://github.com/altercation/archproto/procedures/automatic/systems/lenovo/x220
+    # PRE INFIX STRIP:  http://github.com/altercation/figtree/raw/master/procedures/automatic/systems/lenovo/x220
+    # POST INFIX STRIP: http://github.com/altercation/figtree/procedures/automatic/systems/lenovo/x220
     full_path_remote=$(echo -n "$full_path_remote" | sed "s^$repo_infix^^")
 
     # at this point, we have cleaned up our full remote path and identified what kind of repo it is
@@ -404,8 +406,8 @@ make_local ()
     # need to be ready to handle it here
 
     # make a local path for the profile file for an initial file check and, failing that, cloning, for example:
-    # REMOTE:                       http://github.com/altercation/archproto/procedures/automatic/systems/lenovo/x220
-    # LOCAL:  /tmp/aif/archproto-temp/github.com/altercation/archproto/procedures/automatic/systems/lenovo/x220
+    # REMOTE:                       http://github.com/altercation/figtree/procedures/automatic/systems/lenovo/x220
+    # LOCAL:  /tmp/aif/figtree-temp/github.com/altercation/figtree/procedures/automatic/systems/lenovo/x220
     local full_path_local="$var_TEMP_DIR/${full_path_remote:$(expr "$full_path_remote" : 'https*://')}"
 
     # we can now use that profile path to clone the remote repo by cloning, failing, and trimming until we get down to the actual repo root.
@@ -456,7 +458,7 @@ update_modulepaths_from_profilepath()
                 for test_path in ${var_MODULE_PATHS[@]}; do [[ "$test_path" == "$module_path" ]] && return 0; done
                 # still here, add path to var_MODULE_PATHS
                 var_MODULE_PATHS=("$module_path" "${var_MODULE_PATHS[@]}")
-                d "ARCHPROTO STATECHK: var_MODULE_PATHS updated to: ${var_MODULE_PATHS[*]}"
+                d "STATECHK: var_MODULE_PATHS updated to: ${var_MODULE_PATHS[*]}"
                 return 0
             fi
         done
@@ -464,7 +466,7 @@ update_modulepaths_from_profilepath()
     done
     # if we are still here then we didn't find a "known subdir"... best to error out here, though another option is to just strip the last two / three 
     # path components. we could try to standardize all "known" subdir formats to: modulename/knownsubidr/category/specificprofile, eg:
-    # archproto/systems/lenovo/x220 or archproto/environments/xmonad/es
+    # figtree/systems/lenovo/x220 or figtree/environments/xmonad/es
     die_error "failed to find known subdirectory (one of ${var_KNOWN_SUBDIRS[@]}) in path $1;"
 }
 
@@ -500,7 +502,7 @@ load_profile()
     elif [[ "${profile_path:0:4}" == "http" ]]; then # remote url, could be http or https with this match
         if make_local $profile_path profile_path_local
         then
-                    d "ARCHPROTO PROFILES: preparing to load profile $profile_path_local"
+                    d "PROFILES: preparing to load profile $profile_path_local"
                     load_profile "$profile_path_local" ${profile_type:-http} || return 1
         else
                 die_error "should definitely not reach this error. there was a problem getting the local profile path from a remote repo."
@@ -519,7 +521,7 @@ select_profile ()
 # ----------------------------------------------------------------------
 # lib-profiles
 # ----------------------------------------------------------------------
-# functions to support archproto profiles
+# functions to support figtree profiles
 
 # load (possibly many, possibly a tree of) profiles, local, relative, or remote paths
 depend_profile() { load_profile "$1"; }
