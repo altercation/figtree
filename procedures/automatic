@@ -525,18 +525,14 @@ select_profile ()
 # lib-profiles
 # ----------------------------------------------------------------------
 # functions to support archproto profiles
-
-depend_profile() {
-    #TODO: check array of previously loaded profiles; prevent infinite recursion
-    load_profile "$1";
-}
+#
+depend_profile() { load_profile "$1"; }
 package() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$*"; dstate TARGET_PACKAGES; }
 config () { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate CONFIG_CHANGES; }
 daemons() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_daemons $*"); dstate CONFIG_CHANGES; }
 modules() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstate CONFIG_CHANGES; }
 overlay() { dfunc; [[ -n "$*" ]] && for overlay_file in $*; do var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}"; done; dstate var_OVERLAY_FILES; }
 addmisc() { dfunc; [[ -n "$*" ]] && MISC_COMMANDS+=("$*"); dstate MISC_COMMANDS; }
-
 
 # ----------------------------------------------------------------------
 # lib-config
