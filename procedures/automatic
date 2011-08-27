@@ -262,6 +262,9 @@ process_args ()
 # ----------------------------------------------------------------------
 # gneral utility functions
 
+strip_punct() { local stripped="$*"; stripped="${stripped#[[:punct:]]}"; stripped="${stripped%[[:punct:]]}"; echo -n "$stripped"; }
+unquote() { local stripped="$*"; stripped="${stripped#\"}"; stripped="${stripped%\"}"; echo -n "$stripped"; }
+
 d() { debug PROCEDURE "$1"; }
 dstate() { d "ARCHPROTO STATECHK: $1 is currently: ${!1}"; }
 dfunc()
@@ -296,15 +299,6 @@ debug_report_next()
     read answer
 }
 
-strip_punct()
-{
-    local stripped="$*"; stripped="${stripped#[[:punct:]]}"; stripped="${stripped%[[:punct:]]}"; echo -n "$stripped"
-}
-
-unquote()
-{
-    local stripped="$*"; stripped="${stripped#\"}"; stripped="${stripped%\"}"; echo -n "$stripped"
-}
 
 set_profile_or_default_values ()
 {
@@ -526,10 +520,17 @@ select_profile ()
 # lib-profiles
 # ----------------------------------------------------------------------
 # functions to support archproto profiles
-#
+
+# load (possibly many, possibly a tree of) profiles, local, relative, or remote paths
 depend_profile() { load_profile "$1"; }
-package() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$*"; dstate TARGET_PACKAGES; }
-packages(){ dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$*"; dstate TARGET_PACKAGES; }
+
+# the following are the main set of additional commands available to figtree profiles
+# and build up lists of commands that will be executed later by workers (thus the
+# commands that are represented in the profile aren't "truly" executed till the
+# appropriate phase/worker in aif).
+package() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$* "; dstate TARGET_PACKAGES; }
+packages(){ dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$* "; dstate TARGET_PACKAGES; }
+blacklist() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES_REMOVE+="$* "; dstate TARGET_PACKAGES; }
 config () { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate CONFIG_CHANGES; }
 daemons() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_daemons $*"); dstate CONFIG_CHANGES; }
 modules() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstate CONFIG_CHANGES; }
@@ -545,28 +546,15 @@ kernelparams(){ dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_kernelparams $*"); ds
 # functions to work with configuration files and values
 #write_configs() { dfunc; for config_command in $CONFIG_CHANGES; do $config_command; done }
 
-#write_overlay()
-#{
-#        # TODO: consider just moving/copying *all* files in overlay without any specification, or perhaps allow a special overlay value of "*"
-#        # TODO: we might need to set certain permissions, but i'd rather leave this for the misc step
-#        #       i could also make the system_misc function or worker process an array of commands; here we use installs permissions arg
-#        dfunc
-#        echo "TARGET=$var_TARGET_DIR"
-#        for overlay_file in $var_OVERLAY_FILES
-#        do
-#                # TODO: the following substitution performs differently in script vs command line;
-#                # command line *requires* last slash to be escaped like this:
-#                # from_path="${overlay_file/\/\//\/}"
-#                # script *requires* last slash to *not* be escaped, so we use that here
-#                from_path="${overlay_file/\/\///}"
-#
-#                to_path="$var_TARGET_DIR/${overlay_file#*\/\/}"
-#                # TODO: test if permissions are retained via --preserve-context
-#                # TODO: confirm backups are created correctly
-#                install -C -D -S ".archproto.old" --preserve-context -v -T "$from_path" "$to_path" \
-#                || die_error "failed to overlay file from \"$from_path\" to \"$to_path\""
-#        done
-#}
+# all _functions are identical to the non _ variants used in profile files.
+# The profile commands (config, daemons, etc.) that have _ equivalents are 
+# used to compile lists of _function commands
+_config () { config_switch "$@"; }
+_daemons () { config_switch "$@"; }
+_modules () { config_switch "$@"; }
+_networks () { config_switch "$@"; }
+_kernelparams () { kernel_parameter_write "$@"; }
+
 
 get_value()
 {
@@ -674,11 +662,6 @@ kernel_parameter_write()
     done
     return $boot_loader_changed_return
 }
-_config () { config_switch "$@"; }
-_daemons () { config_switch "$@"; }
-_modules () { config_switch "$@"; }
-_networks () { config_switch "$@"; }
-_kernelparams () { kernel_parameter_write "$@"; }
 
 # ----------------------------------------------------------------------
 # lib-software

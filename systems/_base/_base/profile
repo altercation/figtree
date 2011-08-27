@@ -49,7 +49,7 @@ overlay /usr/bin/rotate-screen
 # SOUND
 # -----------------------------------------------------------------------------
 packages alsa-utils alsa-oss alsa-equalizer
-daemon add @alsa
+daemons add @alsa
 overlays /var/lib/alsa/asound.state
 
 # -----------------------------------------------------------------------------
@@ -59,8 +59,7 @@ packages libdrm dri2proto xf86-video-intel
 packages xorg-server xorg-xinit xorg-utils xorg-server-utils xf86-input-synaptics
 packages mesa mesa-demos xorg-xlsfonts xdotool unclutter
 overlays /etc/drirc
-# this xorg.conf.d/90-monitor.conf is to fix lcd monitor dpi size
-overlays /etc/X11/xorg.conf.d/90-monitor.conf
+overlays /etc/X11/xorg.conf.d/90-monitor.conf # to fix lcd monitor dpi size
 
 ## TODO ... abstract to a function or stick in extras ##if ( ! grep -q 
 'MODULES="i915"' /etc/mkinitcpio.conf ); then
@@ -72,33 +71,3 @@ overlays /etc/X11/xorg.conf.d/90-monitor.conf
 # EXTRAS
 # -----------------------------------------------------------------------------
 
-# -----------------------------------------------------------------------------
-# POWER
-# -----------------------------------------------------------------------------
-# plus acpi input event handling for some hotkeys
-#
-## note that the sleep.d/90physlock is not system specific and should probably 
-## be in environment
-##                    '/etc/pm/sleep.d/90physlock' \
-## and my 01grub override in sleep.d is also best in environment or my own 
-## config as it is dependent on which bootloader is installed
-##                    '/etc/pm/sleep.d/01grub' \
-## finally, save-state is related to my own acpi handler.sh script (maybe 
-## pm-utils does this on it's own I can get rid of this) and should be here to 
-## properly handle lid button events
-#
-## add line to /etc/modprobe.d/modprobe.conf:
-## options thinkpad_acpi fan_control=1
-## newline="options thinkpad_acpi fan_control=1"
-## if ( ! grep -q "${newline}" /etc/modprobe.d/modprobe.conf ); then
-##     echo "${newline}" >> /etc/modprobe.d/modprobe.conf
-##     fi
-##     # add thinkpad_acpi to rc.conf (done above)
-##     # add thinkfan to rc.conf as daemon
-##     rc_set_daemon @thinkfan
-##     write_thinkfan_config
-##
-##     # tp_smapi not yet working on x220t?
-##     # TODO: monitor tp_smapi compatibility status
-##     #install_aur tp_smapi
-##     #rc_set_module tp_smapi
