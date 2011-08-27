@@ -1,0 +1,36 @@
+#!/bin/bash
+
+depend_profile systems/lenovo/x220
+depend_profile users/es
+depend_profile environment/xmonad/es
+depend_profile applications/cli/thebasics
+
+# SYSTEM CONFIG VALUES
+# =============================================================================
+LOCALE="en_US.UTF-8"
+DAEMON_LOCALE="no"
+HARDWARECLOCK="UTC"
+TIMEZONE="Canada/Pacific"
+KEYMAP="us"
+CONSOLEFONT=
+CONSOLEMAP=
+USECOLOR="yes"
+
+# FILESYSTEM CONFIGURATION
+# =============================================================================
+GRUB_DEVICE=/dev/sda
+PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
+BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
+/dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
+/dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
+
+# RUNTIME_REPOSITORIES / RUNTIME_PACKAGES
+# =============================================================================
+RUNTIME_REPOSITORIES=
+RUNTIME_PACKAGES=
+
+# INSTALL PACKAGES
+# =============================================================================
+TARGET_GROUPS=
+TARGET_PACKAGES_EXCLUDE=
+TARGET_PACKAGES=

@@ -1,0 +1,52 @@
+#!/bin/bash
+
+depend_profile systems/lenovo/x220
+depend_profile users/es
+depend_profile environments/xmonad/es
+depend_profile applications/cli/thebasics
+
+# SYSTEM CONFIG VALUES
+# =============================================================================
+LOCALE="en_US.UTF-8"
+DAEMON_LOCALE="no"
+HARDWARECLOCK="UTC"
+TIMEZONE="Canada/Pacific"
+KEYMAP="us"
+CONSOLEFONT=
+CONSOLEMAP=
+USECOLOR="yes"
+
+# FILESYSTEM CONFIGURATION
+# =============================================================================
+GRUB_DEVICE=/dev/sda
+PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
+BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
+/dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
+/dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
+
+# =============================================================================
+# Don't modify items below unless you have cause to. Rather, use the following
+# commands (here or in depend_profile config files):
+#
+# package add packagename [packagename...]
+# package remove packagename [packagename...] (same as blacklisting a package)
+# config  set /config/file/path VALUENAME "value to set"
+# config  unset /config/file/path VALUENAME (comments out the value)
+# daemons add daemonname [@daemonname] [!daemonname]
+# daemons remove daemonname [daemonname...]
+# modules add modulename [modulename...]
+# modules remove modulname [modulename...]
+# overlay /install/path/file (place in the overlay directory or use the overlay procedure)
+# addmisc 'command-goes-here'
+
+# =============================================================================
+# RUNTIME_REPOSITORIES / RUNTIME_PACKAGES
+# =============================================================================
+RUNTIME_REPOSITORIES=
+RUNTIME_PACKAGES=
+
+# INSTALL PACKAGES
+# =============================================================================
+TARGET_GROUPS=
+TARGET_PACKAGES_EXCLUDE=
+TARGET_PACKAGES=
