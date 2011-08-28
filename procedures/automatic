@@ -246,7 +246,8 @@ worker_write_configs()
 {
     inform "Configuration write started"
     echo ${CONFIG_CHANGES[@]} >> /tmp/ccdump.txt
-    dfunc; for config_command in ${CONFIG_CHANGES[@]}; do $config_command || echo "WWC FAILED $config_command"; done
+    dfunc; for config_command in ${CONFIG_CHANGES[@]}; echo $config_command; read answer
+        # || echo "WWC FAILED $config_command"; done
 
 }
 
