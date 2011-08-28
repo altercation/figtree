@@ -2,48 +2,44 @@
 
 # figtree; an Arch Linux AIF module to create conFIG TREEs from local or remote profiles
 # Ethan Schoonover <es@ethanschoonover.com>
-
 # Please see the http://ethanschoonover.com/figtree for details and usage
 
-# command line tests (don't forget -d for debugging):
-# aif -p http://github.com/altercation/figtree/raw/master/procedures/automatic -c systems/lenovo/x220
-# aif -p figtree/automatic -c https://github.com/altercation/figtree/systems/lenovo/x220/profile
-# aif -p figtree/automatic -c systems/lenovo/x220/profile
-
-# figtree is an aif module to install a "nested" series of scope limited 
-# (hardware, environment, user) aif profiles which may be local or remote.
-# this allows a modular approach to creating arch aif profiles which can easily 
-# be stacked into master profile scripts
-
-# packages in figtree profiles will be sourced from the official arch repositories and, if not found,
-# will be sourced from AUR automatically (there should be no overlap between the official repos and
-# the AUR, by policy, so all package names should be unique).
-
-# figtree/automatic
-# aif procedure to install a various prototype configurations
-# including hardware prototypes for specific makes/models,
-# environment prototypes for common wm/de configurations
-# application set prototypes (e.g. lightweight-cli apps)
-# user protytpes
-
-# also takes a user customized aif profile using figtree specific functions
-
-# defined herein:
-#
-# additional custom worker(s)
-# custom command line parameter handling
-# revised http remote module sourcing to enable overlay, etc.
-# revised profile/config source heuristic to be smart (but not too smart) about 
-# where to get the specified profiles from
-# addition to phases to include correct worker(s)
-#
-# we also define and redefine some lib functions, notably those related to 
-# loading libs, files, etc. The reason for these redefined functions is that we 
-# want to be able to source those file remotely, be smart (but not too smart) 
-# about the path searched for those files and enable loading new types of files 
-# such as the system prototype profiles. Finally we have to redefine these here 
-# rather than a library script because this is the only file we can load from 
-# aif remotely.
+# This procedure is similar to (and builds on) the standard AIF core automatic 
+# procedure. Indeed, it can be used as an almost seamless drop in replacement for 
+# it, though if your needs are met by the standard AIF core automatic procedure, 
+# it is recommended to use that as it has undergone considerably more testing.
+# 
+# figtree automatic differs from the core automatic procedure in a several respects:
+# 
+# 1. It can be run from a remote path.
+# 2. It can load both remote and local profiles.
+# 3. These profiles can be standard AIF profiles or "figtree profiles" which 
+#    support more complex system configuration at install time
+# 4. Figtree also supports installation of packages from the AUR automatically
+# 
+# While this may sound nice, please be aware that figtree is very experimental. 
+# It is entirely possible to think you are picking a fig and come away with 
+# a lemon, so please report bugs on the github tracker at:
+# 
+# http://github.com/altercation/figtree
+# 
+# figtree profiles use a handful of simple AIF related functions to add packages, 
+# system configuration variables, and complete system files during AIF 
+# installation. These profiles can be broken up into modular, scope independent 
+# files such as profiles for specific hardware, profiles for specific desktop 
+# environments, or user profiles. Each of these "scoped" profiles can be imported 
+# into a final "master" profile (though there is no fundamental difference 
+# between any of them).
+# 
+# # packages in figtree profiles will be sourced from the official arch repositories and, if not found,
+# # will be sourced from AUR automatically (there should be no overlap between the official repos and
+# # the AUR, by policy, so all package names should be unique).
+# 
+# command line examples (don't forget -d for debugging):
+# aif -p http://github.com/altercation/figtree/raw/master/procedures/automatic -c profiles/my-laptop
+# aif -p http://github.com/altercation/figtree/raw/master/procedures/automatic -c http://github.com/OTHERUSER/figtree/profiles/my-laptop
+# aif -p figtree/automatic -c https://github.com/altercation/figtree/profiles/my-laptop
+# aif -p figtree/automatic -c profiles/my-desktop
 
 # ----------------------------------------------------------------------
 # procedure specific definitions
@@ -60,7 +56,7 @@ var_MODULE_NAME=figtree # in case we need to change our script name
 var_PROCEDURE_SUBPATH=/procedures/automatic
 var_TEMP_DIR="${RUNTIME_DIR}/${var_MODULE_NAME}-temp"
 [[ -e "$var_TEMP_DIR" ]] && rm -rf "$var_TEMP_DIR"; mkdir -p "$var_TEMP_DIR"
-var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples) # standard subdirectory names for figtree/aif
+var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples peripherals) # standard subdirectory names for figtree/aif
 [[ "$module" != "http" ]] && var_AIF_PROCEDURE_PATH="$procedure" || var_AIF_PROCEDURE_PATH="$2"
 var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}"
 #for yaourt, which doesn't work due to not supporting pacman arguments we require, so I'm using a lib function
@@ -115,12 +111,45 @@ phase_finish=(msg_report) # defaults
 # ---------------------------------------------------------------------
 
 read -r -d '' var_ARGS_USAGE <<-'EOF'
--s <make/model>:    Specify a make/model prototype AIF system profile to install. If specified as simply "make/model" the path of the 
-                    figtree module as specified in the -p parameter will be used. This allows for specifying the following:
+Full AIF procedure: figtree automatic
 
-                        aif -p figtree/automatic -s lenovo/x120e
+Usage examples:
 
-                    and aif will automatically source the system profile from:
+(note that in the first example, the procedure must be sourced using the 
+raw/master remote path as AIF doesn't initially have git support. Once the 
+figtree procedure is running, the profile paths can (and should) omit the 
+raw/master path as in the second and third examples.
+
+aif -p http://github.com/altercation/figtree/raw/master/procedures/automatic -c profiles/my-laptop
+aif -p http://github.com/altercation/figtree/raw/master/procedures/automatic -c http://github.com/OTHERUSER/figtree/profiles/my-laptop
+aif -p figtree/automatic -c https://github.com/altercation/figtree/profiles/my-laptop
+aif -p figtree/automatic -c profiles/my-desktop
+aif -p figtree/automatic -c systems/lenovo/x220/profile
+
+Options:
+
+-c profile/path:    Specify a profile path.
+                    The path may specified in the following formats:
+
+                    relative path: profiles/my-laptop
+                    absolute path: ~/aif-files/figtree/profiles/my-laptop
+                    remote path:   http://github.com/name/repo/profiles/my-pc
+
+                    Note! If you have *already* sourced this procedure remotely 
+                    from a repository, it is fine to just use the relative path 
+                    pattern above (see first usage example above).
+
+-r repository-type  Specify the repository type.
+                    [NORMALLY YOU SHOULDN'T NEED TO USE THIS; PLEASE INFORM ME
+                    IF YOU FIND CAUSE - es@ethanschoonover.com]
+                    If sourcing from a remote repository, figtree can usually
+                    determine the type based on a simple heuristic. If it is
+                    failing to correcly identify the type of repository, you
+                    can specify the version control system here with one of:
+
+                    git
+                    mercurial (hs is an acceptable abbreviation)
+                    svn
 EOF
 
 # ----------------------------------------------------------------------
@@ -300,7 +329,6 @@ debug_report_next()
     read answer
 }
 
-
 set_profile_or_default_values ()
 {
     dfunc "$*"
@@ -322,7 +350,6 @@ set_profile_or_default_values ()
         fi
     done
 }
-
 
 # ----------------------------------------------------------------------
 # lib-fileprocessing
@@ -532,7 +559,7 @@ depend_profile() { load_profile "$1"; }
 # appropriate phase/worker in aif).
 package() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$* "; dstate TARGET_PACKAGES; }
 packages(){ dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$* "; dstate TARGET_PACKAGES; }
-blacklist() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES_REMOVE+="$* "; dstate TARGET_PACKAGES; }
+blacklist() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES_EXCLUDE+="$* "; dstate TARGET_PACKAGES; }
 config () { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate CONFIG_CHANGES; }
 daemons() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_daemons $*"); dstate CONFIG_CHANGES; }
 modules() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstate CONFIG_CHANGES; }
