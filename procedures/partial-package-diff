@@ -1,0 +1,122 @@
+#!/bin/bash
+
+# figtree; an Arch Linux AIF module to create conFIG TREEs from local or remote profiles
+# Ethan Schoonover <es@ethanschoonover.com>
+
+# partial procedure: partial-package-diff
+# load a profile (and any depend_profiles associated with it) and report
+# which currently installed packages are not included in the profile 
+# installation. Useful to determine what may be mising from your AIF/figtree
+# profile compared to your current system.
+
+# Please see the http://ethanschoonover.com/figtree for details and usage
+
+# ----------------------------------------------------------------------
+# procedure specific definitions
+# ----------------------------------------------------------------------
+
+depend_procedure figtree automatic
+
+var_OPTS_STRING="c:u:" #var_OPTS_STRING="c:s:e:u:a:r:"
+
+phase_preparation=(intro)
+phase_basics=(configure)
+phase_system=()
+phase_system+=(update_overlay)
+phase_finish=(msg_report)
+
+read -r -d '' var_ARGS_USAGE <<-'EOF'
+Partial AIF procedure: figtree partial-package-diff
+
+This procedure loads a figtree profile (and any depend_profiles associated with 
+it) and reports which *currently* installed packages are not included in the 
+profile installation. Useful to determine what may be mising from your AIF 
+figtree profile compared to your current system.
+
+Options:
+
+-c profile/path:    Specify a profile path. While the full figtree aif
+                    procedures can source and process remote or local 
+                    procedures, the figtree partial-package diff procedure
+                    must operate on a local procedure as it also allows
+                    updating. The path may specified in the following formats:
+
+                    relative path:  profiles/my-laptop
+                    absolute path: ~/aif-files/figtree/profiles/my-laptop
+
+                    the relative path will look for the "profiles" directory
+                    (in this example) in the same module directory as the 
+                    figtree partial procedure, for example:
+
+                    /usr/lib/aif/user/figtree/profiles/my-laptop
+
+-u                  Adds missing packages to the end of the profile specified
+                    using the -c command line argument as a single figtree 
+                    function (packages packagename [packagename]). While 
+                    convenient, it is best to subsequently place these packages 
+                    into more appropriate profiles or profile sections for the 
+                    sake of good organization.
+EOF
+
+# ----------------------------------------------------------------------
+# procedure workers
+# ----------------------------------------------------------------------
+
+worker_intro ()
+{
+
+notify "\
+===============================================================================\n\
+AIF figtree partial procedure: update overlay files\n\
+$var_AIF_PROCEDURE_PATH\n\
+===============================================================================\n"
+}
+
+worker_configure ()
+{
+    inform "Starting system configuration and profile load sequence..."
+    var_UI_TYPE=${arg_ui_type:-cli}
+    ui_init
+    [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
+    # here we import our profile(s) to allow default values to be overridden
+    load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $var_MODULE_PATHS"
+}
+
+worker_write_overlay()
+{
+    inform "Overlay write started..."
+    # TODO: consider just moving/copying *all* files in overlay without any specification, or perhaps allow a special overlay value of "*"
+    # TODO: we might need to set certain permissions, but i'd rather leave this for the misc step
+    #       i could also make the system_misc function or worker process an array of commands; here we use installs permissions arg
+    dfunc
+    echo "TARGET=$var_TARGET_DIR"
+    for overlay_file in $var_OVERLAY_FILES
+    do
+            # TODO: the following substitution performs differently in script vs command line;
+            # command line *requires* last slash to be escaped like this:
+            # from_path="${overlay_file/\/\//\/}"
+            # script *requires* last slash to *not* be escaped, so we use that here
+            from_path="${overlay_file/\/\///}"
+            to_path="$var_TARGET_DIR/${overlay_file#*\/\/}"
+            # TODO: test if permissions are retained via --preserve-context
+            # TODO: confirm backups are created correctly
+            install -C -D -S ".figtree.old" --preserve-context -v -T "$from_path" "$to_path" \
+            || die_error "failed to overlay file from \"$from_path\" to \"$to_path\""
+    done
+}
+
+process_args ()
+{
+    dfunc
+    var_AUTOMATIC_PROFILE=
+    while [[ -n $1 ]]
+    do
+        case $1 in
+            -c) [[ -n "$2" ]] && var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
+            -r) [[ -n "$2" ]] && var_REPO_TYPE=$2 || die_error "You must specify a repository type of git, hg, or svn with the -r flag." ;;
+            *) usage && exit 5 ;;
+        esac
+        shift 2
+    done
+}
+
