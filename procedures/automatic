@@ -45,36 +45,30 @@
 # procedure specific definitions
 # ----------------------------------------------------------------------
 
-[[ "$NOFAILSAFE" != "1" && ! -e /arch ]] \
-    && die_error "FAILSAFE TRIPPED: no /arch directory present, looks like an installed system\nOverride this by: \`export NOFAILSAFE=1\`"
+depend_procedure core automatic
 
-depend_procedure core automatic # most of automatic fits our needs, up top so we can override the phases and values it sets below
-
-var_MODULE_NAME=figtree # in case we need to change our script name 
+var_MODULE_NAME=figtree
 var_PROCEDURE_SUBPATH=/procedures/automatic
-var_TEMP_DIR="${RUNTIME_DIR}/${var_MODULE_NAME}-temp"; [[ -e "$var_TEMP_DIR" ]] && rm -rf "$var_TEMP_DIR"; mkdir -p "$var_TEMP_DIR"
+
+# TEMP DIR LOCATION/CREATION
+var_TEMP_DIR="${RUNTIME_DIR}/${var_MODULE_NAME}-temp"
+[[ -e "$var_TEMP_DIR" ]] && rm -rf "$var_TEMP_DIR"; mkdir -p "$var_TEMP_DIR"
 var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples peripherals filesystems) # figtree specific
-# TODO: this is not correct... $2 is not a good way to id the procedure value
-echo "\$procedure=$procedure"
-echo "\$module=$module"
-echo "\$*=$*"
-exit
-var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && || var_AIF_PROCEDURE_PATH="$2"
+var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && var_AIF_PROCEDURE_PATH="$2"
 var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}"
-#for yaourt, which doesn't work due to not supporting pacman arguments we require, so I'm using a lib function
-#var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
+var_OPTS_STRING="c:r:"
 var_RUNTIME_REPOSITORIES=
-#var_RUNTIME_PACKAGES="git yaourt" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
-#var_RUNTIME_PACKAGES="git" # var_RUNTIME_PACKAGES="yaourt git mercurial svn augeas"
-# added in base-devel in case we download anything that requires it from AUR
-var_RUNTIME_PACKAGES="git gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config"
+var_RUNTIME_PACKAGES="git mercurial svn gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config"
 var_TARGET_GROUPS="base"
-var_OPTS_STRING="c:r:" #var_OPTS_STRING="c:s:e:u:a:r:"
+# follow two lines for reference only. works to source yaourt but yaourt 
+# doesn't have requisite pacman configuration support for target installation
+# var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
+# var_RUNTIME_PACKAGES="yaourt git mercurial svn gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config"
 
 # rc/config default values if not set previously or by user
 # note that in user created profiles these are specified by the same variable names without the "default_" prefix. See the _template profiles for details
 # these are not prefixed by "var_" so we remember that these are not used elsewhere in the procedure (other than one-time default assignment)
-# 
+ 
 # this is different from items with a var_ previx in an important way: defaul_ variables can be completely overriden, as I use them here
 # while var_ varialbes (such as var_RUNTIME_REPOSITORIES) that are set above in this procedure are retained (and possibly added to user values)
 # so, for example, var_RUNTIME_REPOSITORIES retains the value assigned above and takes any extra values the user has assigned to RUNTIME_REPOSITORIES
@@ -99,7 +93,7 @@ default_NETWORKS=(main)
 phase_preparation=(intro runtime_network runtime_repositories runtime_packages configure select_source)
 phase_basics=(set_clock prepare_disks) # defaults, here for ref/override
 phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for ref/override
-phase_system+=(write_configs write_overlay misc_commands) # figtree custom workers (see below)
+phase_system+=(write_configs write_overlay misc_commands) # module specific custom workers (see below)
 phase_finish=(msg_report) # defaults
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
@@ -182,8 +176,17 @@ worker_intro ()
 
 notify "\
 ===============================================================================\n\
-AIF figtree automatic procedure using
+AIF $var_MODULE_NAME $(basename $var_AIF_PROCEDURE_PATH) procedure
 ===============================================================================\n"
+
+if [[ "$NOFAILSAFE" != "1" && ! -e /arch ]]
+then
+    die_error "FAILSAFE TRIPPED: no /arch directory present, looks \
+    like an installed system\nOverride this by: \`export NOFAILSAFE=1\`"
+else
+    show_warning "This procedure will result in complete system disk erasure."
+    ask_yesno "Do you want to continue?" no || exit
+fi
 }
 
 worker_runtime_packages ()
