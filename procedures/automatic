@@ -616,17 +616,16 @@ depend_profile() { load_profile "$1"; }
 # and build up lists of commands that will be executed later by workers (thus the
 # commands that are represented in the profile aren't "truly" executed till the
 # appropriate phase/worker in aif).
-package() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$* "; dstate TARGET_PACKAGES; }
-packages(){ dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$* "; dstate TARGET_PACKAGES; }
-blacklist() { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES_EXCLUDE+="$* "; dstate TARGET_PACKAGES; }
-config () { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate CONFIG_CHANGES; }
-daemons() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_daemons $*"); dstate CONFIG_CHANGES; }
-modules() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstate CONFIG_CHANGES; }
-networks(){ dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_networks $*"); dstate CONFIG_CHANGES; }
-overlay() { dfunc; [[ -n "$*" ]] && for overlay_file in $*; do var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}"; done; dstate var_OVERLAY_FILES; }
-overlays(){ dfunc; [[ -n "$*" ]] && for overlay_file in $*; do var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}"; done; dstate var_OVERLAY_FILES; }
-addmisc() { dfunc; [[ -n "$*" ]] && MISC_COMMANDS+=("$*"); dstate MISC_COMMANDS; }
+packages()    { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$* "; dstate TARGET_PACKAGES; }; package(){packages "$*";}
+blacklist()   { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES_EXCLUDE+="$* "; dstate TARGET_PACKAGES; }; blacklists(){blacklist "$*";}
+config ()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate CONFIG_CHANGES; }; configs(){config "$*";}
+daemons()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_daemons $*"); dstate CONFIG_CHANGES; }; daemon(){daemons "$*";}
+modules()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstate CONFIG_CHANGES; }; module(){modules "$*";}
+networks()    { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_networks $*"); dstate CONFIG_CHANGES; }; network(){networks "$*";}
+addmisc()     { dfunc; [[ -n "$*" ]] && MISC_COMMANDS+=("$*"); dstate MISC_COMMANDS; }
 kernelparams(){ dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_kernelparams $*"); dstate CONFIG_CHANGES; }
+overlays()    { dfunc; [[ -n "$*" ]] && for overlay_file in $*; do var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}"; done; dstate var_OVERLAY_FILES; }
+overlay()     { overlays "$*"; }
 
 # ----------------------------------------------------------------------
 # lib-config
@@ -680,6 +679,7 @@ config_value()
 
 config_list ()
 {
+# config_list set /config/file/path ARRAYNAME list values go here
     local config_method="$1"; shift; local config_file="$1"; shift; local config_name="$1"; shift; local config_list="$*"
     [[ ! -f "$config_file" ]] && d "Missing config file" "Config file \"$config_file\" not found; skipping" && return 1
     get_value "$config_file" "$config_name" current_list && current_list=$(strip_punct "$current_list") || return 1
@@ -703,7 +703,6 @@ config_list ()
 config_switch ()
 {
 # config set /config/file/path CONFIG_ITME_NAME config value here
-# daemons add @daemonname !daemontoblacklist normaldaemon
     local method=$1; shift
     local target_value=$(echo -n ${FUNCNAME[1]} | tr a-z A-Z)
     if [[ "$target_value" == "CONFIG" ]]
@@ -716,8 +715,16 @@ config_switch ()
         local file_path="$var_TARGET_DIR/etc/rc.conf"
     fi
     case $method in
-        set|add) $target_function set $file_path $target_value $* && inform "$target_value SET: $*" || show_warning "Config Write Error" "FAILED $target_value SET: $*" ;;
-        unset|remove|delete) "$target_function" unset $file_path $target_value $* && inform "$target_value UNSET: $*" || show_warning "FAILED $target_value UNSET: $*" ;;
+        set|add)
+            $target_function set $file_path $target_value $* \
+                && inform "$target_value SET: $*" \
+                || show_warning "FAILED $target_value $method" "$*"
+        ;;
+        unset|remove|delete)
+            "$target_function" unset $file_path $target_value $* \
+                && inform "$target_value UNSET: $*" \
+                || show_warning "FAILED $target_value $method" "$*"
+        ;;
     esac
 }
 
