@@ -153,6 +153,25 @@ Options:
 EOF
 
 # ----------------------------------------------------------------------
+# aif.sh related functions
+# ----------------------------------------------------------------------
+
+process_args ()
+{
+    dfunc
+    var_AUTOMATIC_PROFILE=
+    while [[ -n $1 ]]
+    do
+        case $1 in
+            -c) [[ -n "$2" ]] && var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
+            -r) [[ -n "$2" ]] && var_REPO_TYPE=$2 || die_error "You must specify a repository type of git, hg, or svn with the -r flag." ;;
+            *) usage && exit 5 ;;
+        esac
+        shift 2
+    done
+}
+
+# ----------------------------------------------------------------------
 # procedure workers
 # ----------------------------------------------------------------------
 
@@ -161,8 +180,7 @@ worker_intro ()
 
 notify "\
 ===============================================================================\n\
-AIF figtree automatic procedure using initial profile:\n\
-$var_AIF_PROCEDURE_PATH\n\
+AIF figtree automatic procedure using
 ===============================================================================\n"
 }
 
@@ -258,21 +276,6 @@ worker_misc_commands ()
 {
     inform "Misc. system additions started..."
     dfunc; for misc_command in $MISC_COMMANDS; do $misc_command; done
-}
-
-process_args ()
-{
-    dfunc
-    var_AUTOMATIC_PROFILE=
-    while [[ -n $1 ]]
-    do
-        case $1 in
-            -c) [[ -n "$2" ]] && var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
-            -r) [[ -n "$2" ]] && var_REPO_TYPE=$2 || die_error "You must specify a repository type of git, hg, or svn with the -r flag." ;;
-            *) usage && exit 5 ;;
-        esac
-        shift 2
-    done
 }
 
 # ----------------------------------------------------------------------

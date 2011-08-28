@@ -1,177 +1,73 @@
-#!/bin/bash
+#!/bin/base
 
-# Ethan Schoonover <es@ethanschoonover.com>
-#
-# lenovo x220 tablet
-# aif/archproto system profile
-#
-# notes:
-# you might not want to install all the xbindkeys, xinitrc, etc.
-# but they are enough to get the bezel buttons working
+# Systems/_base/base profile. Used as foundation for other _base profiles.  
+# Probably best to depend on one of those (laptop, desktop, vm) rather than 
+# this profile
 
-notify "IN PROFILE lenovo/x220"
-
-# ----------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # NETWORKING
-# ----------------------------------------------------------------------
-# some of these aren't entirely hardware specific
-# but best to just put them here
-add_packages        (
-                    wireless_tools
-                    rfkill
-                    wpa_supplicant
-                    dialog
-                    wpa_actiond
-                    ifplugd
-                    netcfg
-                    wifi-select-git
-                    )
+# -----------------------------------------------------------------------------
+packages netcfg rfkill wpa_supplicant wpa_actiond ifplugd wifi-select-git
+config unset /etc/rc.conf INTERFACES
+config unset /etc/rc.conf eth0
+config unset /etc/rc.conf eth1
+config set   /etc/rc.conf WIRED_INTERFACE eth0
+config set   /etc/rc.conf WIRELESS_INTERFACE wlan0
+networks add main home # just adds to NETWORKS in /etc/rc.conf
+daemons remove network # no longer required due to netcfg
+daemons add @net-auto-wired @net-auto-wireless
+overlay /etc/wpa_supplicant.conf /etc/network.d/ethernet-dhcp
 
-#add_config_changes  (
-#                    'remove /etc/rc.conf/INTERFACES'
-#                    'remove /etc/rc.conf/eth0'
-#                    'remove /etc/rc.conf/eth1'
-#                    'set /etc/rc.conf/WIRED_INTERFACE eth0'
-#                    'set /etc/rc.conf/WIRELESS_INTERFACE wlan0'
-#                    'setlist /etc/rc.conf/NETWORKS main'
-#                    rc_unset_daemon network # no longer required due to netcfg
-#                    set_daemon @net-auto-wired
-#                    set_daemon @net-auto-wireless
-#                    )
-#add_overlay_files   (
-#                    /etc/wpa_supplicant.conf
-#                    /etc/network.d/ethernet-dhcp
-#                    )
-#
-## ----------------------------------------------------------------------
-## POWER
-## ----------------------------------------------------------------------
-## plus acpi input event handling for some hotkeys
-#
-#add_packages        (
-#                    acpi
-#                    acpid
-#                    acpitool
-#                    pm-utils
-#                    cpufrequtils
-#                    thinkfan
-#                    lm_sensors
-#                    )
-#add_config_changes  (
-#                    rc_set_daemon @acpi
-#                    rc_set_module thinkpad_acpi
-#                    rc_set_module acpi_cpufreq
-#                    rc_set_module cpufreq_ondemand
-#                    rc_set_module cpufreq_powersave
-#                    rc_set_daemon sensors
-#                    '/etc/rc.conf/VARIABLE value'
-#                    )
-#add_overlay_files   (
-#                    /etc/acpi/handler.sh
-#                    /etc/pm/power.d/cpu
-#                    /etc/pm/power.d/display
-#                    /etc/pm/power.d/network
-#                    /etc/pm/power.d/save-state
-#                    /etc/pm/power.d/sound
-#                    /etc/pm/sleep.d/11netcfg
-#                    /etc/pm/sleep.d/90alsa
-#                    /etc/thinkfan.conf
-#                    )
-#
-## note that the sleep.d/90physlock is not system specific and should probably 
-## be in environment
-##                    '/etc/pm/sleep.d/90physlock' \
-## and my 01grub override in sleep.d is also best in environment or my own 
-## config as it is dependent on which bootloader is installed
-##                    '/etc/pm/sleep.d/01grub' \
-## finally, save-state is related to my own acpi handler.sh script (maybe 
-## pm-utils does this on it's own I can get rid of this) and should be here to 
-## properly handle lid button events
-#
-## add line to /etc/modprobe.d/modprobe.conf:
-## options thinkpad_acpi fan_control=1
-## newline="options thinkpad_acpi fan_control=1"
-## if ( ! grep -q "${newline}" /etc/modprobe.d/modprobe.conf ); then
-##     echo "${newline}" >> /etc/modprobe.d/modprobe.conf
-##     fi
-##     # add thinkpad_acpi to rc.conf (done above)
-##     # add thinkfan to rc.conf as daemon
-##     rc_set_daemon @thinkfan
-##     write_thinkfan_config
-##
-##     # tp_smapi not yet working on x220t?
-##     # TODO: monitor tp_smapi compatibility status
-##     #install_aur tp_smapi
-##     #rc_set_module tp_smapi
-#
-## ----------------------------------------------------------------------
-## INPUT
-## ----------------------------------------------------------------------
-## hotkeys not handled by acpi or bios
-#
-#add_packages        (
-#                    xbindkeys
-#                    )
-#add_overlay_files   (
-#                    /lib/udev/keymaps/lenovo-thinkpad_x220_tablet
-#                    /etc/udev/rules.d/95-keymap.rules
-#                    /etc/X11/xinit/xinitrc
-#                    /etc/X11/xinit/Xmodmap
-#                    /etc/X11/xinit/xbindkeysrc
-#                    /usr/bin/rotate-screen
-#                    )
-#
-## ----------------------------------------------------------------------
-## SOUND
-## ----------------------------------------------------------------------
-#
-#add_packages        (
-#                    alsa-utils
-#                    alsa-oss
-#                    )
-#                rc_set_daemon @alsa
-#add_overlay_files   (
-#                    /var/lib/alsa/asound.state
-#                    )
-#
-## ----------------------------------------------------------------------
-## DISPLAY
-## ----------------------------------------------------------------------
-#
-#add_packages        (
-#                    libdrm
-#                    dri2proto
-#                    xf86-video-intel
-#                    )
-#add_packages        (
-#                    xorg-server
-#                    xorg-xinit
-#                    xorg-utils
-#                    xorg-server-utils
-#                    xf86-input-synaptics
-#                    unclutter
-#                    mesa
-#                    mesa-demos
-#                    xorg-xlsfonts
-#                    xdotool
-#                    )
-#add_overlay_files   (/etc/drirc)
-## this xorg.conf.d/90-monitor.conf is to fix lcd monitor dpi size
-#add_overlay_files   (/etc/X11/xorg.conf.d/90-monitor.conf)
-#
-## TODO ... abstract to a function or stick in extras 
-##if ( ! grep -q 'MODULES="i915"' /etc/mkinitcpio.conf ); then
+# -----------------------------------------------------------------------------
+# POWER
+# -----------------------------------------------------------------------------
+packages acpi acpid acpitool pm-utils cpufrequtils thinkfan lm_sensors
+daemons add @acpi sensors
+modules add thinkpad_acpi acpi_cpufreq cpufreq_ondemand cpufreq_powersave
+overlay /etc/acpi/handler.sh
+overlay /etc/pm/power.d/cpu
+overlay /etc/pm/power.d/display
+overlay /etc/pm/power.d/network
+overlay /etc/pm/power.d/save-state
+overlay /etc/pm/power.d/sound
+overlay /etc/pm/sleep.d/11netcfg
+overlay /etc/pm/sleep.d/90alsa
+overlay /etc/thinkfan.conf
+
+# -----------------------------------------------------------------------------
+# INPUT
+# -----------------------------------------------------------------------------
+packages xbindkeys
+overlay /lib/udev/keymaps/lenovo-thinkpad_x220_tablet
+overlay /etc/udev/rules.d/95-keymap.rules
+overlay /etc/X11/xinit/xinitrc
+overlay /etc/X11/xinit/Xmodmap
+overlay /etc/X11/xinit/xbindkeysrc
+overlay /usr/bin/rotate-screen
+
+# -----------------------------------------------------------------------------
+# SOUND
+# -----------------------------------------------------------------------------
+packages alsa-utils alsa-oss alsa-equalizer
+daemons add @alsa
+overlays /var/lib/alsa/asound.state
+
+# -----------------------------------------------------------------------------
+# DISPLAY
+# -----------------------------------------------------------------------------
+packages libdrm dri2proto xf86-video-intel
+packages xorg-server xorg-xinit xorg-utils xorg-server-utils xf86-input-synaptics
+packages mesa mesa-demos xorg-xlsfonts xdotool unclutter
+overlays /etc/drirc
+overlays /etc/X11/xorg.conf.d/90-monitor.conf # to fix lcd monitor dpi size
+
+## TODO ... abstract to a function or stick in extras ##if ( ! grep -q 
+'MODULES="i915"' /etc/mkinitcpio.conf ); then
 ##    sed -i 's/\(^MODULES\).*$/\1="i915"/' /etc/mkinitcpio.conf
 ##        mkinitcpio -p kernel26
 ##fi
-#
-## ----------------------------------------------------------------------
-## EXTRAS
-## ----------------------------------------------------------------------
-## this is a catch all function that any system profile can override
-## to do anything that needs doing (custom sed commands, etc.)
-#
-#system_extras()
-#{
-#    true
-#}
+
+# -----------------------------------------------------------------------------
+# EXTRAS
+# -----------------------------------------------------------------------------
+
