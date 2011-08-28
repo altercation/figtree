@@ -50,14 +50,16 @@
 
 depend_procedure core automatic # most of automatic fits our needs, up top so we can override the phases and values it sets below
 
-# set these after the depend_procedure to ensure we override any values therein
-# we will further override or add to some of the values below (RUNTIME_...) after sourcing profiles in worker_configure
 var_MODULE_NAME=figtree # in case we need to change our script name 
 var_PROCEDURE_SUBPATH=/procedures/automatic
-var_TEMP_DIR="${RUNTIME_DIR}/${var_MODULE_NAME}-temp"
-[[ -e "$var_TEMP_DIR" ]] && rm -rf "$var_TEMP_DIR"; mkdir -p "$var_TEMP_DIR"
-var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples peripherals) # standard subdirectory names for figtree/aif
-[[ "$module" != "http" ]] && var_AIF_PROCEDURE_PATH="$procedure" || var_AIF_PROCEDURE_PATH="$2"
+var_TEMP_DIR="${RUNTIME_DIR}/${var_MODULE_NAME}-temp"; [[ -e "$var_TEMP_DIR" ]] && rm -rf "$var_TEMP_DIR"; mkdir -p "$var_TEMP_DIR"
+var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples peripherals filesystems) # figtree specific
+# TODO: this is not correct... $2 is not a good way to id the procedure value
+echo "\$procedure=$procedure"
+echo "\$module=$module"
+echo "\$*=$*"
+exit
+var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && || var_AIF_PROCEDURE_PATH="$2"
 var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}"
 #for yaourt, which doesn't work due to not supporting pacman arguments we require, so I'm using a lib function
 #var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
@@ -199,29 +201,34 @@ worker_configure ()
 {
     inform "Starting system configuration and profile load sequence..."
 
+    # UI TYPE
     var_UI_TYPE=${arg_ui_type:-cli}
     ui_init
-    [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
 
-    # here we import our profile(s) to allow default values to be overridden
+    # LOAD PROFILE
+    [[ -z "$var_AUTOMATIC_PROFILE" ]] && die_error "You must specify a config file to use this procedure"
     load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $var_MODULE_PATHS"
 
-    # make sure we have values for the following (could these be set as defaults safely?)
-    [ -z "$PARTITIONS" ] && die_error "You did not specify a partition scheme"
-    [ -z "$BLOCKDATA"  ] && die_error "You did not specify a partition scheme"
-    [ -z "$GRUB_DEVICE" ] && die_error "You did not specify a grub device"
-
-    # we set default values for select_source following worker_configure, so 
-    # can skip this check. Retained here for reference.
-    # [ -z "$TARGET_REPOSITORIES" ] && die_error "You did not specify \$TARGET_REPOSITORIES"
-
+    # RUNTIME SOURCES
     var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
     var_RUNTIME_PACKAGES+=" $RUNTIME_PACKAGES"
+
+    # FILESYSTEM
+    # TODO: we're not yet setting any defaults for filesystem values
+    set_profile_or_default_values "GRUB_DEVICE PARTITIONS BLOCKDATA"
+    [[ -z "$PARTITIONS" ]] && die_error "You did not specify a partition scheme"
+    [[ -z "$BLOCKDATA"  ]] && die_error "You did not specify a partition scheme"
+    [[ -z "$GRUB_DEVICE" ]] && die_error "You did not specify a grub device"
     var_GRUB_DEVICE=$GRUB_DEVICE
     var_PARTITIONS=$PARTITIONS
     var_BLOCKDATA=$BLOCKDATA
-    var_TARGET_GROUPS+=" $TARGET_GROUPS" # TODO: smarter add to avoid duplicates
-    set_profile_or_default_values "LOCALE DAEMON_LOCALE HARDWARECLOCK TIMEZONE KEYMAP CONSOLEFONT CONSOLEMAP USECOLOR"
+
+    # INSTALL PACKAGES
+    var_TARGET_GROUPS+=$TARGET_GROUPS # TODO: smarter add to avoid duplicates
+
+    # SYSTEM CONFIG (/etc/rc.comf)
+    set_profile_or_default_values "HOSTNAME LOCALE DAEMON_LOCALE HARDWARECLOCK \
+    TIMEZONE KEYMAP CONSOLEFONT CONSOLEMAP USECOLOR NETWORKS_PERSIST NETWORKS"
 }
 
 worker_select_source ()
@@ -245,10 +252,7 @@ worker_select_source ()
 worker_write_configs()
 {
     inform "Configuration write started"
-    echo ${CONFIG_CHANGES[@]} >> /tmp/ccdump.txt
-    dfunc; for config_command in ${CONFIG_CHANGES[@]}; do echo $config_command; read answer; done
-        # || echo "WWC FAILED $config_command"; done
-
+    dfunc; for config_command in ${CONFIG_CHANGES[@]}; do eval "$config_command" || show_warning "CONFIG FAILED" "$config_command"; done
 }
 
 worker_write_overlay()
@@ -276,8 +280,8 @@ worker_write_overlay()
 
 worker_misc_commands ()
 {
-    inform "Misc. system additions started..."
-    dfunc; for misc_command in $MISC_COMMANDS; do $misc_command; done
+    inform "Misc. commands started..."
+    dfunc; for misc_command in ${MISC_COMMANDS[@]}; do eval "$misc_command" || show_warning "COMMAND FAILED" "$misc_command"; done
 }
 
 # ----------------------------------------------------------------------
