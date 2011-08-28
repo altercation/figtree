@@ -622,16 +622,10 @@ config ()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate C
 daemons()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_daemons $*"); dstate CONFIG_CHANGES; }; daemon(){daemons "$*";}
 modules()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstate CONFIG_CHANGES; }; module(){modules "$*";}
 networks()    { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_networks $*"); dstate CONFIG_CHANGES; }; network(){networks "$*";}
-addmisc()     { dfunc; [[ -n "$*" ]] && MISC_COMMANDS+=("$*"); dstate MISC_COMMANDS; }
 kernelparams(){ dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_kernelparams $*"); dstate CONFIG_CHANGES; }
+coda()        { dfunc; [[ -n "$*" ]] && MISC_COMMANDS+=("$*"); dstate MISC_COMMANDS; }; codas(){coda "$*";}
 overlays()    { dfunc; [[ -n "$*" ]] && for overlay_file in $*; do var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}"; done; dstate var_OVERLAY_FILES; }
 overlay()     { overlays "$*"; }
-
-# ----------------------------------------------------------------------
-# lib-config
-# ----------------------------------------------------------------------
-# functions to work with configuration files and values
-#write_configs() { dfunc; for config_command in $CONFIG_CHANGES; do $config_command; done }
 
 # all _functions are identical to the non _ variants used in profile files.
 # The profile commands (config, daemons, etc.) that have _ equivalents are 
@@ -642,6 +636,11 @@ _modules () { config_switch "$@"; }
 _networks () { config_switch "$@"; }
 _kernelparams () { kernel_parameter_write "$@"; }
 
+# ----------------------------------------------------------------------
+# lib-config
+# ----------------------------------------------------------------------
+# functions to work with configuration files and values
+#write_configs() { dfunc; for config_command in $CONFIG_CHANGES; do $config_command; done }
 
 get_value()
 {
