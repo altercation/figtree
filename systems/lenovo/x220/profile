@@ -62,7 +62,7 @@ overlays /etc/drirc
 overlays /etc/X11/xorg.conf.d/90-monitor.conf # to fix lcd monitor dpi size
 
 ## TODO ... abstract to a function or stick in extras ##if ( ! grep -q 
-'MODULES="i915"' /etc/mkinitcpio.conf ); then
+##'MODULES="i915"' /etc/mkinitcpio.conf ); then
 ##    sed -i 's/\(^MODULES\).*$/\1="i915"/' /etc/mkinitcpio.conf
 ##        mkinitcpio -p kernel26
 ##fi
