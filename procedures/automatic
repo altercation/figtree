@@ -35,11 +35,25 @@
 # # will be sourced from AUR automatically (there should be no overlap between the official repos and
 # # the AUR, by policy, so all package names should be unique).
 # 
-# command line examples (don't forget -d for debugging):
-# aif -p http://github.com/altercation/figtree/raw/master/procedures/automatic -c profiles/my-laptop
-# aif -p http://github.com/altercation/figtree/raw/master/procedures/automatic -c http://github.com/OTHERUSER/figtree/profiles/my-laptop
-# aif -p figtree/automatic -c https://github.com/altercation/figtree/profiles/my-laptop
+# command line examples (don't forget the optional -d for debugging):
+#
+# REMOTE PROCEDURE & REMOTE PROFILE
+# aif -p http://github.com/user/figtree/raw/master/procedures/automatic \
+#     -c profiles/my-laptop
+# 
+# REMOTE PROCEDURE & REMOTE PROFILE (DIFFERENT SOURCE URLS)
+# aif -p http://github.com/user/figtree/raw/master/procedures/automatic \
+#     -c http://github.com/OTHERUSER/figtree/profiles/my-laptop
+# 
+# LOCAL PROCEDURE & REMOTE PROFILE
+# aif -p figtree/automatic \
+#     -c https://github.com/altercation/figtree/profiles/my-laptop
+# 
+# LOCAL PROCEDURE & LOCAL PROFILE
 # aif -p figtree/automatic -c profiles/my-desktop
+# 
+# LOCAL PROCEDURE & LOCAL PROFILE (can be any figtree profile)
+# aif -p figtree/automatic -c systems/lenovo/x220/profile
 
 # ----------------------------------------------------------------------
 # procedure specific definitions
@@ -50,7 +64,6 @@ depend_procedure core automatic
 var_MODULE_NAME=figtree
 var_PROCEDURE_SUBPATH=/procedures/automatic
 
-# TEMP DIR LOCATION/CREATION
 var_TEMP_DIR="${RUNTIME_DIR}/${var_MODULE_NAME}-temp"
 [[ -e "$var_TEMP_DIR" ]] && rm -rf "$var_TEMP_DIR"; mkdir -p "$var_TEMP_DIR"
 var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples peripherals filesystems) # figtree specific
@@ -65,14 +78,22 @@ var_TARGET_GROUPS="base"
 # var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 # var_RUNTIME_PACKAGES="yaourt git mercurial svn gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config"
 
-# rc/config default values if not set previously or by user
-# note that in user created profiles these are specified by the same variable names without the "default_" prefix. See the _template profiles for details
-# these are not prefixed by "var_" so we remember that these are not used elsewhere in the procedure (other than one-time default assignment)
- 
-# this is different from items with a var_ previx in an important way: defaul_ variables can be completely overriden, as I use them here
-# while var_ varialbes (such as var_RUNTIME_REPOSITORIES) that are set above in this procedure are retained (and possibly added to user values)
-# so, for example, var_RUNTIME_REPOSITORIES retains the value assigned above and takes any extra values the user has assigned to RUNTIME_REPOSITORIES
-# in their profiles
+# ----------------------------------------------------------------------
+# DEFAULT VALUES
+# ----------------------------------------------------------------------
+# overridden by values in profiles. profile variables are identical but
+# without the default_ prefix. If the profile fails so set a value the
+# default as listed here is used.
+#
+# these differ from variables with a var_ previx in an important way:
+# default_ variables can be completely overriden, as I use them here
+# while var_ variables (such as var_RUNTIME_REPOSITORIES) that are set 
+# above in this procedure are *retained* (and possibly added to user
+# values) so, for example, var_RUNTIME_REPOSITORIES retains the value 
+# assigned above and takes any extra values the user has assigned to 
+# RUNTIME_REPOSITORIES in their profiles
+
+default_HOSTNAME="archlinux"
 default_LOCALE="en_US.UTF-8"
 default_DAEMON_LOCALE="no"
 default_HARDWARECLOCK="UTC"
@@ -85,67 +106,82 @@ default_HOSTNAME=""
 default_NETWORK_PERSIST="no"
 default_NETWORKS=(main)
 
-#phase_preparation=(runtime_network runtime_repositories runtime_packages configure profile intro sysprep select_source)
-#phase_basics=()
-#phase_system=()
-# we reorder phase_preparation so that, if for some reason we're running as a local procedure from install media, we set up the network first
-# and bring in the required runtime packages (primarily for our vcs remote sourcing)
+# we reorder phase_preparation so that if we're running as a local 
+# procedure from install media, we set up the network first and bring in
+# the required runtime packages (primarily for our vcs remote sourcing)
 phase_preparation=(intro runtime_network runtime_repositories runtime_packages configure select_source)
-phase_basics=(set_clock prepare_disks) # defaults, here for ref/override
-phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for ref/override
-phase_system+=(write_configs write_overlay misc_commands) # module specific custom workers (see below)
+phase_basics=(set_clock prepare_disks) # defaults, here for reference during module development
+phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for reference
+phase_system+=(write_configs write_overlay write_coda) # module specific custom workers (see below)
 phase_finish=(msg_report) # defaults
 
 # !!!!!TODO: it's possible we have to call some reconfig at end of phase_system due to possible changes impacting mkinitcpio
 # the worker to call is configure_system. it's actually ok to call the second default function (post_configure target) several times
 # though maybe better to either redefine configure_system, move it to the end, or have another post-configure worker at the end of the phase_system
 
-# ---------------------------------------------------------------------
-# following two lines from dieter's automatic procedure, for ref
-# TODO: implement setting hostname, keymap, consolefont, network settings, root 
-# for a list of recognized variables, see examples/generic-install-on-sda
-# ---------------------------------------------------------------------
-
 read -r -d '' var_ARGS_USAGE <<-'EOF'
+========================================================================
 Full AIF procedure: figtree automatic
-
+------------------------------------------------------------------------
 Usage examples:
+------------------------------------------------------------------------
 
 (note that in the first example, the procedure must be sourced using the 
-raw/master remote path as AIF doesn't initially have git support. Once the 
-figtree procedure is running, the profile paths can (and should) omit the 
-raw/master path as in the second and third examples.
+raw/master remote path as AIF doesn't initially have git support. Once 
+the figtree procedure is running, the profile paths can (and should) 
+omit the raw/master path as in the second and third examples.
 
-aif -p http://github.com/altercation/figtree/raw/master/procedures/automatic -c profiles/my-laptop
-aif -p http://github.com/altercation/figtree/raw/master/procedures/automatic -c http://github.com/OTHERUSER/figtree/profiles/my-laptop
-aif -p figtree/automatic -c https://github.com/altercation/figtree/profiles/my-laptop
+REMOTE PROCEDURE & REMOTE PROFILE
+aif -p http://github.com/user/figtree/raw/master/procedures/automatic \
+    -c profiles/my-laptop
+
+REMOTE PROCEDURE & REMOTE PROFILE (DIFFERENT SOURCE URLS)
+aif -p http://github.com/user/figtree/raw/master/procedures/automatic \
+    -c http://github.com/OTHERUSER/figtree/profiles/my-laptop
+
+LOCAL PROCEDURE & REMOTE PROFILE
+aif -p figtree/automatic \
+    -c https://github.com/altercation/figtree/profiles/my-laptop
+
+LOCAL PROCEDURE & LOCAL PROFILE
 aif -p figtree/automatic -c profiles/my-desktop
+
+LOCAL PROCEDURE & LOCAL PROFILE (can be any figtree profile)
 aif -p figtree/automatic -c systems/lenovo/x220/profile
 
+------------------------------------------------------------------------
 Options:
+------------------------------------------------------------------------
 
 -c profile/path:    Specify a profile path.
                     The path may specified in the following formats:
 
-                    relative path: profiles/my-laptop
-                    absolute path: ~/aif-files/figtree/profiles/my-laptop
-                    remote path:   http://github.com/name/repo/profiles/my-pc
+                    relative: profiles/my-laptop
+                    absolute: ~/aif-files/figtree/profiles/my-laptop
+                    remote:   http://github.com/name/repo/profiles/my-pc
 
-                    Note! If you have *already* sourced this procedure remotely 
-                    from a repository, it is fine to just use the relative path 
-                    pattern above (see first usage example above).
+                    Note! If you have *already* sourced this procedure
+                    remotely from a repository, it is fine to just use 
+                    the relative path pattern above (see first usage 
+                    example above).
 
 -r repository-type  Specify the repository type.
-                    [NORMALLY YOU SHOULDN'T NEED TO USE THIS; PLEASE INFORM ME
-                    IF YOU FIND CAUSE - es@ethanschoonover.com]
-                    If sourcing from a remote repository, figtree can usually
-                    determine the type based on a simple heuristic. If it is
-                    failing to correcly identify the type of repository, you
-                    can specify the version control system here with one of:
+                    ---
+                    NORMALLY YOU SHOULDN'T NEED TO USE THIS;
+                    PLEASE INFORM ME IF YOU FIND CAUSE BY MAILING TO:
+                    es@ethanschoonover.com
+                    ---
+                    If sourcing from a remote repository, figtree can
+                    usually determine the type based on a simple 
+                    heuristic. If it is failing to correcly identify 
+                    the type of repository, you can specify the version
+                    control system here with one of:
 
                     git
                     mercurial (hs is an acceptable abbreviation)
                     svn
+
+------------------------------------------------------------------------
 EOF
 
 # ----------------------------------------------------------------------
@@ -173,18 +209,17 @@ process_args ()
 
 worker_intro ()
 {
-
-notify "\
-===============================================================================\n\
-AIF $var_MODULE_NAME $(basename $var_AIF_PROCEDURE_PATH) procedure
-===============================================================================\n"
-
+local procname="$var_MODULE_NAME $(basename $var_AIF_PROCEDURE_PATH)"
+inform "Running the $procname procedure"
 if [[ "$NOFAILSAFE" != "1" && ! -e /arch ]]
 then
-    die_error "FAILSAFE TRIPPED: no /arch directory present, looks \
-    like an installed system\nOverride this by: \`export NOFAILSAFE=1\`"
-else
-    show_warning "This procedure will result in complete system disk erasure."
+    # looks like an installed system; override this by exporting env var NOFAILSAFE=1
+    inform "IRREVOCABLE FILESYSTEM CHANGES: This procedure will result in complete system disk erasure."
+    ask_yesno "Do you want to continue?" no || exit
+elif [[ "$NOFAILSAFE" != "1" ]]
+then
+    # slightly less scary warning
+    inform "This procedure will perform a complete, automated system installation."
     ask_yesno "Do you want to continue?" no || exit
 fi
 }
@@ -209,7 +244,7 @@ worker_configure ()
     ui_init
 
     # LOAD PROFILE
-    [[ -z "$var_AUTOMATIC_PROFILE" ]] && die_error "You must specify a config file to use this procedure"
+    [[ -z "$var_AUTOMATIC_PROFILE" ]] && die_error "You must specify a config file (-c profile/path) to use this procedure. Run this procedure again with -h for more details."
     load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $var_MODULE_PATHS"
 
     # RUNTIME SOURCES
@@ -281,10 +316,22 @@ worker_write_overlay()
     done
 }
 
-worker_misc_commands ()
+worker_write_coda ()
 {
+    # complete system customization
     inform "Misc. commands started..."
-    dfunc; for misc_command in ${MISC_COMMANDS[@]}; do eval "$misc_command" || show_warning "COMMAND FAILED" "$misc_command"; done
+    dfunc
+    for misc_command in ${MISC_COMMANDS[@]}
+    do
+        eval "$misc_command" || show_warning "COMMAND FAILED" "$misc_command"
+    done
+
+    # rerun postconfigure_target
+    # this has been run once in the the core/automatic worker_configure_system
+    # but we may have made changes that require mkinitcpio recreation.
+    # it is acceptable to run postconfigure_target multiple times, though we
+    # could alternately run just mkinitcpio creation here 
+    postconfigure_target
 }
 
 # ----------------------------------------------------------------------
