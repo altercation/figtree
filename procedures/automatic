@@ -239,7 +239,7 @@ worker_preload ()
         var_RUNTIME_PACKAGES_PRELOAD+=" $(detect_repo_type $var_AIF_PROCEDURE_PATH)"
         var_RUNTIME_PACKAGES_PRELOAD+=" $(detect_repo_type $var_AUTOMATIC_PROFILE)"
         echo "var rpp = $var_RUNTIME_PACKAGES_PRELOAD"
-        var_RUNTIME_PACKAGES_PRELOAD="$(uniq var_RUNTIME_PACKAGES_PRELOAD)"
+        var_RUNTIME_PACKAGES_PRELOAD="$(echo -n $var_RUNTIME_PACKAGES_PRELOAD | uniq)"
         echo "uniq var rpp = $var_RUNTIME_PACKAGES_PRELOAD"
 exit
         for i in `seq 0 $((${#var_RUNTIME_REPOSITORIES[@]}/2-1))`
