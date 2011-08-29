@@ -276,6 +276,8 @@ worker_preload ()
         if [[ -n "$var_AUR_SUPPORT" ]]
         then
                 echo "base-devel: $(list_packages group base-devel | awk '{print $2}')"
+                ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
+                echo $ALL_PACKAGES
                 echo "correct?"
                 read answer
                 var_RUNTIME_PACKAGES_PRELOAD+=" $(list_packages group base-devel | awk '{print $2}')"
