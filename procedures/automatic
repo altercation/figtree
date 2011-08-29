@@ -276,7 +276,10 @@ worker_preload ()
         # AUR (see also the installpkg function below)
         if [[ -n "$var_AUR_SUPPORT" ]]
         then
+                echo "PRE:  $var_RUNTIME_PACKAGES_PRELOAD"
                 var_RUNTIME_PACKAGES_PRELOAD+=" $($PACMAN -Sg base-devel | awk '{print $2}')"
+                echo "POST: $var_RUNTIME_PACKAGES_PRELOAD"
+                read answer
                 notify "AUR ON: Running procedure with AUR support. Packages will be sourced from AUR if not found in official repositories."
         else
                 notify "AUR OFF: Use command line parameter '-a' if you wish to run with automatic AUR support."
