@@ -770,23 +770,17 @@ get_value()
 # looking at augeas as a replacement
 config_value()
 {
-    echo "I'M IN CONFIG_VALUE with $*"
     # set_config /config/file/path config_item_name config_item_value
     local config_method="$1"; shift; local config_file="$1"; shift; local config_name="$1"; shift; local config_value="$*"
-    echo "1AND HERE"
     [[ ! -f "$config_file" ]] && show_warning "MISSING CONFIG FILE" "Config file \"$config_file\" not found; skipping" && return 1
-    echo "1.5AND HERE"
     [[ "${config_value:0:1}" == "(" ]] && local quote= || quote='\"'
-    echo "2AND HERE"
     if get_value "$config_file" "$config_name" current_value
     then
-        echo "I'M IN 1"
         case $config_method in
             set)   sed -i "s+\(^\s*${config_name}=\).*$+\1${quote}${config_value}${quote}+" "${config_file}" ;;
             unset) sed -i "s+\(^\s*${config_name}=.*$\)+#\1 # automatically commented out+" "${config_file}" ;;
         esac
     else
-        echo "I'M IN 2"
         case $config_method in
             set)   echo -e "\n${config_name}=${quote:1:1}${config_value}${quote:1:1} # automatically appended" >> "$config_file" ;;
             unset) : ;;
@@ -805,12 +799,7 @@ config_list ()
         # is "NETWORKS" in /etc/rc.conf, which is by default commented out. I 
         # probably should just uncomment as I used to do. TODO: uncomment when 
         # appropriate (check into augeas first before implementing that again)
-        echo "-----"
-        echo "XXX"
-        echo "$config_file $config_name \($config_list\)"
-        echo "-----"
-        config_value set "$config_file" "$config_name" "\($config_list\)" && ( inform "new value \"$config_name\" written to $config_file"; return 0 ) || return 1
-
+        config_value set "$config_file" "$config_name" "($config_list)" && ( inform "new value \"$config_name\" written to $config_file"; return 0 ) || return 1
     fi
     for config_list_item in $config_list; do
         local new_list=
@@ -826,7 +815,6 @@ config_list ()
         current_list=$new_list
     done
     new_list="(${current_list% })"
-    echo "HERE!!!"; read answer
     config_value set "$config_file" "$config_name" "$new_list"
 }
 
