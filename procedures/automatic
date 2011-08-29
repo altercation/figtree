@@ -776,11 +776,13 @@ config_value()
     [[ "${config_value:0:1}" == "(" ]] && local quote= || quote='\"'
     if get_value "$config_file" "$config_name" current_value
     then
+        echo "I'M IN 1"
         case $config_method in
             set)   sed -i "s+\(^\s*${config_name}=\).*$+\1${quote}${config_value}${quote}+" "${config_file}" ;;
             unset) sed -i "s+\(^\s*${config_name}=.*$\)+#\1 # automatically commented out+" "${config_file}" ;;
         esac
     else
+        echo "I'M IN 2"
         case $config_method in
             set)   echo -e "\n${config_name}=${quote:1:1}${config_value}${quote:1:1} # automatically appended" >> "$config_file" ;;
             unset) : ;;
