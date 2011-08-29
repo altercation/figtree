@@ -3,6 +3,13 @@
 3. test on other git servers
 4. add wget/ftp support?
 
+5. integrate with existing AIF testing framework
+6. improve libui use; normalize use of inform/notify/warnings; 
+
+7. improve error handling; doesn't yet conform to the way AIF really does 
+   things (workers, phases, etc. have some built in error handling that I haven't 
+   fully explored yet)
+
 current:
 
 process_args (in automatic)
