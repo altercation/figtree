@@ -361,6 +361,7 @@ worker_write_configs()
     do
         inform "executing config $i of ${#CONFIG_CHANGES[@]}: ${CONFIG_CHANGES[$i]#_}"
         ${CONFIG_CHANGES[$i]} || show_warning "WRITE CONFIGS ERROR:" "COMMAND FAILED ${CONFIG_CHANGES[$i]}"
+        echo "next..."; read answer
     done
 }
 
