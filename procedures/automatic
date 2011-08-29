@@ -76,7 +76,7 @@ var_RUNTIME_PACKAGES="automake make patch" # "git gcc autoconf automake bison fa
 # Preload packages are used prior to profile load (thus are required to bootstrap the rest of the profile based runtime/target package install)
 # They use the var_RUNTIME_REPOSITORIES value above
 var_RUNTIME_PACKAGES_PRELOAD="git" # yaourt mercurial svn
-var_TARGET_GROUPS="base"
+#var_TARGET_GROUPS="base" this doesn't do anything here unless I override worker_package_list or assign this to TARGET_GROUPS, not var_TARGET_GROUPS
 
 # ----------------------------------------------------------------------
 # DEFAULT VALUES
@@ -93,7 +93,9 @@ var_TARGET_GROUPS="base"
 # assigned above and takes any extra values the user has assigned to 
 # RUNTIME_REPOSITORIES in their profiles
 
-# override anything pulled in from depend_procedure
+# override anything pulled in from depend_procedures (so we have a
+# tabula rasa and can be sure we have *only* values from this 
+# proceudre or from the custom profiles
 HOSTNAME=
 LOCALE=
 DAEMON_LOCALE=
@@ -108,18 +110,24 @@ NETWORK_PERSIST=
 NETWORKS=
 
 # set defaults
-default_HOSTNAME="archlinux"
-default_LOCALE="en_US.UTF-8"
-default_DAEMON_LOCALE="no"
-default_HARDWARECLOCK="UTC"
-default_TIMEZONE="Canada/Pacific"
-default_KEYMAP="us"
-default_CONSOLEFONT=
-default_CONSOLEMAP=
-default_USECOLOR="yes"
-default_HOSTNAME=""
-default_NETWORK_PERSIST="no"
-default_NETWORKS=(main home work)
+default_rc_HOSTNAME="archlinux"
+default_rc_LOCALE="en_US.UTF-8"
+default_rc_DAEMON_LOCALE="no"
+default_rc_HARDWARECLOCK="UTC"
+default_rc_TIMEZONE="Canada/Pacific"
+default_rc_KEYMAP="us"
+default_rc_CONSOLEFONT=
+default_rc_CONSOLEMAP=
+default_rc_USECOLOR="yes"
+default_rc_HOSTNAME=""
+default_rc_NETWORK_PERSIST="no"
+default_rc_NETWORKS=(main home work)
+default_fs_GRUB_DEVICE=/dev/sda
+default_fs_PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
+default_fs_BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
+/dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
+/dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
+
 
 # ----------------------------------------------------------------------
 # PHASE WORKER CUSTOMIZATIONS
@@ -291,28 +299,10 @@ worker_configure ()
     var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
     var_RUNTIME_PACKAGES+=" $RUNTIME_PACKAGES"
 
-    local procedure_items=
-    local profile_items=
-    for default_value in "${!default_@}"
-    do
-        local value=${default_value#default_}
-        if [[ -z ${!value} ]]
-        then
-                if declare | grep -q "$default_value=("
-                then # array
-                    eval eval $value="(\${$default_value[*]})"
-                    #eval "echo $value=\"(\${$value[*]})\"" # DEBUG
-                else # normal variable
-                    eval $value=\'${!default_value}\'
-                fi
-                eval "procedure_items+=\"Using default procedure value for \$value: \${$value[*]}\\n\""
-        else
-                eval "profile_items+=\"Using custom profile value for \$value: \${$value[*]}\\n\""
-        fi
-    done
-    inform "$procedure_items\n$profile_items"
-
-exit
+    # DEFAULT VALUES
+    # override any default_ values using values from profiles
+    process_defaults_from_prefix "default_rc_"
+    process_defaults_from_prefix "default_fs_"
 
     # FILESYSTEM
     # TODO: we're not yet setting any defaults for filesystem values
@@ -323,9 +313,8 @@ exit
     var_PARTITIONS=$PARTITIONS
     var_BLOCKDATA=$BLOCKDATA
 
-    # INSTALL PACKAGES
-    var_TARGET_GROUPS+=$TARGET_GROUPS # TODO: smarter add to avoid duplicates
-
+    # TARGET PACKAGES
+    #var_TARGET_GROUPS+=$TARGET_GROUPS # TODO: smarter add to avoid duplicates (or just check at install to deduplicate?)
 }
 
 worker_select_source ()
@@ -495,6 +484,34 @@ exit
 # ----------------------------------------------------------------------
 # functions related to loading and processing configuration profiles
 #
+
+process_defaults_from_prefix()
+{
+    local procedure_items=
+    local profile_items=
+    #local default_prefix="default_"
+    local default_prefix=$1
+    eval local defaults_list=\"\${!${default_prefix}@}\"
+    for default_value in $defaults_list
+    do
+        eval local value=\${default_value#${default_prefix}}
+        if [[ -z ${!value} ]]
+        then
+                if declare | grep -q "$default_value=("
+                then # array
+                    eval eval $value="(\${$default_value[*]})"
+                    #eval "echo $value=\"(\${$value[*]})\"" # DEBUG
+                else # normal variable
+                    eval $value=\'${!default_value}\'
+                fi
+                eval "procedure_items+=\"Using default procedure value for \$value: \${$value[*]}\\n\""
+        else
+                eval "profile_items+=\"Using custom profile value for \$value: \${$value[*]}\\n\""
+        fi
+    done
+    inform "$procedure_items\n$profile_items"
+}
+
 source_and_overlay()
 {
     # TODO: consider refactoring this to an array
