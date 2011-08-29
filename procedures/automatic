@@ -714,6 +714,7 @@ write_overlay_file()
     # optional: --preserve-context for selinux compliance
     echo "----> source checking"
     if [[ ! -f "$from_path" ]]
+    then
         show_warning "NO OVERLAY FILE SOURCE" "Profile overlay requests non-existant source file: \"$overlay_file\""
         return 1
     fi
