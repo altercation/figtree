@@ -248,9 +248,8 @@ worker_preconfigure ()
 
 worker_intro ()
 {
-echo "INTRO"
 local procname="$var_MODULE_NAME $(basename $var_AIF_PROCEDURE_PATH)"
-inform "Running the $procname procedure\n"
+inform "\nRunning the $procname procedure\n"
 
 # AUR (see also the installpkg function below)
 if [[ -n "$var_AUR_SUPPORT" ]]
