@@ -774,7 +774,7 @@ config_value()
     # set_config /config/file/path config_item_name config_item_value
     local config_method="$1"; shift; local config_file="$1"; shift; local config_name="$1"; shift; local config_value="$*"
     echo "1AND HERE"
-    [[ ! -f "$config_file" ]] && d "Missing config file" "Config file \"$config_file\" not found; skipping" && return 1
+    [[ ! -f "$config_file" ]] && show_warning "MISSING CONFIG FILE" "Config file \"$config_file\" not found; skipping" && return 1
     echo "1.5AND HERE"
     [[ "${config_value:0:1}" == "(" ]] && local quote= || quote='\"'
     echo "2AND HERE"
