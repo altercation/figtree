@@ -362,9 +362,8 @@ worker_write_configs()
     inform "Configuration write started..."
     for i in $(seq ${#CONFIG_CHANGES[@]})
     do
-        inform "CONFIG: executing config $i of ${#CONFIG_CHANGES[@]}: ${CONFIG_CHANGES[$i]#_}"
+        d "CONFIG: executing config $i of ${#CONFIG_CHANGES[@]}: ${CONFIG_CHANGES[$i]#_}"
         ${CONFIG_CHANGES[$i]}
-        echo "next..."; read answer
     done
 }
 
@@ -815,7 +814,6 @@ config_list ()
         current_list=$new_list
     done
     new_list="(${current_list% })"
-    echo ">>>>>>"; read answer
     config_value set "$config_file" "$config_name" "$new_list"
 }
 
