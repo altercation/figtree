@@ -239,6 +239,8 @@ worker_preload ()
         var_RUNTIME_PACKAGES_PRELOAD+=" $(detect_repo_type $var_AIF_PROCEDURE_PATH)"
         var_RUNTIME_PACKAGES_PRELOAD+=" $(detect_repo_type $var_AUTOMATIC_PROFILE)"
         echo "var rpp = $var_RUNTIME_PACKAGES_PRELOAD"
+        var_RUNTIME_PACKAGES_PRELOAD="$(uniq var_RUNTIME_PACKAGES_PRELOAD)"
+        echo "uniq var rpp = $var_RUNTIME_PACKAGES_PRELOAD"
 exit
         for i in `seq 0 $((${#var_RUNTIME_REPOSITORIES[@]}/2-1))`
         do
@@ -460,9 +462,8 @@ detect_repo_type()
     # that no unsupported repository type has been specified by -r on the command line
     case $repo_type in
         git|mercurial|svn) echo -n $repo_type; return 0 ;;
-        *) die_error "$repo_type is an unsupported repository type" ;;
+        *) return 1 ;; # must handle this error differently in different callers
     esac
-    die_error "Unexpected error during repository type assignment."
 exit
 }
 
@@ -497,7 +498,7 @@ make_local ()
     local full_path_remote=$1
 
     # check repo type
-    local repo_type=$(detect_repo_type "$full_path_remote") && echo "REPO TYPE SET TO $repo_type" || die_error "Unexpected error detected repository type from $full_path_remote"
+    local repo_type=$(detect_repo_type "$full_path_remote") && inform "Accessing $repo_type repository type..." || die_error "Unexpected error detected repository type from $full_path_remote"
 
     # now set the repo clone command, infix to strip out github/bitbucket raw file path values, and any suffix required to clone (.git)
     local repo_command=
