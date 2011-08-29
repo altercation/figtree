@@ -276,20 +276,14 @@ worker_preload ()
         # AUR (see also the installpkg function below)
         if [[ -n "$var_AUR_SUPPORT" ]]
         then
-                echo "PRE:  $var_RUNTIME_PACKAGES_PRELOAD"
                 var_RUNTIME_PACKAGES_PRELOAD+=" $(echo $($PACMAN -Sg base-devel | awk '{print $2}'))"
-                echo "POST: $var_RUNTIME_PACKAGES_PRELOAD"
-                echo $var_RUNTIME_PACKAGES_PRELOAD
-                read answer
-                notify "AUR ON: Running procedure with AUR support. Packages will be sourced from AUR if not found in official repositories."
+                notify "AUR ON: Running procedure with AUR support\n(packages will be sourced from AUR if not found in official repositories)"
         else
                 notify "AUR OFF: Use command line parameter '-a' if you wish to run with automatic AUR support."
         fi
 
+        # dedup and install packages
         var_RUNTIME_PACKAGES_PRELOAD="$(dedup $var_RUNTIME_PACKAGES_PRELOAD)"
-                echo $var_RUNTIME_PACKAGES_PRELOAD
-                read answer
-
         for i in `seq 0 $((${#var_RUNTIME_REPOSITORIES[@]}/2-1))`
         do
                 repo=${var_RUNTIME_REPOSITORIES[$(($i*2))]}
@@ -879,6 +873,8 @@ installaur()
 {
     # helper for our custom installpkg
     aur_package="$1"
+echo "=========================================================KEY"
+read answer
     if [[ `pacman -Q "^$aur_package$"` ]]; then
         notify "$aur_package already installed; skipping"
     elif ! `pacman -Qs "^$aur_package$" &>/dev/null`
@@ -896,6 +892,8 @@ installaur()
     else
         die_error "SHOULDN'T BE HERE: installaur() has been passed a package that pacman can find as well: $aur_package"
     fi
+echo "=========================================================KEY"
+read answer
 }
 
 # perform package installation to the target system
