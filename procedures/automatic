@@ -497,7 +497,7 @@ make_local ()
     local full_path_remote=$1
 
     # check repo type
-    local repo_type=$(detect_repo_type "$full_path_remote") && inform "Accessing $repo_type repository type..." || die_error "Unexpected error detected repository type from $full_path_remote"
+    local repo_type=$(detect_repo_type "$full_path_remote") || die_error "Unexpected error detected repository type from $full_path_remote"
 
     # now set the repo clone command, infix to strip out github/bitbucket raw file path values, and any suffix required to clone (.git)
     local repo_command=
@@ -510,6 +510,7 @@ make_local ()
                 repo_infix="raw[./][^/]*/" # raw/master/
         ;;
         hg|mercurial)
+                # note that repo type should never be hg at this point
                 repo_command="hg clone"
                 repo_infix="raw[./][^/]*/[^/]*/" # raw/32dc76fda832/src/
         ;;
