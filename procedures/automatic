@@ -485,7 +485,6 @@ detect_repo_type()
         git|mercurial|svn) echo -n $repo_type; return 0 ;;
         *) return 1 ;; # must handle this error differently in different callers
     esac
-exit
 }
 
 # ----------------------------------------------------------------------
