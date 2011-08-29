@@ -71,7 +71,8 @@ var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && var_AIF_PROCED
 var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}"
 var_OPTS_STRING="c:r:"
 var_RUNTIME_REPOSITORIES= # var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
-var_RUNTIME_PACKAGES="git mercurial svn gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config" # yaourt
+#var_RUNTIME_PACKAGES="git mercurial svn gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config" # yaourt
+var_RUNTIME_PACKAGES="git"
 var_TARGET_GROUPS="base"
 
 # ----------------------------------------------------------------------
@@ -108,11 +109,11 @@ default_NETWORKS=(main)
 # we reorder phase_preparation so that if we're running as a local 
 # procedure from install media, we set up the network first and bring in
 # the required runtime packages (primarily for our vcs remote sourcing)
+# phase_basics=(set_clock prepare_disks) # defaults, here for reference during module development
+# phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for reference
+# phase_finish=(msg_report) # defaults, for reference
 phase_preparation=(intro runtime_network runtime_repositories runtime_packages configure select_source)
-phase_basics=(set_clock prepare_disks) # defaults, here for reference during module development
-phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for reference
 phase_system+=(write_configs write_overlay write_coda) # module specific custom workers (see below)
-phase_finish=(msg_report) # defaults, for reference
 
 # ----------------------------------------------------------------------
 # aif.sh related functions
