@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# depend_profile systems/lenovo/x220
-# depend_profile users/es
-# depend_profile environments/xmonad/es
-# depend_profile applications/cli/thebasics
-# 
+depend_profile systems/lenovo/x220
+depend_profile users/es
+depend_profile environments/xmonad/es
+depend_profile applications/cli/thebasics
+ 
 # SYSTEM CONFIG VALUES
 # =============================================================================
-HOSTNAME="rho"
-#LOCALE="yyyen_US.UTF-8"
+HOSTNAME="tau"
+LOCALE="en_US.UTF-8"
 DAEMON_LOCALE="no"
 HARDWARECLOCK="UTC"
 TIMEZONE="Canada/Pacific"
