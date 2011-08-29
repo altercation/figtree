@@ -815,6 +815,7 @@ config_list ()
         current_list=$new_list
     done
     new_list="(${current_list% })"
+    echo ">>>>>>"; read answer
     config_value set "$config_file" "$config_name" "$new_list"
 }
 
