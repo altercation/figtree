@@ -70,9 +70,12 @@ var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications us
 var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && var_AIF_PROCEDURE_PATH="$2"
 var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}"
 var_OPTS_STRING="c:r:"
+# Preload packages are used prior to profile load (thus are required to bootstrap the rest of the profile based runtime/target package install)
+var_PRELOAD_REPOSITORIES=
+var_PRELOAD_PACKAGES="git"
+# Runtime packages are used during installation but are not installed to the target system unless included in TARGET_PACKAGES as well
 var_RUNTIME_REPOSITORIES= # var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
-#var_RUNTIME_PACKAGES="git mercurial svn gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config" # yaourt
-var_RUNTIME_PACKAGES="git gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config" # yaourt
+var_RUNTIME_PACKAGES= # "git gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config" # yaourt mercurial svn
 var_TARGET_GROUPS="base"
 
 # ----------------------------------------------------------------------
@@ -112,14 +115,8 @@ default_NETWORKS=(main)
 # phase_basics=(set_clock prepare_disks) # defaults, here for reference during module development
 # phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for reference
 # phase_finish=(msg_report) # defaults, for reference
-phase_preparation=(intro runtime_network runtime_repositories runtime_packages configure select_source)
+phase_preparation=(preconfigure intro runtime_network preload configure select_source runtime_repositories runtime_packages)
 phase_system+=(write_configs write_overlay write_coda) # module specific custom workers (see below)
-
-#worker_prepare_disks ()
-#{
-#    echo "DONE"
-#    exit
-#}
 
 # ----------------------------------------------------------------------
 # aif.sh related functions
@@ -209,6 +206,12 @@ EOF
 # procedure workers
 # ----------------------------------------------------------------------
 
+worker_preconfigure ()
+{
+    var_UI_TYPE=${arg_ui_type:-cli}
+    ui_init
+}
+
 worker_intro ()
 {
 local procname="$var_MODULE_NAME $(basename $var_AIF_PROCEDURE_PATH)"
@@ -226,24 +229,29 @@ then
 fi
 }
 
-worker_runtime_packages ()
+worker_preload ()
 {
-    inform "Checking for pacman updates..."; $PACMAN -Sy pacman --noconfirm &>/dev/null || return 1 # update pacman first to avoid having to run twice
-    for pkg in $var_RUNTIME_PACKAGES; do inform "Installing $pkg for use by installer..."; $PACMAN -Sy --noconfirm --needed $pkg &>/dev/null || return 1; done
-#    PACMAN="pacman --config /tmp/pacman.conf"
-#    PACMAN_TARGET="yaourt --root /mnt"
-#    echo "PACMAN_TARGET is $PACMAN_TARGET"
-#    exit
-    return 0
+        inform "Installing preload packages required to access remote profiles..."
+        for i in `seq 0 $((${#var_PRELOAD_REPOSITORIES[@]}/2-1))`
+        do
+                repo=${var_PRELOAD_REPOSITORIES[$(($i*2))]}
+                location=${var_PRELOAD_REPOSITORIES[$(($i*2+1))]}
+                if ! list_pacman_repos runtime | grep -q $repo
+                then
+                        add_pacman_repo runtime $repo "$location" || return 1
+                fi
+        done
+        return 0
+
+        inform "Checking for pacman updates..."; $PACMAN -Sy pacman --noconfirm &>/dev/null || return 1 # update pacman first to avoid having to run twice
+        for pkg in $var_PRELOAD_PACKAGES; do inform "Installing $pkg for use during preload..."; $PACMAN -Sy --noconfirm --needed $pkg &>/dev/null || return 1; done
+        # we'd change pacman to yaourt here if yaourt had better pacman config support
+        return 0
 }
 
 worker_configure ()
 {
     inform "Starting system configuration and profile load sequence..."
-
-    # UI TYPE
-    var_UI_TYPE=${arg_ui_type:-cli}
-    ui_init
 
     # LOAD PROFILE
     [[ -z "$var_AUTOMATIC_PROFILE" ]] && \
@@ -252,6 +260,9 @@ worker_configure ()
         die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $var_MODULE_PATHS"
 
     # RUNTIME SOURCES
+    # NOTE: we've already installed some prerequisite packages (git, etc.) in 
+    # order to source remote profiles. We now load any other repos/packages 
+    # that have been specified in the user profile.
     var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
     var_RUNTIME_PACKAGES+=" $RUNTIME_PACKAGES"
 
@@ -329,7 +340,6 @@ worker_write_coda ()
     do
         eval "$misc_command" || show_warning "COMMAND FAILED" "$misc_command"
     done
-
     # rerun postconfigure_target
     # this has been run once in the the core/automatic worker_configure_system
     # but we may have made changes that require mkinitcpio recreation.
@@ -358,7 +368,7 @@ worker_write_coda ()
 strip_punct() { local stripped="$*"; stripped="${stripped#[[:punct:]]}"; stripped="${stripped%[[:punct:]]}"; echo -n "$stripped"; }
 unquote() { local stripped="$*"; stripped="${stripped#\"}"; stripped="${stripped%\"}"; echo -n "$stripped"; }
 
-d() { debug PROCEDURE "$1"; }
+d() { debug PROCEDURE "$1"; return 0; }
 dstate() { d "STATECHK: $1 is currently: ${!1}"; }
 dfunc()
 {
@@ -425,8 +435,9 @@ source_and_overlay()
     dfunc "$*"
     local revert_overlay=$var_OVERLAY_PATH
     var_OVERLAY_PATH="$(dirname "$1")/overlay"
-    inform "Sourcing profile:\n${1#$var_TEMP_DIR}"
-    source "$1" && inform "Successfully processed profile:\n${1#$var_TEMP_DIR}" \
+    # inform "Sourcing profile:\n${1#$var_TEMP_DIR}"
+    local divider="----------------------------------------------------------------------"
+    source "$1" && inform "\n${divider}\nSuccessfully loaded profile:\n${1#$var_TEMP_DIR}\n${divider}\n" \
                 || die_error "Failed to process profile \"$1\"."
     var_OVERLAY_PATH=$revert_overlay
 } 
@@ -620,16 +631,24 @@ depend_profile() { load_profile "$1"; }
 # and build up lists of commands that will be executed later by workers (thus the
 # commands that are represented in the profile aren't "truly" executed till the
 # appropriate phase/worker in aif).
-packages()    { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$* "; dstate TARGET_PACKAGES; }; package() { packages "$*"; }
-blacklist()   { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES_EXCLUDE+="$* "; dstate TARGET_PACKAGES; }; blacklists () { blacklist "$*"; }
-config ()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate CONFIG_CHANGES; }; configs() { config "$*"; }
-daemons()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_daemons $*"); dstate CONFIG_CHANGES; }; daemon() { daemons "$*"; }
-modules()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstate CONFIG_CHANGES; }; module() { modules "$*"; }
-networks()    { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_networks $*"); dstate CONFIG_CHANGES; }; network() { networks "$*"; }
-kernelparams(){ dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_kernelparams $*"); dstate CONFIG_CHANGES; }; kernelparam() { kernelparams "$*"; }
-coda()        { dfunc; [[ -n "$*" ]] && MISC_COMMANDS+=("$*"); dstate MISC_COMMANDS; }; codas(){ coda "$*"; }
-overlays()    { dfunc; [[ -n "$*" ]] && for overlay_file in $*; do var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}"; done; dstate var_OVERLAY_FILES; }
-overlay()     { overlays "$*"; }
+packages()      { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$* "; dstate TARGET_PACKAGES; }
+package()       { packages "$*"; }
+blacklist()     { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES_EXCLUDE+="$* "; dstate TARGET_PACKAGES; }
+blacklists()    { blacklist "$*"; }
+config ()       { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate CONFIG_CHANGES; }
+configs()       { config "$*"; }
+daemons()       { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_daemons $*"); dstate CONFIG_CHANGES; }
+#daemon()       { daemons "$*"; }
+modules()       { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstate CONFIG_CHANGES; }
+module()        { modules "$*"; }
+networks()      { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_networks $*"); dstate CONFIG_CHANGES; }
+network()       { networks "$*"; }
+kernelparams()  { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_kernelparams $*"); dstate CONFIG_CHANGES; }
+kernelparam()   { kernelparams "$*"; }
+coda()          { dfunc; [[ -n "$*" ]] && MISC_COMMANDS+=("$*"); dstate MISC_COMMANDS; }
+codas()         { coda "$*"; }
+overlays()      { dfunc; [[ -n "$*" ]] && for overlay_file in $*; do var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}"; done; dstate var_OVERLAY_FILES; }
+overlay()       { overlays "$*"; }
 
 # all _functions are identical to the non _ variants used in profile files.
 # The profile commands (config, daemons, etc.) that have _ equivalents are 
