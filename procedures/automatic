@@ -69,7 +69,7 @@ var_TEMP_DIR="${RUNTIME_DIR}/${var_MODULE_NAME}-temp"
 var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples peripherals filesystems) # figtree specific
 var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && var_AIF_PROCEDURE_PATH="$2"
 var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}"
-var_OPTS_STRING="c:r:"
+var_OPTS_STRING="c:r:a"
 # Runtime packages are used during installation but are not installed to the target system unless included in TARGET_PACKAGES as well
 var_RUNTIME_REPOSITORIES= # var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_PACKAGES="automake make patch" # "git gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config"
@@ -77,6 +77,8 @@ var_RUNTIME_PACKAGES="automake make patch" # "git gcc autoconf automake bison fa
 # They use the var_RUNTIME_REPOSITORIES value above
 var_RUNTIME_PACKAGES_PRELOAD="git" # yaourt mercurial svn
 #var_TARGET_GROUPS="base" this doesn't do anything here unless I override worker_package_list or assign this to TARGET_GROUPS, not var_TARGET_GROUPS
+var_AUTOMATIC_PROFILE= # assigned in process_args
+var_AUR_SUPPORT= # by default no AUR support unless -a command line parameter; TODO: should this be default on?
 
 # ----------------------------------------------------------------------
 # DEFAULT VALUES
@@ -109,7 +111,7 @@ HOSTNAME=
 NETWORK_PERSIST=
 NETWORKS=
 
-# set defaults
+# default /etc/rc.conf values
 default_rc_HOSTNAME="archlinux"
 default_rc_LOCALE="en_US.UTF-8"
 default_rc_DAEMON_LOCALE="no"
@@ -122,12 +124,13 @@ default_rc_USECOLOR="yes"
 default_rc_HOSTNAME=""
 default_rc_NETWORK_PERSIST="no"
 default_rc_NETWORKS=(main home work)
+
+# default filesystem values
 default_fs_GRUB_DEVICE=/dev/sda
 default_fs_PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
 default_fs_BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
 /dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
 /dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
-
 
 # ----------------------------------------------------------------------
 # PHASE WORKER CUSTOMIZATIONS
@@ -150,16 +153,12 @@ phase_system+=(write_configs write_overlay write_coda) # module specific custom 
 process_args ()
 {
     dfunc
-    var_AUTOMATIC_PROFILE=
-    while [[ -n $1 ]]
-    do
-        case $1 in
-            -c) [[ -n "$2" ]] && var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
-            -r) [[ -n "$2" ]] && var_REPO_TYPE=$2 || die_error "You must specify a repository type of git, hg, or svn with the -r flag." ;;
-            *) usage && exit 5 ;;
-        esac
-        shift 2
-    done
+    case $1 in
+        -a) var_AUR_SUPPORT=1 ;;
+        -c) [[ -n "$2" ]] && echo "var_AUTOMATIC_PROFILE=$2" || die_error "You must specify an aif config profile when using the -c flag." ;;
+        -r) [[ -n "$2" ]] && echo "var_REPO_TYPE=$2" || die_error "You must specify a repository type of git, hg, or svn with the -r flag." ;;
+        *) usage && exit 5 ;;
+    esac
 }
 
 read -r -d '' var_ARGS_USAGE <<-'EOF'
@@ -224,6 +223,16 @@ Options:
                     mercurial (hs is an acceptable abbreviation)
                     svn
 
+-a                  Enable AUR support.
+                    This will automatically add base-devel to the
+                    runtime support packages and, when a package
+                    included in a profile is not found, will 
+                    search the AUR for the package, building and
+                    installing it if found. 
+                    
+
+                    
+
 ------------------------------------------------------------------------
 EOF
 
@@ -257,14 +266,22 @@ fi
 worker_preload ()
 {
         inform "Installing preload packages required to access remote profiles..."
-        echo "mod and pro $var_MODULE_PATH $var_AUTOMATIC_PROFILE"
+
+        # check our command line parameters to see if we need to preload git, hg, etc.
+        # thus avoiding installing what we don't need
         var_RUNTIME_PACKAGES_PRELOAD+=" $(detect_repo_type $var_AIF_PROCEDURE_PATH)"
         var_RUNTIME_PACKAGES_PRELOAD+=" $(detect_repo_type $var_AUTOMATIC_PROFILE)"
-        var_RUNTIME_PACKAGES_PRELOAD="$(echo -n $var_RUNTIME_PACKAGES_PRELOAD | uniq)"
-        echo "PREDEDUP: $var_RUNTIME_PACKAGES_PRELOAD"
+
+        # AUR
+        if [[ -n "$var_AUR_SUPPORT" ]]
+        then
+                var_RUNTIME_PACKAGES_PRELOAD+=" $(list_packages group base-devel | awk '{print $2}')"
+                notify "AUR ON:\nRunning procedure with AUR support. Packages will be sourced from AUR if no found in official repositories."
+        else
+                notify "AUR OFF:\nUse command line parameter '-a' if you wish to run with automatic AUR support."
+        fi
+
         var_RUNTIME_PACKAGES_PRELOAD="$(dedup $var_RUNTIME_PACKAGES_PRELOAD)"
-        echo "POSTDEDUP: $var_RUNTIME_PACKAGES_PRELOAD"
-        read answer
 
         for i in `seq 0 $((${#var_RUNTIME_REPOSITORIES[@]}/2-1))`
         do
@@ -908,8 +925,10 @@ installpkg() {
             elif `pacman -Ss "^$package$" &>/dev/null`
             then
                 run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $package" $TMP_PACMAN_LOG "Installing $package..." 
-            else
+            elif [[ -n "$var_AUR_SUPPORT" ]]
                 installaur "$package" || return 1
+            else
+                show_warning "PACKAGE NOT FOUND: $package\nIf you wish to install packages from AUR, run this procedure again with the '-a' command line parameter."
             fi
         done
 
