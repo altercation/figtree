@@ -306,7 +306,7 @@ worker_select_source ()
 worker_write_configs()
 {
     inform "Configuration write started"
-    dfunc; for config_command in ${CONFIG_CHANGES[@]}; do eval '$config_command' || show_warning "CONFIG FAILED" "$config_command"; done
+    dfunc; for config_command in ${CONFIG_CHANGES[@]}; do echo '$config_command'; read answer || show_warning "CONFIG FAILED" "$config_command"; done
 }
 
 worker_write_overlay()
