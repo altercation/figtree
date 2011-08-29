@@ -822,14 +822,10 @@ config_switch ()
     fi
     case $method in
         set|add)
-            $target_function set $file_path $target_value $* \
-                && inform "$target_value SET: $*" \
-                || show_warning "FAILED $target_value $method" "$*"
+            $target_function set $file_path $target_value $*  && ( inform "value \"$target_value\" set to \"$*\" in $file_path"; return 0 )  || ( show_warning "CONFIG FAILURE" "FAILED $target_value $method" "$*"; return 1 )
         ;;
         unset|remove|delete)
-            "$target_function" unset $file_path $target_value $* \
-                && inform "$target_value UNSET: $*" \
-                || show_warning "FAILED $target_value $method" "$*"
+            "$target_function" unset $file_path $target_value $* && ( inform "value \"$target_value\" removed from $file_path"; return 0 ) || ( show_warning "CONFIG FAILURE" "FAILED $target_value $method" "$*"; return 1 )
         ;;
     esac
 }
