@@ -215,7 +215,7 @@ elif [[ "$NOFAILSAFE" != "1" ]]
 then
     # slightly less scary warning
     inform "This procedure will perform a complete, automated system installation."
-    ask_yesno "Do you want to continue?" no || exit
+    ask_yesno "Do you want to continue?" yes || exit
 fi
 }
 
@@ -250,7 +250,7 @@ worker_configure ()
 
     # FILESYSTEM
     # TODO: we're not yet setting any defaults for filesystem values
-    set_profile_or_default_values "GRUB_DEVICE PARTITIONS BLOCKDATA"
+#    set_profile_or_default_values "GRUB_DEVICE PARTITIONS BLOCKDATA"
     [[ -z "$PARTITIONS" ]] && die_error "You did not specify a partition scheme"
     [[ -z "$BLOCKDATA"  ]] && die_error "You did not specify a partition scheme"
     [[ -z "$GRUB_DEVICE" ]] && die_error "You did not specify a grub device"
