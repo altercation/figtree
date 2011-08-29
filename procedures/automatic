@@ -272,7 +272,7 @@ worker_preload ()
         var_RUNTIME_PACKAGES_PRELOAD+=" $(detect_repo_type $var_AIF_PROCEDURE_PATH)"
         var_RUNTIME_PACKAGES_PRELOAD+=" $(detect_repo_type $var_AUTOMATIC_PROFILE)"
 
-        # AUR
+        # AUR (see also the installpkg function below)
         if [[ -n "$var_AUR_SUPPORT" ]]
         then
                 var_RUNTIME_PACKAGES_PRELOAD+=" $(list_packages group base-devel | awk '{print $2}')"
