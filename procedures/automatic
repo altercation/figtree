@@ -713,7 +713,7 @@ write_overlay_file()
     # TODO: confirm backups are created correctly
     # optional: --preserve-context for selinux compliance
     [[ ! -f "$from_path" ]] && ( show_warning "NO OVERLAY FILE SOURCE" "Profile overlay requests non-existant source file: \"$overlay_file\""; return 1 )
-    if install -C -D -S ".figtree.old" -v -T "$from_path" "$to_path"
+    if install -C -D -S ".figtree.old" -v -T "$from_path" "$to_path" &>/dev/null
     then
         inform "Successful write of overlay file \"$overlay_file\""
         return 0
