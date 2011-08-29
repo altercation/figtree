@@ -142,8 +142,8 @@ default_fs_BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_la
 # phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for reference
 # phase_finish=(msg_report) # defaults, for reference
 phase_preparation=(preconfigure intro runtime_network preload configure select_source runtime_repositories runtime_packages)
-#phase_basics=() # off for testing
-#phase_system=() # off for testing
+phase_basics=() # off for testing
+phase_system=() # off for testing
 phase_system+=(write_configs write_overlay write_coda) # module specific custom workers (see below)
 
 # ----------------------------------------------------------------------
