@@ -359,8 +359,8 @@ worker_write_configs()
     inform "Configuration write started..."
     for i in $(seq ${#CONFIG_CHANGES[@]})
     do
-        inform "executing config $i of ${#CONFIG_CHANGES[@]}: ${CONFIG_CHANGES[$i]#_}"
-        ${CONFIG_CHANGES[$i]} || show_warning "WRITE CONFIGS ERROR:" "COMMAND FAILED ${CONFIG_CHANGES[$i]}"
+        d "CONFIG: executing config $i of ${#CONFIG_CHANGES[@]}: ${CONFIG_CHANGES[$i]#_}"
+        ${CONFIG_CHANGES[$i]}
         echo "next..."; read answer
     done
 }
@@ -804,6 +804,7 @@ config_list ()
         current_list=$new_list
     done
     new_list="(${current_list% })"
+    echo "HERE!!!"; read answer
     config_value set "$config_file" "$config_name" "$new_list"
 }
 
@@ -823,10 +824,10 @@ config_switch ()
     fi
     case $method in
         set|add)
-            $target_function set $file_path $target_value $*  && ( inform "CONFIG SUCCESS: value \"$target_value\" set to \"$*\" in $file_path"; return 0 )  || ( echo "IN A"; show_warning "CONFIG FAILURE" "FAILED $target_value $method $*"; return 1 )
+            $target_function set $file_path $target_value $*  && ( inform "CONFIG SUCCESS: value \"$target_value\" set to \"$*\" in $file_path"; return 0 )  || ( show_warning "CONFIG ERROR: failed to write value \"$target_value\" set to \"$*\" in $file_path"; return 1 )
         ;;
         unset|remove|delete)
-            "$target_function" unset $file_path $target_value $* && ( inform "CONFIG SUCCESS: value \"$target_value\" removed from $file_path"; return 0 ) || ( echo "IN B"; show_warning "CONFIG FAILURE" "FAILED $target_value $method $*"; return 1 )
+            "$target_function" unset $file_path $target_value $* && ( inform "CONFIG SUCCESS: value \"$target_value\" removed from $file_path"; return 0 ) || ( show_warning "CONFIG ERROR: failed to remove value \"$target_value\" from $file_path"; return 1 )
         ;;
     esac
 }
