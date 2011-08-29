@@ -275,6 +275,9 @@ worker_preload ()
         # AUR (see also the installpkg function below)
         if [[ -n "$var_AUR_SUPPORT" ]]
         then
+                echo "base-devel: $(list_packages group base-devel | awk '{print $2}')"
+                echo "correct?"
+                read answer
                 var_RUNTIME_PACKAGES_PRELOAD+=" $(list_packages group base-devel | awk '{print $2}')"
                 notify "AUR ON: Running procedure with AUR support. Packages will be sourced from AUR if not found in official repositories."
         else
