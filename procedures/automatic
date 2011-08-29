@@ -822,10 +822,10 @@ config_switch ()
     fi
     case $method in
         set|add)
-            $target_function set $file_path $target_value $*  && ( inform "value \"$target_value\" set to \"$*\" in $file_path"; return 0 )  || ( show_warning "CONFIG FAILURE" "FAILED $target_value $method" "$*"; return 1 )
+            $target_function set $file_path $target_value $*  && ( inform "value \"$target_value\" set to \"$*\" in $file_path"; return 0 )  || ( echo "IN A"; show_warning "CONFIG FAILURE" "FAILED $target_value $method $*"; return 1 )
         ;;
         unset|remove|delete)
-            "$target_function" unset $file_path $target_value $* && ( inform "value \"$target_value\" removed from $file_path"; return 0 ) || ( show_warning "CONFIG FAILURE" "FAILED $target_value $method" "$*"; return 1 )
+            "$target_function" unset $file_path $target_value $* && ( inform "value \"$target_value\" removed from $file_path"; return 0 ) || ( echo "IN B"; show_warning "CONFIG FAILURE" "FAILED $target_value $method $*"; return 1 )
         ;;
     esac
 }
@@ -926,7 +926,8 @@ installpkg() {
             then
                 installaur "$package" || return 1
             else
-                show_warning "PACKAGE NOT FOUND: $package\nIf you wish to install packages from AUR, run this procedure again with the '-a' command line parameter."
+                echo "DEBUG: var_AUR_SUPPORT=$var_AUR_SUPPORT"
+                show_warning "PACKAGE NOT FOUND" "$package\nIf you wish to install packages from AUR, run this procedure again with the '-a' command line parameter."
             fi
         done
 
