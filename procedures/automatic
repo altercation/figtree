@@ -925,6 +925,7 @@ installpkg() {
             then
                 run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $package" $TMP_PACMAN_LOG "Installing $package..." 
             elif [[ -n "$var_AUR_SUPPORT" ]]
+            then
                 installaur "$package" || return 1
             else
                 show_warning "PACKAGE NOT FOUND: $package\nIf you wish to install packages from AUR, run this procedure again with the '-a' command line parameter."
