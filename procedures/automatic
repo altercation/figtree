@@ -446,8 +446,9 @@ detect_repo_type()
         elif [ $(expr "$test_path" : 'https*://code.google.com') -gt 0 ]; then repo_type=svn
         elif [ $(expr "$test_path" : '.*/trunk/') -gt 0 ]; then repo_type=svn
         elif [ $(expr "$test_path" : '.*/svn/') -gt 0 ]; then repo_type=svn
-        else
-            : # no repotype detected... case where we error out here? TODO: review this case
+        fi
+    else # repo type already set on command line
+        if [[ "${repo_type}" == "hg" ]]; then repo_type="mercurial"; fi
     fi
     # we've set the repo type automatically or via command line, so one more check to make sure
     # that no unsupported repository type has been specified by -r on the command line
@@ -456,6 +457,7 @@ detect_repo_type()
         *) die_error "$repo_type is an unsupported repository type" ;;
     esac
     echo -n $repo_type
+exit
 }
 
 # ----------------------------------------------------------------------
