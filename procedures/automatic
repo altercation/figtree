@@ -81,6 +81,22 @@ var_AUTOMATIC_PROFILE= # assigned in process_args
 var_AUR_SUPPORT= # by default no AUR support unless -a command line parameter; TODO: should this be default on?
 
 # ----------------------------------------------------------------------
+# PHASE WORKER CUSTOMIZATIONS
+# ----------------------------------------------------------------------
+# we reorder phase_preparation so that if we're running as a local 
+# procedure from install media, we set up the network first and bring in
+# the required runtime packages (primarily for our vcs remote sourcing)
+# phase_basics=(set_clock prepare_disks) # defaults, here for reference during module development
+# phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for reference
+# phase_finish=(msg_report) # defaults, for reference
+#
+#phase_basics=() # off for testing
+#phase_system=() # off for testing
+
+phase_preparation=(preconfigure intro runtime_network preload configure select_source runtime_repositories runtime_packages)
+phase_system+=(write_configs write_overlay write_coda) # module specific custom workers (see below)
+
+# ----------------------------------------------------------------------
 # DEFAULT VALUES
 # ----------------------------------------------------------------------
 # overridden by values in profiles. profile variables are identical but
@@ -131,22 +147,6 @@ default_fs_PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
 default_fs_BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
 /dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
 /dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
-
-# ----------------------------------------------------------------------
-# PHASE WORKER CUSTOMIZATIONS
-# ----------------------------------------------------------------------
-# we reorder phase_preparation so that if we're running as a local 
-# procedure from install media, we set up the network first and bring in
-# the required runtime packages (primarily for our vcs remote sourcing)
-# phase_basics=(set_clock prepare_disks) # defaults, here for reference during module development
-# phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for reference
-# phase_finish=(msg_report) # defaults, for reference
-#
-phase_basics=() # off for testing
-phase_system=() # off for testing
-
-phase_preparation=(preconfigure intro runtime_network preload configure select_source runtime_repositories runtime_packages)
-phase_system+=(write_configs write_overlay write_coda) # module specific custom workers (see below)
 
 # ----------------------------------------------------------------------
 # aif.sh related functions
