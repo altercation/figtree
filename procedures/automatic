@@ -276,8 +276,24 @@ worker_configure ()
     var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
     var_RUNTIME_PACKAGES+=" $RUNTIME_PACKAGES"
 
-    # all default_ values
-    set_profile_or_default_values "${!default_*}"
+echo "defaults..."
+    for default_value in ${!_default*}
+    do
+        echo $default_value
+        local value=${default_value#default_}
+        if [[ -z ${!value} ]]
+        then
+                if declare | grep -q "$defaul_value=("
+                then # array
+                    eval eval $value="(\${default_value[*]})"
+                else # normal variable
+                    eval $value=\'${!default_value}\'
+                fi
+                inform "Using default procedure defined value for $value"
+        else
+                inform "Using profile defined value for $value"
+        fi
+    done
 
 exit
 
@@ -392,7 +408,7 @@ dedup()
     done
     for item in "$dupcheck"
     do
-        
+   :     
     done
 }
 
@@ -433,22 +449,6 @@ debug_report_next()
 default_values ()
 {
     dfunc "$*"
-    for default_value in $@
-    do
-        local value=${default_value#default_}
-        if [[ -z ${!value} ]]
-        then
-                if declare | grep -q "$defaul_value=("
-                then # array
-                    eval eval $value="(\${default_value[*]})"
-                else # normal variable
-                    eval $value=\'${!default_value}\'
-                fi
-                inform "Using default procedure defined value for $value"
-        else
-                inform "Using profile defined value for $value"
-        fi
-    done
 }
 
 detect_repo_type()
