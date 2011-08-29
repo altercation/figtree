@@ -220,8 +220,8 @@ Options:
                     control system here with one of:
 
                     git
-                    mercurial (hs is an acceptable abbreviation)
-                    svn
+                    mercurial (hg is an acceptable abbreviation)
+                    subversion (svn is an acceptable abbreviation)
 
 -a                  Enable AUR support.
                     This will automatically add base-devel to the
@@ -472,12 +472,14 @@ detect_repo_type()
         elif [ $(expr "$test_path" : 'https*://.*bitbucket.org') -gt 0 ]; then repo_type=mercurial
         elif [ $(expr "$test_path" : '.*/hg/') -gt 0 ]; then repo_type=mercurial
         elif [ $(expr "$test_path" : '.*/mercurial/') -gt 0 ]; then repo_type=mercurial
-        elif [ $(expr "$test_path" : 'https*://code.google.com') -gt 0 ]; then repo_type=svn
-        elif [ $(expr "$test_path" : '.*/trunk/') -gt 0 ]; then repo_type=svn
-        elif [ $(expr "$test_path" : '.*/svn/') -gt 0 ]; then repo_type=svn
+        elif [ $(expr "$test_path" : 'https*://code.google.com') -gt 0 ]; then repo_type=subversion
+        elif [ $(expr "$test_path" : '.*/trunk/') -gt 0 ]; then repo_type=subversion
+        elif [ $(expr "$test_path" : '.*/svn/') -gt 0 ]; then repo_type=subversion
         fi
-    else # repo type already set on command line
-        if [[ "${repo_type}" == "hg" ]]; then repo_type="mercurial"; fi
+    elif [[ "${repo_type}" == "hg" ]]; then
+        repo_type="mercurial"
+    elif [[ "${repo_type}" == "svn" ]]; then
+        repo_type="subversion"
     fi
     # we've set the repo type automatically or via command line, so one more check to make sure
     # that no unsupported repository type has been specified by -r on the command line
@@ -808,7 +810,7 @@ config_switch ()
 {
 # config set /config/file/path CONFIG_ITME_NAME config value here
     local method=$1; shift
-    local target_value=$(echo -n ${FUNCNAME[1]} | tr a-z A-Z)
+    local target_value=$(echo -n ${FUNCNAME[1]#_} | tr a-z A-Z)
     if [[ "$target_value" == "CONFIG" ]]
     then
         local target_function="config_value"
