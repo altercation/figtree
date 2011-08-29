@@ -360,7 +360,7 @@ worker_write_configs()
     for i in $(seq ${#CONFIG_CHANGES[@]})
     do
         inform "executing config $i of ${#CONFIG_CHANGES[@]}: ${CONFIG_CHANGES[$i]#_}"
-        ${CONFIG_CHANGES[$i]} || show_warning "CONFIG FAILED" "$config_command"
+        ${CONFIG_CHANGES[$i]} || show_warning "WRITE CONFIGS ERROR:" "COMMAND FAILED ${CONFIG_CHANGES[$i]}"
     done
 }
 
