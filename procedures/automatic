@@ -376,7 +376,10 @@ worker_write_overlay()
     # TODO: we might need to set certain permissions, but i'd rather leave this for the misc step
     #       i could also make the system_misc function or worker process an array of commands; here we use installs permissions arg
     dfunc
-    echo "TARGET=$var_TARGET_DIR"
+}
+
+write_overlay()
+{
     for overlay_file in $var_OVERLAY_FILES
     do
             # TODO: the following substitution performs differently in script vs command line;
@@ -387,8 +390,16 @@ worker_write_overlay()
             to_path="$var_TARGET_DIR/${overlay_file#*\/\/}"
             # TODO: test if permissions are retained via --preserve-context
             # TODO: confirm backups are created correctly
-            install -C -D -S ".figtree.old" --preserve-context -v -T "$from_path" "$to_path" \
-            || die_error "failed to overlay file from \"$from_path\" to \"$to_path\""
+            # optional: --preserve-context for selinux compliance
+            [[ ! -f "$from_path" ]] && show_warning "NO OVERLAY FILE SOURCE" "Profile overlay requests non-existant source file: \"$overlay_file\"" && return 1
+            if install -C -D -S ".figtree.old" -v -T "$from_path" "$to_path" \
+            then
+                inform "Successful write of overlay file \"$overlay_file\""
+                return 0
+            else
+                show_warning "CRITICAL OVERLAY FILE ERROR" "Failed to overlay file from \"$from_path\" to \"$to_path\""
+                return 1
+            fi
     done
 }
 
