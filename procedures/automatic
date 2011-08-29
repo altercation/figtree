@@ -299,7 +299,7 @@ worker_configure ()
     # order to source remote profiles. We now load any other repos/packages 
     # that have been specified in the user profile.
     var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
-    var_RUNTIME_PACKAGES+=" $RUNTIME_PACKAGES"
+    var_RUNTIME_PACKAGES=$(dedup "$var_RUNTIME_PACKAGES $RUNTIME_PACKAGES")
 
     # DEFAULT VALUES
     # override any default_ values using values from profiles
@@ -894,7 +894,7 @@ installpkg() {
                 [ -n "$ALL_PACKAGES" ] && ALL_PACKAGES="$ALL_PACKAGES $var_TARGET_PACKAGES"
                 [ -z "$ALL_PACKAGES" ] && ALL_PACKAGES=$var_TARGET_PACKAGES
         fi
-        ALL_PACKAGES=`echo "$ALL_PACKAGES"`
+        ALL_PACKAGES=`dedup "$ALL_PACKAGES"` # TODO: note dedup
         [ -z "$ALL_PACKAGES" ] && die_error "No packages/groups specified to install"
 
         target_special_fs on
