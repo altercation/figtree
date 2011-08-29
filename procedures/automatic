@@ -93,6 +93,21 @@ var_TARGET_GROUPS="base"
 # assigned above and takes any extra values the user has assigned to 
 # RUNTIME_REPOSITORIES in their profiles
 
+# override anything pulled in from depend_procedure
+HOSTNAME=
+LOCALE=
+DAEMON_LOCALE=
+HARDWARECLOCK=
+TIMEZONE=
+KEYMAP=
+CONSOLEFONT=
+CONSOLEMAP=
+USECOLOR=
+HOSTNAME=
+NETWORK_PERSIST=
+NETWORKS=
+
+# set defaults
 default_HOSTNAME="archlinux"
 default_LOCALE="en_US.UTF-8"
 default_DAEMON_LOCALE="no"
@@ -104,7 +119,7 @@ default_CONSOLEMAP=
 default_USECOLOR="yes"
 default_HOSTNAME=""
 default_NETWORK_PERSIST="no"
-default_NETWORKS=(main)
+default_NETWORKS=(main home work)
 
 # ----------------------------------------------------------------------
 # PHASE WORKER CUSTOMIZATIONS
@@ -276,16 +291,17 @@ worker_configure ()
     var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
     var_RUNTIME_PACKAGES+=" $RUNTIME_PACKAGES"
 
-echo "defaults..."
-    for default_value in ${!_default*}
+    for default_value in "${!default_@}"
     do
-        echo $default_value
+        echo "hello! $default_value"
         local value=${default_value#default_}
         if [[ -z ${!value} ]]
         then
-                if declare | grep -q "$defaul_value=("
+                if declare | grep -q "$default_value=("
                 then # array
-                    eval eval $value="(\${default_value[*]})"
+                    echo "$default_value"
+                    eval eval $value="(\${$default_value[*]})"
+                    #eval "echo $value=\"(\${$value[*]})\"" # DEBUG
                 else # normal variable
                     eval $value=\'${!default_value}\'
                 fi
