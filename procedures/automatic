@@ -383,29 +383,6 @@ worker_write_overlay()
     done
 }
 
-write_overlay_file()
-{
-    local overlay_file="$1"
-    # TODO: the following substitution performs differently in script vs command line;
-    # command line *requires* last slash to be escaped like this:
-    # from_path="${overlay_file/\/\//\/}"
-    # script *requires* last slash to *not* be escaped, so we use that here
-    from_path="${overlay_file/\/\///}"
-    to_path="$var_TARGET_DIR/${overlay_file#*\/\/}"
-    # TODO: test if permissions are retained via --preserve-context
-    # TODO: confirm backups are created correctly
-    # optional: --preserve-context for selinux compliance
-    [[ ! -f "$from_path" ]] && show_warning "NO OVERLAY FILE SOURCE" "Profile overlay requests non-existant source file: \"$overlay_file\"" && return 1
-    if install -C -D -S ".figtree.old" -v -T "$from_path" "$to_path" \
-    then
-        inform "Successful write of overlay file \"$overlay_file\""
-        return 0
-    else
-        show_warning "CRITICAL OVERLAY FILE ERROR" "Failed to overlay file from \"$from_path\" to \"$to_path\""
-        return 1
-    fi
-}
-
 worker_write_coda ()
 {
     # complete system customization
@@ -721,6 +698,29 @@ select_profile ()
 {
     true
     # for future use in an interative procedure
+}
+
+write_overlay_file()
+{
+    local overlay_file="$1"
+    # TODO: the following substitution performs differently in script vs command line;
+    # command line *requires* last slash to be escaped like this:
+    # from_path="${overlay_file/\/\//\/}"
+    # script *requires* last slash to *not* be escaped, so we use that here
+    from_path="${overlay_file/\/\///}"
+    to_path="$var_TARGET_DIR/${overlay_file#*\/\/}"
+    # TODO: test if permissions are retained via --preserve-context
+    # TODO: confirm backups are created correctly
+    # optional: --preserve-context for selinux compliance
+    [[ ! -f "$from_path" ]] && show_warning "NO OVERLAY FILE SOURCE" "Profile overlay requests non-existant source file: \"$overlay_file\"" && return 1
+    if install -C -D -S ".figtree.old" -v -T "$from_path" "$to_path" \
+    then
+        inform "Successful write of overlay file \"$overlay_file\""
+        return 0
+    else
+        show_warning "CRITICAL OVERLAY FILE ERROR" "Failed to overlay file from \"$from_path\" to \"$to_path\""
+        return 1
+    fi
 }
 
 # ----------------------------------------------------------------------
