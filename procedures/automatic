@@ -72,7 +72,7 @@ var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}"
 var_OPTS_STRING="c:r:"
 var_RUNTIME_REPOSITORIES= # var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 #var_RUNTIME_PACKAGES="git mercurial svn gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config" # yaourt
-var_RUNTIME_PACKAGES="git" # gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config" # yaourt
+var_RUNTIME_PACKAGES="git gcc" #autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config" # yaourt
 var_TARGET_GROUPS="base"
 
 # ----------------------------------------------------------------------
