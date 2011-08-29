@@ -241,14 +241,12 @@ worker_preload ()
                         add_pacman_repo runtime $repo "$location" || return 1
                 fi
         done
-        return 0
-
-        inform "Checking for pacman updates..."; $PACMAN -Sy pacman --noconfirm &>/dev/null || return 1 # update pacman first to avoid having to run twice
+        inform "Checking for pacman updates..."
+        $PACMAN -Sy pacman --noconfirm &>/dev/null || return 1 # update pacman first to avoid having to run twice
         for pkg in $var_RUNTIME_PACKAGES_PRELOAD
         do
                 inform "Installing $pkg for use during preload..."; $PACMAN -Sy --noconfirm --needed $pkg &>/dev/null || return 1
         done
-        # we'd change pacman to yaourt here if yaourt had better pacman config support
         return 0
 }
 
