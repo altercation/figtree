@@ -310,7 +310,7 @@ worker_write_configs()
     inform "Configuration write started..."
     for i in $(seq ${#CONFIG_CHANGES[@]})
     do
-        inform "executing config $i of ${#CONFIG_CHANGES[@]}: ${CONFIG_CHANGES[$i]}"
+        inform "executing config $i of ${#CONFIG_CHANGES[@]}: ${CONFIG_CHANGES[$i]#_}"
         ${CONFIG_CHANGES[$i]} || show_warning "CONFIG FAILED" "$config_command"
     done
     exit
@@ -432,6 +432,32 @@ set_profile_or_default_values ()
     done
 }
 
+detect_repo_type()
+{
+    # detect/set repo_type
+    local repo_type=${var_REPO_TYPE:-} # from optional -r command line argument
+    load test_path="$1"
+    if [[ -z ${repo_type} ]]; then # no repo type set on command line
+        if [ $(expr "$test_path" : 'https*://.*github.com') -gt 0 ]; then repo_type=git
+        elif [ $(expr "$test_path" : '.*/git/') -gt 0 ]; then repo_type=git
+        elif [ $(expr "$test_path" : 'https*://.*bitbucket.org') -gt 0 ]; then repo_type=mercurial
+        elif [ $(expr "$test_path" : '.*/hg/') -gt 0 ]; then repo_type=mercurial
+        elif [ $(expr "$test_path" : '.*/mercurial/') -gt 0 ]; then repo_type=mercurial
+        elif [ $(expr "$test_path" : 'https*://code.google.com') -gt 0 ]; then repo_type=svn
+        elif [ $(expr "$test_path" : '.*/trunk/') -gt 0 ]; then repo_type=svn
+        elif [ $(expr "$test_path" : '.*/svn/') -gt 0 ]; then repo_type=svn
+        else
+            : # no repotype detected... case where we error out here? TODO: review this case
+    fi
+    # we've set the repo type automatically or via command line, so one more check to make sure
+    # that no unsupported repository type has been specified by -r on the command line
+    case $repo_type in
+        git|mercurial|svn) inform "using repository of type $repo_type" ;;
+        *) die_error "$repo_type is an unsupported repository type" ;;
+    esac
+    echo -n $repo_type
+}
+
 # ----------------------------------------------------------------------
 # lib-fileprocessing
 # ----------------------------------------------------------------------
@@ -462,18 +488,8 @@ make_local ()
     # subsequently use that repo information (extracted from the raw path). The infix values below should clean this up for us, but needs more testing
     local full_path_remote=$1
 
-    # detect/set repo_type
-    local repo_type=${var_REPO_TYPE:-} # from optional -r command line argument
-    if [[ -n "$repo_type" ]]; then : # $repo_type already set
-    elif [ $(expr "$full_path_remote" : 'https*://.*github.com') -gt 0 ]; then repo_type=git
-    elif [ $(expr "$full_path_remote" : '.*/git/') -gt 0 ]; then repo_type=git
-    elif [ $(expr "$full_path_remote" : 'https*://.*bitbucket.org') -gt 0 ]; then repo_type=hg
-    elif [ $(expr "$full_path_remote" : '.*/hg/') -gt 0 ]; then repo_type=hg
-    elif [ $(expr "$full_path_remote" : '.*/mercurial/') -gt 0 ]; then repo_type=hg
-    elif [ $(expr "$full_path_remote" : 'https*://code.google.com') -gt 0 ]; then repo_type=svn
-    elif [ $(expr "$full_path_remote" : '.*/trunk/') -gt 0 ]; then repo_type=svn
-    elif [ $(expr "$full_path_remote" : '.*/svn/') -gt 0 ]; then repo_type=svn
-    fi
+    # check repo type
+    local repo_type=$(detect_repo_type "$full_path_remote")
 
     # now set the repo clone command, infix to strip out github/bitbucket raw file path values, and any suffix required to clone (.git)
     local repo_command=
