@@ -825,10 +825,10 @@ config_switch ()
     fi
     case $method in
         set|add)
-            $target_function set $file_path $target_value $*  && ( inform "CONFIG SUCCESS: value \"$target_value\" set to \"$*\" in $file_path"; return 0 )  || ( show_warning "CONFIG ERROR: failed to write value \"$target_value\" set to \"$*\" in $file_path"; return 1 )
+            $target_function set $file_path $target_value $*  && ( inform "CONFIG SUCCESS: value \"$target_value\" set to \"$*\" in $file_path"; return 0 )  || ( show_warning "CONFIG ERROR" "Failed to write value \"$target_value\" set to \"$*\" in $file_path"; return 1 )
         ;;
         unset|remove|delete)
-            "$target_function" unset $file_path $target_value $* && ( inform "CONFIG SUCCESS: value \"$target_value\" removed from $file_path"; return 0 ) || ( show_warning "CONFIG ERROR: failed to remove value \"$target_value\" from $file_path"; return 1 )
+            "$target_function" unset $file_path $target_value $* && ( inform "CONFIG SUCCESS: value \"$target_value\" removed from $file_path"; return 0 ) || ( show_warning "CONFIG ERROR" "Failed to remove value \"$target_value\" from $file_path"; return 1 )
         ;;
     esac
 }
