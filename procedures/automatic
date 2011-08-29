@@ -115,11 +115,11 @@ default_NETWORKS=(main)
 phase_preparation=(intro runtime_network runtime_repositories runtime_packages configure select_source)
 phase_system+=(write_configs write_overlay write_coda) # module specific custom workers (see below)
 
-worker_prepare_disks ()
-{
-    echo "DONE"
-    exit
-}
+#worker_prepare_disks ()
+#{
+#    echo "DONE"
+#    exit
+#}
 
 # ----------------------------------------------------------------------
 # aif.sh related functions
