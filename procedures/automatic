@@ -250,7 +250,17 @@ worker_intro ()
 {
 echo "INTRO"
 local procname="$var_MODULE_NAME $(basename $var_AIF_PROCEDURE_PATH)"
-inform "Running the $procname procedure"
+inform "Running the $procname procedure\n"
+
+# AUR (see also the installpkg function below)
+if [[ -n "$var_AUR_SUPPORT" ]]
+then
+        var_RUNTIME_PACKAGES_PRELOAD+=" $(echo $($PACMAN -Sg base-devel | awk '{print $2}'))"
+        notify "AUR ON: Running procedure with AUR support\n(packages will be sourced from AUR if not found in official repositories)\n"
+else
+        notify "AUR OFF: Use command line parameter '-a' if you wish to run with automatic AUR support.\n"
+fi
+
 if [[ "$NOFAILSAFE" != "1" && ! -e /arch ]]
 then
     # looks like an installed system; override this by exporting env var NOFAILSAFE=1
@@ -262,6 +272,7 @@ then
     inform "This procedure will perform a complete, automated system installation."
     ask_yesno "Do you want to continue?" yes || exit
 fi
+
 }
 
 worker_preload ()
@@ -272,15 +283,6 @@ worker_preload ()
         # thus avoiding installing what we don't need
         var_RUNTIME_PACKAGES_PRELOAD+=" $(detect_repo_type $var_AIF_PROCEDURE_PATH)"
         var_RUNTIME_PACKAGES_PRELOAD+=" $(detect_repo_type $var_AUTOMATIC_PROFILE)"
-
-        # AUR (see also the installpkg function below)
-        if [[ -n "$var_AUR_SUPPORT" ]]
-        then
-                var_RUNTIME_PACKAGES_PRELOAD+=" $(echo $($PACMAN -Sg base-devel | awk '{print $2}'))"
-                notify "AUR ON: Running procedure with AUR support\n(packages will be sourced from AUR if not found in official repositories)"
-        else
-                notify "AUR OFF: Use command line parameter '-a' if you wish to run with automatic AUR support."
-        fi
 
         # dedup and install packages
         var_RUNTIME_PACKAGES_PRELOAD="$(dedup $var_RUNTIME_PACKAGES_PRELOAD)"
@@ -360,7 +362,7 @@ worker_write_configs()
     inform "Configuration write started..."
     for i in $(seq ${#CONFIG_CHANGES[@]})
     do
-        d "CONFIG: executing config $i of ${#CONFIG_CHANGES[@]}: ${CONFIG_CHANGES[$i]#_}"
+        inform "CONFIG: executing config $i of ${#CONFIG_CHANGES[@]}: ${CONFIG_CHANGES[$i]#_}"
         ${CONFIG_CHANGES[$i]}
         echo "next..."; read answer
     done
