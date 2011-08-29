@@ -155,8 +155,8 @@ process_args ()
     dfunc
     case $1 in
         -a) var_AUR_SUPPORT=1 ;;
-        -c) [[ -n "$2" ]] && echo "var_AUTOMATIC_PROFILE=$2" || die_error "You must specify an aif config profile when using the -c flag." ;;
-        -r) [[ -n "$2" ]] && echo "var_REPO_TYPE=$2" || die_error "You must specify a repository type of git, hg, or svn with the -r flag." ;;
+        -c) [[ -n "$2" ]] && var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
+        -r) [[ -n "$2" ]] && var_REPO_TYPE=$2 || die_error "You must specify a repository type of git, hg, or svn with the -r flag." ;;
         *) usage && exit 5 ;;
     esac
 }
@@ -276,9 +276,9 @@ worker_preload ()
         if [[ -n "$var_AUR_SUPPORT" ]]
         then
                 var_RUNTIME_PACKAGES_PRELOAD+=" $(list_packages group base-devel | awk '{print $2}')"
-                notify "AUR ON:\nRunning procedure with AUR support. Packages will be sourced from AUR if no found in official repositories."
+                notify "AUR ON: Running procedure with AUR support. Packages will be sourced from AUR if not found in official repositories."
         else
-                notify "AUR OFF:\nUse command line parameter '-a' if you wish to run with automatic AUR support."
+                notify "AUR OFF: Use command line parameter '-a' if you wish to run with automatic AUR support."
         fi
 
         var_RUNTIME_PACKAGES_PRELOAD="$(dedup $var_RUNTIME_PACKAGES_PRELOAD)"
