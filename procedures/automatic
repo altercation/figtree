@@ -382,6 +382,18 @@ worker_write_coda ()
 
 strip_punct() { local stripped="$*"; stripped="${stripped#[[:punct:]]}"; stripped="${stripped%[[:punct:]]}"; echo -n "$stripped"; }
 unquote() { local stripped="$*"; stripped="${stripped#\"}"; stripped="${stripped%\"}"; echo -n "$stripped"; }
+dedup()
+{
+    # deplicate words from string without changing order
+    for item in "$1"
+    do
+        dupcheck[$item]="$item"
+    done
+    for item in "$1"
+    do
+        
+    done
+}
 
 d() { debug PROCEDURE "$1"; return 0; }
 dstate() { d "STATECHK: $1 is currently: ${!1}"; }
