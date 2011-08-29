@@ -809,7 +809,7 @@ config_list ()
         echo "XXX"
         echo "$config_file $config_name \($config_list\)"
         echo "-----"
-        config_value "$config_file" "$config_name" "\($config_list\)" && ( inform "new value \"$config_name\" written to $config_file"; return 0 ) || return 1
+        config_value set "$config_file" "$config_name" "\($config_list\)" && ( inform "new value \"$config_name\" written to $config_file"; return 0 ) || return 1
 
     fi
     for config_list_item in $config_list; do
