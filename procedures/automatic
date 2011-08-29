@@ -291,25 +291,26 @@ worker_configure ()
     var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
     var_RUNTIME_PACKAGES+=" $RUNTIME_PACKAGES"
 
+    local procedure_items=
+    local profile_items=
     for default_value in "${!default_@}"
     do
-        echo "hello! $default_value"
         local value=${default_value#default_}
         if [[ -z ${!value} ]]
         then
                 if declare | grep -q "$default_value=("
                 then # array
-                    echo "$default_value"
                     eval eval $value="(\${$default_value[*]})"
                     #eval "echo $value=\"(\${$value[*]})\"" # DEBUG
                 else # normal variable
                     eval $value=\'${!default_value}\'
                 fi
-                inform "Using default procedure defined value for $value"
+                eval "procedure_items+=\"Using default procedure value for \$value: \${$value[*]}\\n\""
         else
-                inform "Using profile defined value for $value"
+                eval "profile_items+=\"Using custom profile value for \$value: \${$value[*]}\\n\""
         fi
     done
+    inform "$procedure_items\n$profile_items"
 
 exit
 
@@ -460,11 +461,6 @@ debug_report_next()
     echo "================================================================================"
     echo "enter to continue..."
     read answer
-}
-
-default_values ()
-{
-    dfunc "$*"
 }
 
 detect_repo_type()
