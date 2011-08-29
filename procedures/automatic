@@ -234,6 +234,10 @@ fi
 worker_preload ()
 {
         inform "Installing preload packages required to access remote profiles..."
+        echo "mod and pro $var_MODULE_PATH $var_AUTOMATIC_PROFILE"
+exit
+        var_RUNTIME_PACKAGES_PRELOAD+=" $(detect_repo_type $var_MODULE_PATH)" # could use AIF_PROCEDURE_PATH as well
+        var_RUNTIME_PACKAGES_PRELOAD+=" $(detect_repo_type $var_AUTOMATIC_PROFILE)" # could use AIF_PROCEDURE_PATH as well
         for i in `seq 0 $((${#var_RUNTIME_REPOSITORIES[@]}/2-1))`
         do
                 repo=${var_RUNTIME_REPOSITORIES[$(($i*2))]}
