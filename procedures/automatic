@@ -75,7 +75,7 @@ var_PRELOAD_REPOSITORIES=
 var_PRELOAD_PACKAGES="git"
 # Runtime packages are used during installation but are not installed to the target system unless included in TARGET_PACKAGES as well
 var_RUNTIME_REPOSITORIES= # var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
-var_RUNTIME_PACKAGES= # "git gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config" # yaourt mercurial svn
+var_RUNTIME_PACKAGES="automake make patch" # "git gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config" # yaourt mercurial svn
 var_TARGET_GROUPS="base"
 
 # ----------------------------------------------------------------------
