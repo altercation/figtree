@@ -276,9 +276,13 @@ worker_configure ()
     var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
     var_RUNTIME_PACKAGES+=" $RUNTIME_PACKAGES"
 
+    # all default_ values
+    set_profile_or_default_values "${!default_*}"
+
+exit
+
     # FILESYSTEM
     # TODO: we're not yet setting any defaults for filesystem values
-    set_profile_or_default_values "GRUB_DEVICE PARTITIONS BLOCKDATA"
     [[ -z "$PARTITIONS" ]] && die_error "You did not specify a partition scheme"
     [[ -z "$BLOCKDATA"  ]] && die_error "You did not specify a partition scheme"
     [[ -z "$GRUB_DEVICE" ]] && die_error "You did not specify a grub device"
@@ -289,9 +293,6 @@ worker_configure ()
     # INSTALL PACKAGES
     var_TARGET_GROUPS+=$TARGET_GROUPS # TODO: smarter add to avoid duplicates
 
-    # SYSTEM CONFIG (/etc/rc.comf)
-    set_profile_or_default_values "HOSTNAME LOCALE DAEMON_LOCALE HARDWARECLOCK \
-    TIMEZONE KEYMAP CONSOLEFONT CONSOLEMAP USECOLOR NETWORKS_PERSIST NETWORKS"
 }
 
 worker_select_source ()
@@ -389,7 +390,7 @@ dedup()
     do
         dupcheck[$item]="$item"
     done
-    for item in "$1"
+    for item in "$dupcheck"
     do
         
     done
@@ -429,24 +430,23 @@ debug_report_next()
     read answer
 }
 
-set_profile_or_default_values ()
+default_values ()
 {
     dfunc "$*"
-    local valuelist=$@
-    for valname in $valuelist
+    for default_value in $@
     do
-        defaultval=default_$valname
-        if [[ -z ${!valname} ]]
+        local value=${default_value#default_}
+        if [[ -z ${!value} ]]
         then
-                if declare | grep -q "$valname=("
+                if declare | grep -q "$defaul_value=("
                 then # array
-                    eval eval $valname="(\${default_$valname[*]})"
+                    eval eval $value="(\${default_value[*]})"
                 else # normal variable
-                    eval $valname=\'${!defaultval}\'
+                    eval $value=\'${!default_value}\'
                 fi
-                inform "Using default procedure defined value for $valname"
+                inform "Using default procedure defined value for $value"
         else
-                inform "Using profile defined value for $valname"
+                inform "Using profile defined value for $value"
         fi
     done
 }
