@@ -249,15 +249,16 @@ worker_preconfigure ()
 worker_intro ()
 {
 local procname="$var_MODULE_NAME $(basename $var_AIF_PROCEDURE_PATH)"
-inform "\nRUNNING THE $(toupper procname) PROCEDURE\n"
 
 # AUR (see also the installpkg function below)
 if [[ -n "$var_AUR_SUPPORT" ]]
 then
         var_RUNTIME_PACKAGES_PRELOAD+=" $(echo $($PACMAN -Sg base-devel | awk '{print $2}'))"
-        notify "AUR ON: Running procedure with AUR support\n(packages will be sourced from AUR if not found in official repositories)\n"
+        inform "\nRUNNING THE $(toupper "$procname") PROCEDURE WITH AUR SUPPORT."
+        inform "Packages will be sourced from AUR if not found in official repositories.\n"
 else
-        notify "AUR OFF: Use command line parameter '-a' if you wish to run with automatic AUR support.\n"
+        inform "\nRUNNING THE $(toupper "$procname") PROCEDURE WITH *NO* AUR SUPPORT."
+        notify "Use command line parameter '-a' if you wish to run with automatic AUR support.\n"
 fi
 
 if [[ "$NOFAILSAFE" != "1" && ! -e /arch ]]
@@ -427,7 +428,7 @@ worker_write_coda ()
 strip_punct() { local stripped="$*"; stripped="${stripped#[[:punct:]]}"; stripped="${stripped%[[:punct:]]}"; echo -n "$stripped"; }
 unquote() { local stripped="$*"; stripped="${stripped#\"}"; stripped="${stripped%\"}"; echo -n "$stripped"; }
 dedup() { for item in $*; do [[ "$newlist" == "${newlist#* $item }" ]] && newlist="${newlist% } $item "; done; echo -n ${newlist[*]}; }
-toupper() { $(echo -n ${1} | tr a-z A-Z; )
+toupper() { echo -n ${1} | tr a-z A-Z; }
 
 d() { debug PROCEDURE "$1"; return 0; }
 dstate() { d "STATECHK: $1 is currently: ${!1}"; }
