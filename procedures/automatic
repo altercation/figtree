@@ -613,14 +613,14 @@ depend_profile() { load_profile "$1"; }
 # and build up lists of commands that will be executed later by workers (thus the
 # commands that are represented in the profile aren't "truly" executed till the
 # appropriate phase/worker in aif).
-packages()    { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$* "; dstate TARGET_PACKAGES; }; package(){packages "$*";}
-blacklist()   { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES_EXCLUDE+="$* "; dstate TARGET_PACKAGES; }; blacklists(){blacklist "$*";}
-config ()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate CONFIG_CHANGES; }; configs(){config "$*";}
-daemons()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_daemons $*"); dstate CONFIG_CHANGES; }; daemon(){daemons "$*";}
-modules()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstate CONFIG_CHANGES; }; module(){modules "$*";}
-networks()    { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_networks $*"); dstate CONFIG_CHANGES; }; network(){networks "$*";}
-kernelparams(){ dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_kernelparams $*"); dstate CONFIG_CHANGES; }
-coda()        { dfunc; [[ -n "$*" ]] && MISC_COMMANDS+=("$*"); dstate MISC_COMMANDS; }; codas(){coda "$*";}
+packages()    { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$* "; dstate TARGET_PACKAGES; }; package() { packages "$*"; }
+blacklist()   { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES_EXCLUDE+="$* "; dstate TARGET_PACKAGES; }; blacklists () { blacklist "$*"; }
+config ()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate CONFIG_CHANGES; }; configs() { config "$*"; }
+daemons()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_daemons $*"); dstate CONFIG_CHANGES; }; daemon() { daemons "$*"; }
+modules()     { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstate CONFIG_CHANGES; }; module() { modules "$*"; }
+networks()    { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_networks $*"); dstate CONFIG_CHANGES; }; network() { networks "$*"; }
+kernelparams(){ dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_kernelparams $*"); dstate CONFIG_CHANGES; }; kernelparam() { kernelparams "$*"; }
+coda()        { dfunc; [[ -n "$*" ]] && MISC_COMMANDS+=("$*"); dstate MISC_COMMANDS; }; codas(){ coda "$*"; }
 overlays()    { dfunc; [[ -n "$*" ]] && for overlay_file in $*; do var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}"; done; dstate var_OVERLAY_FILES; }
 overlay()     { overlays "$*"; }
 
