@@ -793,7 +793,16 @@ config_list ()
 # config_list set /config/file/path ARRAYNAME list values go here
     local config_method="$1"; shift; local config_file="$1"; shift; local config_name="$1"; shift; local config_list="$*"
     [[ ! -f "$config_file" ]] && d "Missing config file" "Config file \"$config_file\" not found; skipping" && return 1
-    get_value "$config_file" "$config_name" current_list && current_list=$(strip_punct "$current_list") || return 1
+    if ! $(get_value "$config_file" "$config_name" current_list && current_list=$(strip_punct "$current_list"))
+    then
+        # failed to find array value in target file. a common example of this 
+        # is "NETWORKS" in /etc/rc.conf, which is by default commented out. I 
+        # probably should just uncomment as I used to do. TODO: uncomment when 
+        # appropriate (check into augeas first before implementing that again)
+        echo "XXX"
+        config_value "$config_file" "$config_name" "($config_list)" && ( inform "new value \"$config_name\" written to $config_file"; return 0 ) || return 1
+
+    fi
     for config_list_item in $config_list; do
         local new_list=
         for current_list_item in $current_list; do
