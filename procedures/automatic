@@ -453,10 +453,10 @@ detect_repo_type()
     # we've set the repo type automatically or via command line, so one more check to make sure
     # that no unsupported repository type has been specified by -r on the command line
     case $repo_type in
-        git|mercurial|svn) inform "using repository of type $repo_type" ;;
+        git|mercurial|svn) echo -n $repo_type; return 0 ;;
         *) die_error "$repo_type is an unsupported repository type" ;;
     esac
-    echo -n $repo_type
+    die_error "Unexpected error during repository type assignment."
 exit
 }
 
