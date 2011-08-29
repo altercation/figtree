@@ -258,12 +258,14 @@ worker_preload ()
 {
         inform "Installing preload packages required to access remote profiles..."
         echo "mod and pro $var_MODULE_PATH $var_AUTOMATIC_PROFILE"
-        echo "var rpp = $var_RUNTIME_PACKAGES_PRELOAD"
         var_RUNTIME_PACKAGES_PRELOAD+=" $(detect_repo_type $var_AIF_PROCEDURE_PATH)"
         var_RUNTIME_PACKAGES_PRELOAD+=" $(detect_repo_type $var_AUTOMATIC_PROFILE)"
-        echo "var rpp = $var_RUNTIME_PACKAGES_PRELOAD"
         var_RUNTIME_PACKAGES_PRELOAD="$(echo -n $var_RUNTIME_PACKAGES_PRELOAD | uniq)"
-#        echo "uniq var rpp = $var_RUNTIME_PACKAGES_PRELOAD"
+        echo "PREDEDUP: $var_RUNTIME_PACKAGES_PRELOAD"
+        var_RUNTIME_PACKAGES_PRELOAD="$(dedup $var_RUNTIME_PACKAGES_PRELOAD)"
+        echo "POSTDEDUP: $var_RUNTIME_PACKAGES_PRELOAD"
+        read answer
+
         for i in `seq 0 $((${#var_RUNTIME_REPOSITORIES[@]}/2-1))`
         do
                 repo=${var_RUNTIME_REPOSITORIES[$(($i*2))]}
@@ -343,7 +345,6 @@ worker_write_configs()
         inform "executing config $i of ${#CONFIG_CHANGES[@]}: ${CONFIG_CHANGES[$i]#_}"
         ${CONFIG_CHANGES[$i]} || show_warning "CONFIG FAILED" "$config_command"
     done
-    exit
 }
 
 worker_write_overlay()
@@ -405,18 +406,7 @@ worker_write_coda ()
 
 strip_punct() { local stripped="$*"; stripped="${stripped#[[:punct:]]}"; stripped="${stripped%[[:punct:]]}"; echo -n "$stripped"; }
 unquote() { local stripped="$*"; stripped="${stripped#\"}"; stripped="${stripped%\"}"; echo -n "$stripped"; }
-dedup()
-{
-    # deplicate words from string without changing order
-    for item in "$1"
-    do
-        dupcheck[$item]="$item"
-    done
-    for item in "$dupcheck"
-    do
-   :     
-    done
-}
+dedup() { for item in $*; do [[ "$newlist" == "${newlist#* $item }" ]] && newlist="${newlist% } $item "; done; echo -n ${newlist[*]} }
 
 d() { debug PROCEDURE "$1"; return 0; }
 dstate() { d "STATECHK: $1 is currently: ${!1}"; }
@@ -428,6 +418,8 @@ dfunc()
     [[ $1 ]] && local with_args=" with arguments \"$@\"" || local with_args=""
     d "FUNCTION: ${FUNCNAME[1]}() called at line ${BASH_LINENO[1]} by ${FUNCNAME[2]}${with_args}"
 }
+
+
 
 debug_report_values()
 {
