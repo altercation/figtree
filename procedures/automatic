@@ -156,7 +156,7 @@ process_args ()
 {
     dfunc
     case $1 in
-        -a) var_AUR_SUPPORT=1 ;;
+        -a) var_AUR_SUPPORT=1; var_RUNTIME_PACKAGES_PRELOAD+=" $(echo $($PACMAN -Sg base-devel | awk '{print $2}'))" ;;
         -c) [[ -n "$2" ]] && var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
         -r) [[ -n "$2" ]] && var_REPO_TYPE=$2 || die_error "You must specify a repository type of git, hg, or svn with the -r flag." ;;
         *) usage && exit 5 ;;
@@ -255,7 +255,6 @@ local procname="$var_MODULE_NAME $(basename $var_AIF_PROCEDURE_PATH)"
 # AUR (see also the installpkg function below)
 if [[ -n "$var_AUR_SUPPORT" ]]
 then
-        var_RUNTIME_PACKAGES_PRELOAD+=" $(echo $($PACMAN -Sg base-devel | awk '{print $2}'))"
         inform "\nRUNNING THE $(toupper "$procname") PROCEDURE WITH AUR SUPPORT."
         inform "Packages will be sourced from AUR if not found in official repositories.\n"
 else
@@ -654,6 +653,7 @@ update_modulepaths_from_profilepath()
 
 load_profile()
 {
+    echo "HERE $*"
     dfunc "$*"
     # arguments:
     # $1 (assigned to profile_path): a path, either relative, absolute local or remote URL

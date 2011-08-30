@@ -2,8 +2,10 @@
 
 # figtree; an Arch Linux AIF module to create conFIG TREEs from local or remote profiles
 # Ethan Schoonover <es@ethanschoonover.com>
-
 # Please see the http://ethanschoonover.com/figtree for details and usage
+
+# this procedure updates the overlay files from a live, production system to an 
+# aif profile directory
 
 # ----------------------------------------------------------------------
 # procedure specific definitions
@@ -11,45 +13,145 @@
 
 depend_procedure figtree automatic
 
-var_OPTS_STRING="c:r:d:f:" #var_OPTS_STRING="c:s:e:u:a:r:"
+var_MODULE_NAME=figtree
+var_PROCEDURE_SUBPATH=/procedures/partial-update-overlay
+var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}"
+var_FORCE_OVERWRITE=
+var_NO_BACKUPS=
+var_OPTS_STRING="c:fn"
 
-phase_preparation=(intro)
-phase_basics=(configure)
-phase_system=()
-phase_system+=(update_overlay)
-phase_finish=(msg_report)
+# ----------------------------------------------------------------------
+# PHASE WORKER CUSTOMIZATIONS
+# ----------------------------------------------------------------------
+# we reorder phase_preparation so that if we're running as a local 
+# procedure from install media, we set up the network first and bring in
+# the required runtime packages (primarily for our vcs remote sourcing)
+# phase_basics=(set_clock prepare_disks) # defaults, here for reference during module development
+# phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for reference
+# phase_finish=(msg_report) # defaults, for reference
+#
+phase_preparation=(preconfigure intro configure)
+phase_system=(write_overlay) # module specific custom workers (see below)
+
+# ----------------------------------------------------------------------
+# aif.sh related functions
+# ----------------------------------------------------------------------
+
+process_args ()
+{
+    dfunc
+    case $1 in
+        -f) var_FORCE_OVERWRITE=1 ;;
+        -n) var_NO_BACKUPS=1 ;;
+        -c) [[ -n "$2" ]] && var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
+        *) usage && exit 5 ;;
+    esac
+}
 
 read -r -d '' var_ARGS_USAGE <<-'EOF'
--s <make/model>:    Specify a make/model prototype AIF system profile to install. If specified as simply "make/model" the path of the 
-                    figtree module as specified in the -p parameter will be used. This allows for specifying the following:
+========================================================================
+Partial AIF procedure: figtree partial-update-overlay
+------------------------------------------------------------------------
+Usage examples:
+------------------------------------------------------------------------
 
-                        aif -p figtree/automatic -s lenovo/x120e
+This partial procedure updates the overlay files associated with a 
+figtree profile. A profile might be in:
 
-                    and aif will automatically source the system profile from:
+    /usr/lib/aif/user/figtree/profiles/my-laptop
+
+or a more scope limited profile:
+
+    /usr/lib/aif/user/figtree/systems/make/model
+
+The profile file itself is usually a file named "profile" in the 
+directories listed above:
+
+    /usr/lib/aif/user/figtree/profiles/my-laptop/profile
+
+and the overlay directory is always in the same directory as the
+profile file, thus:
+
+    /usr/lib/aif/user/figtree/profiles/my-laptop/overlay
+
+This procedure *must* be run against a local profile (the procedure can
+be called remotely, in which case you should be careful to specify a
+full path such as /usr/lib/aif/user/figtree/profiles/my-laptop on the
+command line.
+
+LOCAL PROCEDURE & LOCAL, RELATIVE PROFILE PATH
+aif -p figtree/automatic -c profiles/my-desktop
+aif -p figtree/automatic -c systems/lenovo/x220
+
+LOCAL PROCEDURE & LOCAL, ABSOLUTE PROFILE PATH
+aif -p figtree/automatic -c /tmp/aif/systems/lenovo/x220
+
+REMOTE PROCEDURE & LOCAL PROFILE
+aif -p http://github.com/user/figtree/raw/master/procedures/automatic \
+    -c /usr/lib/aif/user/figtree/profiles/my-laptop
+
+------------------------------------------------------------------------
+Options:
+------------------------------------------------------------------------
+
+-c profile/path:    Specify a profile path.
+                    The path may specified in the following formats:
+
+                    relative: profiles/my-laptop
+                    absolute: ~/aif-files/figtree/profiles/my-laptop
+
+                    Note that the full figtree procedures such as 
+                    "automatic" can also use a remote path, but as we
+                    require local write access, this is not usable for
+                    this partial procedure)
+
+-f                  Force overwrite mode (DANGER!)
+                    Does not prompt for action when scanning files;
+                    simply overwrites all overlay files in the target
+                    profile subdirectory. Overwritten files will be
+                    backed up unless the -n command line parameter is
+                    also specified.
+
+-n                  No backup file. When writing an overlay file, any
+                    existing overlay file in that directory with the
+                    same name will normally be backed up first. Use of
+                    the '-n' parameter will stop backups from being
+                    written; use with caution or with version control!
+
+------------------------------------------------------------------------
 EOF
 
 # ----------------------------------------------------------------------
 # procedure workers
 # ----------------------------------------------------------------------
 
-worker_intro ()
+worker_preconfigure ()
 {
-
-notify "\
-===============================================================================\n\
-AIF figtree partial procedure: update overlay files\n\
-$var_AIF_PROCEDURE_PATH\n\
-===============================================================================\n"
-}
-
-worker_configure ()
-{
-    inform "Starting system configuration and profile load sequence..."
     var_UI_TYPE=${arg_ui_type:-cli}
     ui_init
-    [ -z "$var_AUTOMATIC_PROFILE" ] && die_error "You must specify a config file to use this procedure"
-    # here we import our profile(s) to allow default values to be overridden
-    load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $var_MODULE_PATHS"
+}
+
+worker_intro ()
+{
+    local procname="$var_MODULE_NAME $(basename $var_AIF_PROCEDURE_PATH)"
+    if [[ -n "$var_NO_BACKUPS" ]]
+    then
+            local backup_warning="Backups are OFF! No backup files will be created when overwriting overlay files."
+    else
+            local backup_warning="Backups are ON. Original overlay files will be renamed and saved with a backup suffix during overwrite procedures."
+    fi
+    if [[ -n "$var_FORCE_OVERWRITE" ]]
+    then
+            inform "\nRUNNING THE $(toupper "$procname") PROCEDURE IN FORCE-OVERWRITE MODE."
+            notify "Overlay files in the profile directory will be *COMPLETELY AND AUTOMATICALLY OVERWRITTEN WITH THE CURRENT, LIVE VERSION OF THE OVERLAY FILE!"
+            inform "$backup_warning"
+            ask_yesno "Do you want to continue?" no || exit
+    else
+            inform "\nRUNNING THE $(toupper "$procname") PROCEDURE IN QUERY MODE (NORMAL)."
+            inform "Overlay files will be scanned and you will be presented with a series of choices regarding each based on the current state of the profile overlay."
+            inform "$backup_warning"
+            ask_yesno "Do you want to continue?" yes || exit
+    fi
 }
 
 worker_write_overlay()
@@ -59,34 +161,39 @@ worker_write_overlay()
     # TODO: we might need to set certain permissions, but i'd rather leave this for the misc step
     #       i could also make the system_misc function or worker process an array of commands; here we use installs permissions arg
     dfunc
-    echo "TARGET=$var_TARGET_DIR"
+    local overlay_file=
     for overlay_file in $var_OVERLAY_FILES
     do
-            # TODO: the following substitution performs differently in script vs command line;
-            # command line *requires* last slash to be escaped like this:
-            # from_path="${overlay_file/\/\//\/}"
-            # script *requires* last slash to *not* be escaped, so we use that here
-            from_path="${overlay_file/\/\///}"
-            to_path="$var_TARGET_DIR/${overlay_file#*\/\/}"
-            # TODO: test if permissions are retained via --preserve-context
-            # TODO: confirm backups are created correctly
-            install -C -D -S ".figtree.old" --preserve-context -v -T "$from_path" "$to_path" \
-            || die_error "failed to overlay file from \"$from_path\" to \"$to_path\""
+        write_overlay_file "$overlay_file"
     done
 }
 
-process_args ()
+write_overlay_file()
 {
-    dfunc
-    var_AUTOMATIC_PROFILE=
-    while [[ -n $1 ]]
-    do
-        case $1 in
-            -c) [[ -n "$2" ]] && var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
-            -r) [[ -n "$2" ]] && var_REPO_TYPE=$2 || die_error "You must specify a repository type of git, hg, or svn with the -r flag." ;;
-            *) usage && exit 5 ;;
-        esac
-        shift 2
-    done
+    local overlay_file="$1"
+    # TODO: the following substitution performs differently in script vs command line;
+    # command line *requires* last slash to be escaped like this:
+    # from_path="${overlay_file/\/\//\/}"
+    # script *requires* last slash to *not* be escaped, so we use that here
+    to_path="${overlay_file/\/\///}"
+    from_path="$var_SOURCE_DIR/${overlay_file#*\/\/}"
+    echo "$from_path => $to_path"
+    return
+    
+    # TODO: test if permissions are retained via --preserve-context
+    # TODO: confirm backups are created correctly
+    # optional: --preserve-context for selinux compliance
+    if [[ ! -f "$from_path" ]]
+    then
+        show_warning "NO OVERLAY FILE SOURCE" "Profile overlay requests non-existant source file: \"$from_path\""
+        return 1
+    fi
+    if install -C -D -S ".figtree.old" -v -T "$from_path" "$to_path" &>/dev/null
+    then
+        inform "Successful write of overlay file \"$overlay_file\""
+        return 0
+    else
+        show_warning "CRITICAL OVERLAY FILE ERROR" "Failed to overlay file from \"$from_path\" to \"$to_path\""
+        return 1
+    fi
 }
-
