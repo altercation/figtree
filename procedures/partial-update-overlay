@@ -173,7 +173,7 @@ worker_intro ()
             intro+="\n -f  Force overwrite is ON. NO PROMPTS Will be given and all OVERWRITES WILL BE MADE."
             local default=no
     else
-            intro+="\n(-f) Force overwrite is off. Prompts will be given prior to any change."
+            intro+="\n(-f) Force overwrite is off. Prompts will be given prior to any overwrite or deletion."
     fi
     if [[ -n "$var_NO_BACKUPS" ]]
     then
@@ -203,10 +203,18 @@ worker_intro ()
 }
 
 worker_pre_overlay ()
-{ var_POST_OVERLAY= ; load_profile $var_PARTIAL_PROFILE || die_error "Failed to load profile $var_PARTIAL_PROFILE from paths $var_MODULE_PATHS"; }
+{
+    var_LOADED_PROFILES= # reset
+    var_POST_OVERLAY=
+    load_profile $var_PARTIAL_PROFILE || die_error "Failed to load profile $var_PARTIAL_PROFILE from paths $var_MODULE_PATHS"
+}
 
 worker_post_overlay ()
-{ var_POST_OVERLAY=1; load_profile $var_PARTIAL_PROFILE || die_error "Failed to load profile $var_PARTIAL_PROFILE from paths $var_MODULE_PATHS"; }
+{
+    var_LOADED_PROFILES= # reset
+    var_POST_OVERLAY=1
+    load_profile $var_PARTIAL_PROFILE || die_error "Failed to load profile $var_PARTIAL_PROFILE from paths $var_MODULE_PATHS"
+}
 
 write_overlay_file()
 {
@@ -216,7 +224,7 @@ write_overlay_file()
     if [[ -z "$var_FORCE_OVERWRITE" ]]
     then
         if [[ ! -f "$from_path" ]];      then show_warning "NO SOURCE" "Profile overlay requests non-existant source file: \"$from_path\""; return 1
-        elif [[ ! -f "$to_path" ]];      then ask_yesno "No overlay file present. Copy current $from_path to $to_path" yes || return 0
+        elif [[ ! -f "$to_path" ]];      then inform "No overlay file present. Copying $from_path to $to_path"
         elif [[ -n "$var_NO_BACKUPS" ]]; then ask_yesno "Overlay file present. Copy current $from_path to $to_path? NO BACKUP WILL BE CREATED." no || return 0
         else ask_yesno "Overlay file present. Copy current $from_path to $to_path? Backup will be created." yes || return 0
         fi
@@ -246,10 +254,10 @@ source_and_overlay()
         echo "WE ARE PRE OVERLAY"
         echo "========================================"
         read answer
-        if [[ -n "$var_WIPE_OVERLAY" ]]; then
+        if [[ -n "$var_WIPE_OVERLAY" && -d "$var_OVERLAY_PATH" ]]; then
                 if [[ -z "$var_FORCE_OVERRIDE" ]]
                 then
-                        ask_yesno "Press enter to delete existing overlay directory $var_OVERLAY_PATH:" $yes && rm -rf "$var_OVERLAY_PATH"
+                        ask_yesno "Delete existing overlay directory $var_OVERLAY_PATH:" && rm -rf "$var_OVERLAY_PATH"
                 else
                         rm -rf "$var_OVERLAY_PATH"
                 fi
@@ -258,13 +266,11 @@ source_and_overlay()
                 && inform "\n${divider}\nSuccessfully loaded profile:\n${1#$var_TEMP_DIR}\n${divider}\n" \
                 || die_error "Failed to process profile \"$1\"."
     else # we've already run through the overlay update and need to change permissions
-        echo "WE ARE POST OVERLAY"
-        echo "========================================"
-        read answer
-        chmod --recursive --reference="$module_root" "$var_OVERLAY_PATH" \
+        # the only file we *know* we have is the profile, $1
+        chmod --recursive --reference="$1" "$var_OVERLAY_PATH" \
                 && inform "Recursively updated permissions on $var_OVERLAY_PATH" \
                 || die_error "PERMISSIONS UPDATE ERROR" "Recursively updated permissions on $var_OVERLAY_PATH"
-        chown --recursive --reference="$module_root" "$var_OVERLAY_PATH" \
+        chown --recursive --reference="$1" "$var_OVERLAY_PATH" \
                 && inform "Recursively updated ownership on $var_OVERLAY_PATH" \
                 || die_error "PERMISSIONS UPDATE ERROR" "Recursively updated ownership on $var_OVERLAY_PATH"
     fi

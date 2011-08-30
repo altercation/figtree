@@ -81,6 +81,7 @@ var_RUNTIME_PACKAGES_PRELOAD="git" # yaourt mercurial svn
 var_AUTOMATIC_PROFILE= # assigned in process_args
 var_AUR_SUPPORT= # by default no AUR support unless -a command line parameter; TODO: should this be default on?
 var_RECURSIVE=1 # on by default in automatic; overridden in partial-update-overlay, for instance
+var_POST_OVERLAY= # unset by default; used in partial-update-overlay
 
 # ----------------------------------------------------------------------
 # PHASE WORKER CUSTOMIZATIONS
@@ -312,6 +313,7 @@ worker_configure ()
     inform "Starting system configuration and profile load sequence..."
 
     # LOAD PROFILE
+    var_LOADED_PROFILES= # reset
     [[ -z "$var_AUTOMATIC_PROFILE" ]] && \
         die_error "You must specify a config file (-c profile/path) to use this procedure. Run this procedure again with -h for more details."
     load_profile $var_AUTOMATIC_PROFILE || \
@@ -519,6 +521,7 @@ process_defaults_from_prefix()
 
 source_and_overlay()
 {
+    # load_profile will have confirmed path prior to reaching this point
     # TODO: consider refactoring this to an array
     dfunc "$*"
     local revert_overlay=$var_OVERLAY_PATH
