@@ -395,7 +395,7 @@ worker_write_coda ()
     rank_mirrors # TODO: copy from runtime optimized file would be faster, but there might be different repos
     for misc_command in ${MISC_COMMANDS[@]}
     do
-        eval "$misc_command" || show_warning "COMMAND FAILED" "$misc_command"
+        eval "$misc_command" || show_warning "COMMAND FAILED" "coda command failed: $misc_command"
     done
     # rerun postconfigure_target
     # this has been run once in the the core/automatic worker_configure_system
