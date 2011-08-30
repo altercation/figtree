@@ -365,7 +365,7 @@ worker_select_source ()
                 TARGET_REPOSITORIES=(core $var_MIRRORLIST extra $var_MIRRORLIST community $var_MIRRORLIST) 
         fi
     fi
-    rank_mirrors "runtime"
+    #rank_mirrors "runtime" #...slow, let's save it for install only
 }
 
 worker_write_configs()
