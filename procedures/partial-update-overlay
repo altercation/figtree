@@ -34,6 +34,8 @@ var_OPTS_STRING="c:fnwDR"
 phase_preparation=(preconfigure intro)
 phase_basics=()
 phase_system=(pre_overlay write_overlay post_overlay) # module specific custom workers (see below)
+phase_finish=() # our overlay messages are the key information here, so no report phase
+
 
 # ----------------------------------------------------------------------
 # aif.sh related functions

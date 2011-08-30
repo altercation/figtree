@@ -729,10 +729,37 @@ write_overlay_file()
 # load (possibly many, possibly a tree of) profiles, local, relative, or remote paths
 depend_profile() { [[ -n "${var_RECURSIVE}" ]] && load_profile "$1"; }
 
-# the following are the main set of additional commands available to figtree profiles
+# The following are the main set of additional commands available to figtree profiles
 # and build up lists of commands that will be executed later by workers (thus the
 # commands that are represented in the profile aren't "truly" executed till the
 # appropriate phase/worker in aif).
+#
+# Usage examples:
+#
+# packages  add packagename [packagename...]
+# blacklist packagename [packagename...] (same as blacklisting a package)
+# config    set /config/file/path VALUENAME "value to set"
+# config    unset /config/file/path VALUENAME (comments out the value)
+# daemons   add daemonname [@daemonname] [!daemonname]
+# daemons   remove daemonname [daemonname...]
+# modules   add modulename [modulename...]
+# modules   remove modulname [modulename...]
+# modules   add networkname [networkname...]
+# modules   remove networkname [networkname...]
+# overlay   /install/path/file [/another/file/here]
+#           (place the file in the overlay directory or use the
+#            figtree module partial-update-overlay procedure)
+# code      'misc command to be run at end of installation goes-here'
+# kernelparams parameter list here
+#
+# plural and singular forms of each command are equivalent in order to 
+# eliminate a common error in the config syntax
+# packages|package blacklist|blacklists config|configs daemons|daemon 
+# modules|module networks|network kernelparams|kernelparam coda|codas 
+# overlays|overlay
+#
+# the following are equivalent and may be used interchangeably 
+# add==set  unset==remove==delete
 packages()      { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$* "; dstate TARGET_PACKAGES; }
 package()       { packages "$*"; }
 blacklist()     { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES_EXCLUDE+="$* "; dstate TARGET_PACKAGES; }
@@ -740,7 +767,7 @@ blacklists()    { blacklist "$*"; }
 config ()       { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate CONFIG_CHANGES; }
 configs()       { config "$*"; }
 daemons()       { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_daemons $*"); dstate CONFIG_CHANGES; }
-#daemon()       { daemons "$*"; }
+daemon()        { daemons "$*"; }
 modules()       { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstate CONFIG_CHANGES; }
 module()        { modules "$*"; }
 networks()      { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_networks $*"); dstate CONFIG_CHANGES; }
