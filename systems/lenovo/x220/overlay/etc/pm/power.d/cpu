@@ -1,0 +1,30 @@
+#!/bin/sh
+
+. "${PM_FUNCTIONS}"
+
+set_governor()
+{
+	local cpu=$1
+	local governor=$2
+	logger "CPU $cpu GOV $governor"
+	echo -n "$2" > "$cpu/cpufreq/scaling_governor"
+}
+
+case $1 in
+    true)
+	logger "PM-UTILS: CPU Powersave on"
+	for cpupath in /sys/devices/system/cpu/cpu?; do
+		set_governor $cpupath powersave
+	done
+    ;;
+    false)
+	logger "PM-UTILS: CPU Powersave off"
+	for cpupath in /sys/devices/system/cpu/cpu?; do
+		set_governor $cpupath ondemand
+		#set_governor $cpupath performance
+	done
+    ;;
+    *) exit $NA ;;
+esac
+
+exit 0

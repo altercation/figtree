@@ -1,0 +1,7 @@
+<driconf>
+    <device screen="0" driver="dri2">
+        <application name="all">
+            <option name="vblank_mode" value="0" />
+        </application>
+    </device>
+</driconf>

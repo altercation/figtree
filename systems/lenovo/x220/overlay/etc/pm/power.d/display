@@ -1,0 +1,63 @@
+#!/bin/sh
+#
+# set display to powersave mode
+
+. "${PM_FUNCTIONS}"
+POWERSAVE_BRIGHTNESS_LEVEL=13
+
+# get current x user and environment
+PID=`pgrep startx`
+USER=`ps -o user --no-headers $PID `
+USERHOME=`getent passwd $USER | cut -d: -f6`
+export XAUTHORITY="$USERHOME/.Xauthority"
+for x in /tmp/.X11-unix/*; do
+    displaynum=`echo $x | sed s#/tmp/.X11-unix/X##`
+    if [ x"$XAUTHORITY" != x"" ]; then
+        export DISPLAY=":$displaynum"
+    fi
+done
+
+case $1 in
+    false)
+	xset dpms 0 0 600 2>/dev/null || true
+	# echo -n profile > /sys/class/drm/card0/device/power_method
+	for (( c=$(cat /sys/class/backlight/acpi_video0/brightness); c<=$(cat /sys/class/backlight/acpi_video0/max_brightness); c++ ))
+	do
+		echo -n $c > /sys/class/backlight/acpi_video0/brightness
+		sleep .017
+	done
+	# the power_profile is set to "default" with no real power management at boot
+	# so setting it to "auto" is critical, both here and below depending on state at boot
+	#echo -n auto > /sys/class/drm/card0/device/power_profile
+	#
+	# if we want to be sure that we're getting max performance, use "high" as shown below
+	# echo -n high > /sys/class/drm/card0/device/power_profile
+	# power usage can be checked via:
+	# mount -t debugfs none /sys/kernel/debug      (only if  /sys/kernel/debug is empty)
+	# cat /sys/kernel/debug/dri/0/radeon_pm_info
+	#
+	# an alternate would be to explore using dynamic power management via:
+	# echo dynpm > /sys/class/drm/card0/device/power_method
+	# which works and is definitely dynamic, but which, on battery mode, doesn't keep it at low power
+	#
+	# see https://wiki.archlinux.org/index.php/ATI
+    ;;
+    true)
+	xset dpms 0 0 60 2>/dev/null || true
+	#beep -f 200
+	#echo -n profile > /sys/class/drm/card0/device/power_method
+        for (( c=$(cat /sys/class/backlight/acpi_video0/max_brightness); c>=$POWERSAVE_BRIGHTNESS_LEVEL; c-- ))
+        do
+                echo -n $c > /sys/class/backlight/acpi_video0/brightness
+                sleep .017
+        done
+
+	# see above for details
+	#echo -n auto > /sys/class/drm/card0/device/power_profile
+	# see above for details on using high/low in liew of auto (which essentially does the same based on ac/batt state)
+	# echo -n low > /sys/class/drm/card0/device/power_profile
+    ;;
+    *) exit $NA ;;
+esac
+
+exit 0

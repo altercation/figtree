@@ -1,0 +1,109 @@
+#!/bin/sh
+
+# currently this script always reverts back to normal mode when switching to laptop mode, and allows cycling through all orientations in tablet mode.
+
+E_BADARGS=66
+
+restart()
+{
+if test -z "$1"  # No command-line arg supplied?
+then
+    echo "Usage: `basename $0` Process(es)_to_kill"
+    exit $E_BADARGS
+fi
+for PROCESS_NAME in $*; do
+    ps ax | grep "$PROCESS_NAME" | awk '{print $1}' | xargs -i kill {} 2&>/dev/null
+    #killall "$PROCESS_NAME"
+    $PROCESS_NAME &
+    logger "ROTATE: restarted $PROCESS_NAME"
+done
+}
+
+PID=`pgrep startx`
+USER=`ps -o user --no-headers $PID`
+USERHOME=`getent passwd $USER | cut -d: -f6`
+export XAUTHORITY="$USERHOME/.Xauthority"
+for x in /tmp/.X11-unix/*; do
+    displaynum=`echo $x | sed s#/tmp/.X11-unix/X##`
+    if [ x"$XAUTHORITY" != x"" ]; then
+        export DISPLAY=":$displaynum"
+    fi
+done
+
+# Find the line in "xrandr -q --verbose" output that contains current screen orientation and "strip" out current orientation.
+
+rotation="$(xrandr -q --verbose | grep ' connected' | egrep -o  '\) (normal|left|inverted|right) \(' | egrep -o '(normal|left|inverted|right)')"
+tabletpath=/sys/devices/platform/thinkpad_acpi/hotkey_tablet_mode
+if [ -f "$tabletpath" ]; then
+	tabletmode="`cat $tabletpath`" 
+else
+	tabletmode=0
+fi
+
+# Using current screen orientation proceed to rotate screen and input devices.
+
+stylus="Wacom ISDv4 E6 Pen stylus"
+touch="Wacom ISDv4 E6 Finger touch"
+eraser="Wacom ISDv4 E6 Pen eraser"
+
+case "$tabletmode" in
+    1)
+        # in tablet mode
+        case "$rotation" in
+            normal)
+            # rotate to the left
+            xrandr -o left
+            xsetwacom set "$stylus" rotate ccw
+            xsetwacom set "$eraser" rotate ccw
+            xsetwacom set "$touch" rotate ccw
+            ;;
+            left)
+            # rotate to inverted
+            xrandr -o inverted
+            xsetwacom set "$stylus" rotate half
+            xsetwacom set "$eraser" rotate half
+            xsetwacom set "$touch" rotate half
+            ;;
+            inverted)
+            # rotate to the right
+            xrandr -o right
+            xsetwacom set "$stylus" rotate cw
+            xsetwacom set "$eraser" rotate cw
+            xsetwacom set "$touch" rotate cw
+            ;;
+            right)
+            # rotate to normal
+            xrandr -o normal
+            xsetwacom set "$stylus" rotate none
+            xsetwacom set "$eraser" rotate none
+            xsetwacom set "$touch" rotate none
+            ;;
+            *)
+            # rotate to normal
+            xrandr -o normal
+            xsetwacom set "$stylus" rotate none
+            xsetwacom set "$eraser" rotate none
+            xsetwacom set "$touch" rotate none
+            ;;
+        esac
+    ;;
+    *)
+        case "$rotation" in
+	    normal)
+	    # no action
+	    ;;
+            *)
+	    # if we're not already in normal orientation, get there
+            # rotate to normal
+            xrandr -o normal
+            xsetwacom set "$stylus" rotate none
+            xsetwacom set "$eraser" rotate none
+            xsetwacom set "$touch" rotate none
+            ;;
+	esac
+    ;;
+
+esac
+
+#restart cairo-compmgr gromit-mpx
+restart gromit-mpx

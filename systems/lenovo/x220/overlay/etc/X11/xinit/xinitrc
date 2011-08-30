@@ -1,0 +1,39 @@
+#!/bin/sh
+
+sysresources=/etc/X11/xinit/Xresources
+sysmodmap=/etc/X11/xinit/Xmodmap
+sysxbindkeys=/etc/X11/xinit/xbindkeysrc
+userresources=$HOME/.Xresources
+usermodmap=$HOME/.Xmodmap
+userxbindkeys=$HOME/.xbindkeysrc
+
+# merge in defaults and keymaps
+if [ -f $sysresources ]; then
+    xrdb -merge $sysresources
+fi
+if [ -f $sysmodmap ]; then
+    xmodmap $sysmodmap
+fi
+if [ -f "$userresources" ]; then
+    xrdb -merge "$userresources"
+fi
+if [ -f "$usermodmap" ]; then
+    xmodmap "$usermodmap"
+fi
+if [ -f $userxbindkeys ]; then
+    xbindkeys
+else
+    xbindkeys -f $sysxbindkeys
+fi
+
+# set background color
+hsetroot -solid "#000000"
+
+# turn off touchpad buttons
+# (x100e makes these easy to depress while working on lap)
+#xinput set-button-map 'SynPS/2 Synaptics TouchPad' 0 0 0 4 5 6 7 8 9 1 2 3
+#xinput set-int-prop 'SynPS/2 Synaptics TouchPad' 'Device Enabled' 8 0
+
+# start xmonad
+echo $USER > /tmp/xuser
+exec xmonad

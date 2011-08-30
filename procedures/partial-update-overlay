@@ -19,7 +19,7 @@ var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && var_AIF_PROCED
 var_MODULE_PATHS=("${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}" "/usr/lib/aif/user/figtree")
 var_FORCE_OVERWRITE=
 var_NO_BACKUPS=
-var_OPTS_STRING="c:fn"
+var_OPTS_STRING="c:fnwDR"
 
 # ----------------------------------------------------------------------
 # PHASE WORKER CUSTOMIZATIONS
@@ -39,13 +39,22 @@ phase_system=(write_overlay) # module specific custom workers (see below)
 # aif.sh related functions
 # ----------------------------------------------------------------------
 
+var_WIPE_OVERLAY=
+var_FORCE_OVERWRITE=
+var_NO_BACKUPS=
+var_DIFFS=
+var_RECURSIVE=
+
 process_args ()
 {
     dfunc
     case $1 in
+        -w) var_WIPE_OVERLAY=1 ;;
         -f) var_FORCE_OVERWRITE=1 ;;
         -n) var_NO_BACKUPS=1 ;;
-        -c) [[ -n "$2" ]] && var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
+        -D) var_DIFFS=1 ;;
+        -R) var_RECURSIVE=1 ;;
+        -c) [[ -n "$2" ]] && var_PARTIAL_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
         *) usage && exit 5 ;;
     esac
 }
@@ -107,6 +116,12 @@ Options:
                     require local write access, this is not usable for
                     this partial procedure)
 
+-w                  Wipe overwrite directory (DANGER!)
+                    Completely removes existing overlay directory
+                    prior to copying new overlay files over. Will
+                    operate recursively if the -r parameter is also
+                    present. Be careful! Use version control.
+
 -f                  Force overwrite mode (DANGER!)
                     Does not prompt for action when scanning files;
                     simply overwrites all overlay files in the target
@@ -114,11 +129,26 @@ Options:
                     backed up unless the -n command line parameter is
                     also specified.
 
+-F                  Force clean overlay mode (DOUBLE DANGER!)
+                    Completely erases the existing overlay directory!
+                    Danger danger danger! All existing overlay data
+                    will be removed. No prompts will be given.
+
 -n                  No backup file. When writing an overlay file, any
                     existing overlay file in that directory with the
                     same name will normally be backed up first. Use of
                     the '-n' parameter will stop backups from being
                     written; use with caution or with version control!
+
+-D                  Report file diff before prompting for (or forcing)
+                    file overwrite.
+
+-R                  Recursive. All profiles referenced by master
+                    profiles will be processed by the procedure. Note
+                    that the full figtree procedures such as automatic
+                    are always recursive. This partial procedure
+                    normally operates on a single profile but can be
+                    forced into recursive mode using this parameter.
 
 ------------------------------------------------------------------------
 EOF
@@ -127,34 +157,58 @@ EOF
 # procedure workers
 # ----------------------------------------------------------------------
 
-worker_preconfigure ()
-{
-    var_UI_TYPE=${arg_ui_type:-cli}
-    ui_init
-}
-
 worker_intro ()
 {
     local procname="$var_MODULE_NAME $(basename $var_AIF_PROCEDURE_PATH)"
+    local default=yes
+    if [[ -n "$var_WIPE_OVERLAY" ]]; then
+            intro+="\n -w  Wipe overlay directory is ON. Overlay directory will be COMPLETELY REMOVED Prior to write."
+            local default=no
+    else
+            intro+="\n(-w) Wipe overlay directory is off. Overlay directory will remain intact prior to write."
+    fi
+    if [[ -n "$var_FORCE_OVERWRITE" ]]; then
+            intro+="\n -f  Force overwrite is ON. NO PROMPTS Will be given and all OVERWRITES WILL BE MADE."
+            local default=no
+    else
+            intro+="\n(-f) Force overwrite is off. Prompts will be given prior to any change."
+    fi
     if [[ -n "$var_NO_BACKUPS" ]]
     then
-            local backup_warning="Backups are OFF! No backup files will be created when overwriting overlay files."
+            intro+="\n -b  No-backups mode is ON. NO BACKUP FILES Will be created during overwrites."
+            local default=no
     else
-            local backup_warning="Backups are ON. Original overlay files will be renamed and saved with a backup suffix during overwrite procedures."
+            intro+="\n(-b) No-backup mode is off. Backups will be created during any overwrite."
     fi
-    if [[ -n "$var_FORCE_OVERWRITE" ]]
+    if [[ -n "$var_RECURSIVE" ]]
     then
-            inform "\nRUNNING THE $(toupper "$procname") PROCEDURE IN FORCE-OVERWRITE MODE."
-            notify "Overlay files in the profile directory will be *COMPLETELY AND AUTOMATICALLY OVERWRITTEN WITH THE CURRENT, LIVE VERSION OF THE OVERLAY FILE!"
-            inform "$backup_warning"
-            ask_yesno "Do you want to continue?" no || exit
+            intro+="\n -R  Recursive mode is ON. ALL LINKED PROFILES Will be processed."
+            recursive_note=" and all recursively linked profiles"
+            local default=no
     else
-            inform "\nRUNNING THE $(toupper "$procname") PROCEDURE IN QUERY MODE (NORMAL)."
-            inform "Overlay files will be scanned and you will be presented with a series of choices regarding each based on the current state of the profile overlay."
-            inform "$backup_warning"
-            ask_yesno "Do you want to continue?" yes || exit
+            intro+="\n(-R) Recursive mode is off. No linked profiles will be processed."
+            recursive_note=
     fi
+    if [[ -n "$var_DIFFS" ]]; then
+            intro+="\n -d  Diff mode is ON. Diffs will be displayed prior to file overwrite."
+    else
+            intro+="\n(-d) Diff mode is off. No diff information will be shown."
+    fi
+    inform "\nRUNNING THE $(toupper "$procname") PROCEDURE"
+    inform "\nSourcing profile ${var_PARTIAL_PROFILE}${recursive_note}"
+    inform "${intro}\n"
+    ask_yesno "Do you want to continue?" $default || exit
 }
+
+worker_configure ()
+{
+    # LOAD PROFILE
+    [[ -z "$var_PARTIAL_PROFILE" ]] && \
+        die_error "You must specify a config file (-c profile/path) to use this procedure. Run this procedure again with -h for more details."
+    load_profile $var_PARTIAL_PROFILE || \
+        die_error "Failed to load profile $var_PARTIAL_PROFILE from paths $var_MODULE_PATHS"
+}
+
 
 worker_write_overlay()
 {
@@ -164,11 +218,12 @@ worker_write_overlay()
     #       i could also make the system_misc function or worker process an array of commands; here we use installs permissions arg
     dfunc
     local overlay_file=
-    for overlay_file in $var_OVERLAY_FILES
+    for overlay_file in $var_OVERLAY_FILES; do write_overlay_file "$overlay_file"; done
+    for module_root in ${var_MODULE_PATHS[@]}
     do
-        write_overlay_file "$overlay_file"
+        chmod --recursive --reference=$module_root $(dirname $module_root)
+        chown --recursive --reference=$module_root $(dirname $module_root)
     done
-    chmod and chown en mass
 }
 
 write_overlay_file()
@@ -186,7 +241,7 @@ write_overlay_file()
             show_warning "NO OVERLAY FILE SOURCE" "Profile overlay requests non-existant source file: \"$from_path\""; return 1
         elif [[ ! -f "$to_path" ]]; then
             ask_yesno "No overlay file present. Copy current $from_path to $to_path" yes || return 0
-        elif [[ -n "$var_NO_BACKUP" ]]; then
+        elif [[ -n "$var_NO_BACKUPS" ]]; then
             ask_yesno "Overlay file present. Copy current $from_path to $to_path? NO BACKUP WILL BE CREATED." no || return 0
         else
             ask_yesno "Overlay file present. Copy current $from_path to $to_path? Backup will be created." yes || return 0

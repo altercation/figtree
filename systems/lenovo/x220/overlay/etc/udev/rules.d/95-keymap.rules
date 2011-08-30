@@ -1,0 +1,1 @@
+SUBSYSTEM=="input", ATTRS{name}=="AT Translated Set 2 keyboard", RUN+="keymap $name /lib/udev/keymaps/lenovo-thinkpad_x220_tablet"

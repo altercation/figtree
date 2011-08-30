@@ -1,0 +1,3 @@
+keycode 162 = XF86RotateWindows
+keycode 161 = XF86RotationPB
+keycode 248 = XF86AudioRecord

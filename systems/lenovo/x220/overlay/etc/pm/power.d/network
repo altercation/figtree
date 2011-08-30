@@ -1,0 +1,21 @@
+#!/bin/sh
+
+. "${PM_FUNCTIONS}"
+
+case $1 in
+    true)
+	logger "PM-UTILS: Network devices; powersave on"
+	for cpupath in /sys/class/net/*; do
+		echo -n "auto" > "$cpupath/device/power/control"
+	done
+    ;;
+    false)
+	logger "PM-UTILS: Network devices; powersave off"
+	for cpupath in /sys/class/net/*; do
+		echo -n "on" > "$cpupath/device/power/control"
+	done
+    ;;
+    *) exit $NA ;;
+esac
+
+exit 0

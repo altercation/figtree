@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo -n $1 > /var/run/pm-utils/pm-powersave/state 
+
+exit 0

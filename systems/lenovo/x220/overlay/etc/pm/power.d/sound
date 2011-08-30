@@ -1,0 +1,21 @@
+#!/bin/sh
+
+. "${PM_FUNCTIONS}"
+
+case $1 in
+    true)
+        logger "PM-UTILS: Sound devices; powersave on"
+        for device in /sys/class/sound/card*; do
+                echo -n "auto" > "$device/device/power/control"
+        done
+    ;;
+    false)
+        logger "PM-UTILS: Sound devices; powersave off"
+        for device in /sys/class/sound/card*; do
+                echo -n "on" > "$device/device/power/control"
+        done
+    ;;
+    *) exit $NA ;;
+esac
+
+exit 0

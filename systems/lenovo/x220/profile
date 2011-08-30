@@ -43,7 +43,7 @@ overlay /etc/udev/rules.d/95-keymap.rules
 overlay /etc/X11/xinit/xinitrc
 overlay /etc/X11/xinit/Xmodmap
 overlay /etc/X11/xinit/xbindkeysrc
-overlay /usr/bin/rotate-screen
+overlay /usr/local/bin/rotate-screen
 
 # -----------------------------------------------------------------------------
 # SOUND

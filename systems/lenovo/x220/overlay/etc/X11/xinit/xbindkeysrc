@@ -1,0 +1,31 @@
+# xbindkeys configuration
+
+# Mute
+"amixer set Master toggle"
+m:0x0 + c:121
+XF86AudioMute
+
+# Mic Mute (see news.spinics.net/lists/linux-input/msg15394.html as
+# this may end up working in future kernels)
+# see also www.spinics.net/lists/platform-driver-x86/msg02012.html
+# regarding micmute led
+"amixer set Capture toggle"
+m:0x0 + c:248
+XF86AudioRecord
+
+# Volume down
+"amixer set Master playback 5-"
+m:0x0 + c:122
+XF86AudioLowerVolume
+
+# Volume up
+"amixer set Master playback 5+"
+m:0x0 + c:123
+XF86AudioRaiseVolume
+
+# Rotate screen orientation
+"rotate-screen"
+m:0x0 + c:161
+XF86RotationPB
+
+# End of xbindkeys configuration
