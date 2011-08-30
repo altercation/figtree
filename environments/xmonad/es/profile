@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# there is a userspace requirement to properly use xmonad
+# (~/.xmonad is where xmoand actually lives)
+
+# XORG GENERAL
+# =============================================================================
+packages xorg-server xorg-xinit xorg-utils xorg-server-utils unclutter xorg-xlsfonts xdotool xcompmgr hsetroot
+
+# HASKELL & XMONAD
+# =============================================================================
+packages xmonad-darcs xmonad-contrib-darcs xmobar
+#packages cabal-install
+#packages haskell-platform
+# install ABS in order to update ghc
+#packages abs
+# the following command will also update the abs tree after initial install
+# abs
+
+# GTK RELATED
+# =============================================================================
+packages xmonad-darcs xmonad-contrib-darcs
+packages xmobar
+config set /etc/rc.conf XSESSION xmonad
+daemon add @dbus
+
+# KEY APPLICATIONS
+# =============================================================================
+packages rxvt-unicode urxvt-url-select
+
+# FONTS, LOOK & FEEL
+# =============================================================================
+packages terminus-font freetype2-infinality ttf-dejavu ttf-ms-fonts
+overlay /etc/fonts/local.conf
+
+# GTK RELATED
+# =============================================================================
+packages gtk3 lxappearance gtk-engines gtk2-theme-dyne gtk-theme-hope
+
+# SECURITY
+# =============================================================================
+package physlock

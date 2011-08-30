@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# SYSADMIN
+# =============================================================================
+package sudo openssh tightvnc
+ 
+# DNS/NETWORK/PENTEST
+# =============================================================================
+install_packages dnsutils
+install_packages macchanger
+install_packages aircrack-ng aircrack-ng-scripts
+install_aur compat-wireless-patched
+install_aur iodine
+rc_set_module tun
+install_aur sshuttle-git
+
+# DNS/NETWORK/PENTEST
+# =============================================================================
+install_packages iptables
+rc_set_daemon @iptables
+
+# SHELL/CODING/TXT
+# =============================================================================
+packages zsh terminus-font git mercurial vim
+packages gvim curl terminus-font bc gnupg gnupg2 keychain par hunspell
+packages rxvt-unicode urxvt-url-select
+# par - currently has incorrect architecture values
+
+# HASKELL GENERAL
+# =============================================================================
+
+# PRODUCTIVITY & MGMT
+# =============================================================================
+packages task ledger
+
+# AUR
+# =============================================================================
+packages curl yajl package-query yaourt burp
+
+# GRAPHICS
+# =============================================================================
+packages gromit-mpx gimp-devel inkscape
+
+# MISC
+# =============================================================================
+package fortune-mod-issa-haiku figlet
+
+# HW UTILS
+# =============================================================================
+packages htop hardinfo powertop-git
+
+# HW UTILS
+# =============================================================================
+packages mutt offlineimap-git notmuch-git mutt-notmuch muttjump
+package msmtp-git # msmtp from AUR as we want the queue scripts
+# following w3m compface netpbm used for xface display
+# packages w3m compface netpbm
+
+# INTERNET
+# =============================================================================
+packages newsbeuter # rss
+packages googlecl gcalcli
+packages weechat-git # irc, seems faster than irssi
+packages chromium flashplugin skype
+overlay /usr/local/bin/chrome
+#packages firefox-aurora pentadactyl-hg
+#TODO: to use the multilib flash plugin in firefox, set
+#'dom.ipc.plugins.enabled' to true in about:config, otherwise lots of crashes
+#install_packages google-earth
+#packages hspell uzbl-experimental-git
+ 
+# MEDIA
+# =============================================================================
+packages mpd mpc mplayer2 youtube-viewer
+packages apvlv #PDF; zathura
