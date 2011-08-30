@@ -724,7 +724,7 @@ write_overlay_file()
 # functions to support figtree profiles
 
 # load (possibly many, possibly a tree of) profiles, local, relative, or remote paths
-depend_profile() { [[ -n ${var_RECURSIVE}" ]] && load_profile "$1"; }
+depend_profile() { [[ -n "${var_RECURSIVE}" ]] && load_profile "$1"; }
 
 # the following are the main set of additional commands available to figtree profiles
 # and build up lists of commands that will be executed later by workers (thus the
