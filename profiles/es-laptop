@@ -28,6 +28,10 @@ BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_para
 /dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
 /dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
 
+# INSTALL OPTIONS
+# =============================================================================
+RANKMIRRORS=10 # set top # of mirrors during install; 0=don't run rankmirrors
+
 # =============================================================================
 # Don't modify items below unless you have cause to. Rather, use the following
 # commands (here or in depend_profile config files):

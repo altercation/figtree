@@ -151,6 +151,9 @@ default_fs_BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_la
 /dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
 /dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
 
+# default figtree options
+default_ft_RANKMIRRORS=10 # 0 means don't run
+
 # ----------------------------------------------------------------------
 # aif.sh related functions
 # ----------------------------------------------------------------------
@@ -330,6 +333,7 @@ worker_configure ()
     # override any default_ values using values from profiles
     process_defaults_from_prefix "default_rc_"
     process_defaults_from_prefix "default_fs_"
+exit
 
     # FILESYSTEM
     # TODO: we're not yet setting any defaults for filesystem values
@@ -496,24 +500,24 @@ process_defaults_from_prefix()
 {
     local procedure_items=
     local profile_items=
-    #local default_prefix="default_"
     local default_prefix=$1
+    local final_prefix=${2:-}
     eval local defaults_list=\"\${!${default_prefix}@}\"
-    for default_value in $defaults_list
+    for default_value_name in $defaults_list
     do
-        eval local value=\${default_value#${default_prefix}}
-        if [[ -z ${!value} ]]
+        eval local value_name=\${default_value_name#${default_prefix}}
+        if [[ -z ${!value_name} ]]
         then
-                if declare | grep -q "$default_value=("
+                if declare | grep -q "$default_value_name=("
                 then # array
-                    eval eval $value="(\${$default_value[*]})"
+                    eval eval $value_name="(\${$default_value_name[*]})"
                     #eval "echo $value=\"(\${$value[*]})\"" # DEBUG
                 else # normal variable
-                    eval $value=\'${!default_value}\'
+                    eval $value_name=\'${!default_value_name}\'
                 fi
-                eval "procedure_items+=\"Using default procedure value for \$value: \${$value[*]}\\n\""
+                eval "procedure_items+=\"Using default procedure value for \$value_name: \${$value_name[*]}\\n\""
         else
-                eval "profile_items+=\"Using custom profile value for \$value: \${$value[*]}\\n\""
+                eval "profile_items+=\"Using custom profile value for \$value_name: \${$value_name[*]}\\n\""
         fi
     done
     inform "$procedure_items\n$profile_items"
@@ -917,6 +921,23 @@ kernel_parameter_write()
 # lib-software
 # ----------------------------------------------------------------------
 # functions that override or augment aif core lib-software.sh
+
+rankmirrors()
+{
+    # uses global state $var_RANKMIRRORS
+    if [ $OPTIMIZE_MIRRORS = 1 ]; then
+        install_packages curl
+        cd /etc/pacman.d
+        # don't overwrite older mirrorlist.orig if present
+        cp -n mirrorlist mirrorlist.orig
+        # do write a backup of current mirrorlist
+        cp mirrorlist mirrorlist.backup
+        sed -i 's/^#Server/Server/g' mirrorlist.orig
+        rankmirrors -n 10 mirrorlist.orig | tee mirrorlist
+    else
+        echo "skipping mirror optimization"
+    fi
+}
 
 installaur()
 {
