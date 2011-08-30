@@ -251,11 +251,8 @@ source_and_overlay()
     local revert_overlay=$var_OVERLAY_PATH
     var_OVERLAY_PATH="$(dirname "$1")/overlay"
     if [[ -z $var_POST_OVERLAY ]]; then # haven't yet updated overlay
-        echo "WE ARE PRE OVERLAY"
-        echo "========================================"
-        read answer
         if [[ -n "$var_WIPE_OVERLAY" && -d "$var_OVERLAY_PATH" ]]; then
-                if [[ -z "$var_FORCE_OVERRIDE" ]]
+                if [[ -z "$var_FORCE_OVERWRITE" ]]
                 then
                         ask_yesno "Delete existing overlay directory $var_OVERLAY_PATH:" && rm -rf "$var_OVERLAY_PATH"
                 else
