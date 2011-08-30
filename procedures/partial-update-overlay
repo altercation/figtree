@@ -247,7 +247,8 @@ source_and_overlay()
         echo "========================================"
         read answer
         if [[ -n "$var_WIPE_OVERLAY" ]]; then
-                if [[ -z "$var_FORCE_OVERRIDE" ]] then
+                if [[ -z "$var_FORCE_OVERRIDE" ]]
+                then
                         ask_yesno "Press enter to delete existing overlay directory $var_OVERLAY_PATH:" $yes && rm -rf "$var_OVERLAY_PATH"
                 else
                         rm -rf "$var_OVERLAY_PATH"
