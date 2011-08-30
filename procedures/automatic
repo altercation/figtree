@@ -309,7 +309,6 @@ worker_preload ()
         return 0
 }
 
-dpause() { echo "=====================> pause"; read answer; }
 worker_configure ()
 {
     inform "Starting system configuration and profile load sequence..."
@@ -323,21 +322,17 @@ worker_configure ()
 
     # DEFAULT VALUES
     # override any default_ values using values from profiles
-    dpause
     process_defaults_from_prefix "default_rc_"
     process_defaults_from_prefix "default_fs_"
     process_defaults_from_prefix "default_in_"
-    dpause
 
     # RUNTIME SOURCES
     # NOTE: we've already installed some prerequisite packages (git, etc.) in 
     # order to source remote profiles. We now load any other repos/packages 
     # that have been specified in the user profile.
-    dpause
     var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
     var_RUNTIME_PACKAGES=$(dedup "$var_RUNTIME_PACKAGES $RUNTIME_PACKAGES")
     var_RANKMIRRORS=$RANKMIRRORS
-    dpause
 
     # FILESYSTEM
     # TODO: we're not yet setting any defaults for filesystem values
@@ -1017,10 +1012,8 @@ installpkg() {
         do
             if [[ `$PACMAN_TARGET -Q "^$package$" &>/dev/null` ]]; then
                 inform "INSTALLATION: $package already installed; skipping"
-                dpause
             elif `$PACMAN_TARGET -Ss "^$package$" &>/dev/null`
             then
-                echo "about to install.... xyz"; dpause
                 run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $package" $TMP_PACMAN_LOG "Installing $package..." 
             elif [[ -n "$var_AUR_SUPPORT" ]]
             then
@@ -1047,46 +1040,3 @@ installpkg() {
 
         return $CONTROLLED_EXIT
 }
-
-ORIGinstallpkg() {
-        ALL_PACKAGES=
-        [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
-        if [ -n "$var_TARGET_PACKAGES_EXCLUDE" ]
-        then
-                for excl in $var_TARGET_PACKAGES_EXCLUDE
-                do
-                        ALL_PACKAGES=${ALL_PACKAGES//$excl/}
-                done
-        fi
-
-        if [ -n "$var_TARGET_PACKAGES" ]
-        then
-                [ -n "$ALL_PACKAGES" ] && ALL_PACKAGES="$ALL_PACKAGES $var_TARGET_PACKAGES"
-                [ -z "$ALL_PACKAGES" ] && ALL_PACKAGES=$var_TARGET_PACKAGES
-        fi
-        ALL_PACKAGES=`echo $ALL_PACKAGES`
-        [ -z "$ALL_PACKAGES" ] && die_error "No packages/groups specified to install"
-
-        target_special_fs on
-
-        notify "Package installation will begin now.  You can watch the output in the progress window. Please be patient."
-
-        run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $ALL_PACKAGES" $TMP_PACMAN_LOG "Installing... Please Wait" 
-
-        local _result=''
-        if [ $CONTROLLED_EXIT -ne 0 ]; then
-                _result="Installation Failed (see errors below)"
-                echo -e "\nPackage Installation FAILED." >>$TMP_PACMAN_LOG
-        else
-                _result="Installation Complete"
-                echo -e "\nPackage Installation Complete." >>$TMP_PACMAN_LOG
-        fi
-
-        show_warning "$_result" "$TMP_PACMAN_LOG" text || return 1
-
-        target_special_fs off
-        sync
-
-        return $CONTROLLED_EXIT
-}
-
