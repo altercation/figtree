@@ -15,7 +15,8 @@ depend_procedure figtree automatic
 
 var_MODULE_NAME=figtree
 var_PROCEDURE_SUBPATH=/procedures/partial-update-overlay
-var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}"
+var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && var_AIF_PROCEDURE_PATH="$2"
+var_MODULE_PATHS=("${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}" "/usr/lib/aif/user/figtree")
 var_FORCE_OVERWRITE=
 var_NO_BACKUPS=
 var_OPTS_STRING="c:fn"
@@ -31,6 +32,7 @@ var_OPTS_STRING="c:fn"
 # phase_finish=(msg_report) # defaults, for reference
 #
 phase_preparation=(preconfigure intro configure)
+phase_basics=()
 phase_system=(write_overlay) # module specific custom workers (see below)
 
 # ----------------------------------------------------------------------
@@ -177,18 +179,17 @@ write_overlay_file()
     # script *requires* last slash to *not* be escaped, so we use that here
     to_path="${overlay_file/\/\///}"
     from_path="$var_SOURCE_DIR/${overlay_file#*\/\/}"
-    echo "$from_path => $to_path"
-    return
     
-    # TODO: test if permissions are retained via --preserve-context
-    # TODO: confirm backups are created correctly
-    # optional: --preserve-context for selinux compliance
     if [[ ! -f "$from_path" ]]
     then
         show_warning "NO OVERLAY FILE SOURCE" "Profile overlay requests non-existant source file: \"$from_path\""
         return 1
-    fi
-    if install -C -D -S ".figtree.old" -v -T "$from_path" "$to_path" &>/dev/null
+    elif [[ ! -f "$to_path" ]]
+    then
+        ask_yesno "No overlay file present. Copy current $from_path to overlay?" yes || return 0
+        # TODO: PERMISSIONS ARE GOING TO BE SCREWED UP!
+        cp "$from_path" "$to_path"
+    elif install -C -D -S ".figtree.old" -v -T "$from_path" "$to_path" &>/dev/null
     then
         inform "Successful write of overlay file \"$overlay_file\""
         return 0
