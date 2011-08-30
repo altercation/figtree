@@ -5,8 +5,8 @@
 depend_profile systems/lenovo/x220
 depend_profile users/es
 depend_profile environments/xmonad/es
-depend_profile applications/cli/thebasics
-depend_profile applications/cli/av
+#depend_profile applications/cli/thebasics
+#depend_profile applications/cli/av
  
 # SYSTEM CONFIG VALUES
 # =============================================================================
@@ -16,17 +16,18 @@ DAEMON_LOCALE="no"
 HARDWARECLOCK="UTC"
 TIMEZONE="Canada/Pacific"
 KEYMAP="us"
-CONSOLEFONT=
+CONSOLEFONT="ter-120n"
 CONSOLEMAP=
 USECOLOR="yes"
 
 # FILESYSTEM CONFIGURATION
 # =============================================================================
-GRUB_DEVICE=/dev/sda
-PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
-BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
-/dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
-/dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
+# letter figtree automatic provide defaults for now
+#GRUB_DEVICE=/dev/sda
+#PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
+#BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
+#/dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
+#/dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
 
 # INSTALL OPTIONS
 # =============================================================================
@@ -36,8 +37,10 @@ RANKMIRRORS=10 # set top # of mirrors during install; 0=don't run rankmirrors
 # Don't modify items below unless you have cause to. Rather, use the following
 # commands (here or in depend_profile config files):
 #
-# packages  add packagename [packagename...]
+# packages  packagename [packagename...]
+# package_groups groupname [groupname...]
 # blacklist packagename [packagename...] (same as blacklisting a package)
+# -----------------------------------------------------------------------------
 # config    set /config/file/path VALUENAME "value to set"
 # config    unset /config/file/path VALUENAME (comments out the value)
 # daemons   add daemonname [@daemonname] [!daemonname]
@@ -49,12 +52,17 @@ RANKMIRRORS=10 # set top # of mirrors during install; 0=don't run rankmirrors
 # overlay   /install/path/file [/another/file/here]
 #           (place the file in the overlay directory or use the
 #            figtree module partial-update-overlay procedure)
-# code      'misc command to be run at end of installation goes-here'
+# coda      'misc command to be run at end of installation goes-here'
+# -----------------------------------------------------------------------------
 # kernelparams parameter list here
 #
-# plural and singular forms of each command are equivalent in order to eliminate a common error in the config syntax
-# packages|package blacklist|blacklists config|configs daemons|daemon modules|module networks|network kernelparams|kernelparam coda|codas overlays|overlay
-#
+# plural and singular forms of each command are equivalent in order to 
+# eliminate a common error in the config syntax:
+# -----------------------------------------------------------------------------
+# packages|package package_groups|package_group blacklist|blacklists 
+# config|configs daemons|daemon modules|module networks|network 
+# kernelparams|kernelparam coda|codas overlays|overlay
+# -----------------------------------------------------------------------------
 # the following are equivalent and may be used interchangeably 
 # add==set  unset==remove==delete
 

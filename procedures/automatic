@@ -742,7 +742,8 @@ depend_profile() { [[ -n "${var_RECURSIVE}" ]] && load_profile "$1"; }
 #
 # Usage examples:
 #
-# packages  add packagename [packagename...]
+# packages  packagename [packagename...]
+# package_groups groupname [groupname...]
 # blacklist packagename [packagename...] (same as blacklisting a package)
 # config    set /config/file/path VALUENAME "value to set"
 # config    unset /config/file/path VALUENAME (comments out the value)
@@ -760,14 +761,16 @@ depend_profile() { [[ -n "${var_RECURSIVE}" ]] && load_profile "$1"; }
 #
 # plural and singular forms of each command are equivalent in order to 
 # eliminate a common error in the config syntax
-# packages|package blacklist|blacklists config|configs daemons|daemon 
-# modules|module networks|network kernelparams|kernelparam coda|codas 
-# overlays|overlay
+# packages|package package_groups|package_group blacklist|blacklists 
+# config|configs daemons|daemon modules|module networks|network 
+# kernelparams|kernelparam coda|codas overlays|overlay
 #
 # the following are equivalent and may be used interchangeably 
 # add==set  unset==remove==delete
 packages()      { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$* "; dstate TARGET_PACKAGES; }
 package()       { packages "$*"; }
+package_groups(){ dfunc; [[ -n "$*" ]] && TARGET_GROUPS+="$* "; dstate TARGET_PACKAGES; }
+package_group() { package_groups "$*"; }
 blacklist()     { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES_EXCLUDE+="$* "; dstate TARGET_PACKAGES; }
 blacklists()    { blacklist "$*"; }
 config ()       { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate CONFIG_CHANGES; }
@@ -778,8 +781,8 @@ modules()       { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstat
 module()        { modules "$*"; }
 networks()      { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_networks $*"); dstate CONFIG_CHANGES; }
 network()       { networks "$*"; }
-kernelparams()  { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_kernelparams $*"); dstate CONFIG_CHANGES; }
-kernelparam()   { kernelparams "$*"; }
+kernel_params() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_kernel_params $*"); dstate CONFIG_CHANGES; }
+kernel_param()  { kernelparams "$*"; }
 coda()          { dfunc; [[ -n "$*" ]] && MISC_COMMANDS+=("$*"); dstate MISC_COMMANDS; }
 codas()         { coda "$*"; }
 overlays()      { dfunc; [[ -n "$*" ]] && for overlay_file in $*; do var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}"; done; dstate var_OVERLAY_FILES; }
@@ -792,7 +795,7 @@ _config () { config_switch "$@"; }
 _daemons () { config_switch "$@"; }
 _modules () { config_switch "$@"; }
 _networks () { config_switch "$@"; }
-_kernelparams () { kernel_parameter_write "$@"; }
+_kernel_params () { kernel_parameter_write "$@"; }
 
 # ----------------------------------------------------------------------
 # lib-config

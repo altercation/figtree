@@ -1,12 +1,7 @@
 #!/bin/base
 
-# Systems/_base/base profile. Used as foundation for other _base profiles.  
-# Probably best to depend on one of those (laptop, desktop, vm) rather than 
-# this profile
-
-# -----------------------------------------------------------------------------
 # NETWORKING
-# -----------------------------------------------------------------------------
+# =============================================================================
 packages netcfg rfkill wpa_supplicant wpa_actiond ifplugd wifi-select-git
 config unset /etc/rc.conf INTERFACES
 config unset /etc/rc.conf eth0
@@ -18,13 +13,12 @@ daemons remove network # no longer required due to netcfg
 daemons add @net-auto-wired @net-auto-wireless
 overlay /etc/wpa_supplicant.conf /etc/network.d/ethernet-dhcp
 
-# -----------------------------------------------------------------------------
 # POWER
-# -----------------------------------------------------------------------------
+# =============================================================================
 packages acpi acpid acpitool pm-utils cpufrequtils thinkfan lm_sensors
-daemons add @acpi sensors
+daemons add @acpi @sensors @thinkfan
 modules add thinkpad_acpi acpi_cpufreq cpufreq_ondemand cpufreq_powersave
-overlay /etc/acpi/handler.sh
+overlay /etc/acpi/handler.sh # acpi events and hotkeys
 overlay /etc/pm/power.d/cpu
 overlay /etc/pm/power.d/display
 overlay /etc/pm/power.d/network
@@ -33,10 +27,19 @@ overlay /etc/pm/power.d/sound
 overlay /etc/pm/sleep.d/11netcfg
 overlay /etc/pm/sleep.d/90alsa
 overlay /etc/thinkfan.conf
+# add line to /etc/modprobe.d/modprobe.conf:
+# options thinkpad_acpi fan_control=1
+newline="options thinkpad_acpi fan_control=1"
+if ( ! grep -q "${newline}" /etc/modprobe.d/modprobe.conf ); then
+    echo "${newline}" >> /etc/modprobe.d/modprobe.conf
+fi
+# tp_smapi not yet working on x220t?
+# TODO: monitor tp_smapi compatibility status
+#packages tp_smapi
+#module set tp_smapi
 
-# -----------------------------------------------------------------------------
 # INPUT
-# -----------------------------------------------------------------------------
+# =============================================================================
 packages xbindkeys
 overlay /lib/udev/keymaps/lenovo-thinkpad_x220_tablet
 overlay /etc/udev/rules.d/95-keymap.rules
@@ -45,29 +48,40 @@ overlay /etc/X11/xinit/Xmodmap
 overlay /etc/X11/xinit/xbindkeysrc
 overlay /usr/local/bin/rotate-screen
 
-# -----------------------------------------------------------------------------
+# TODO: some of these will need to be installed *last*
+packages xf86-input-wacom-git input-wacom-git
+
 # SOUND
-# -----------------------------------------------------------------------------
+# =============================================================================
 packages alsa-utils alsa-oss alsa-equalizer
 daemons add @alsa
 overlays /var/lib/alsa/asound.state
 
-# -----------------------------------------------------------------------------
 # DISPLAY
-# -----------------------------------------------------------------------------
+# =============================================================================
 packages libdrm dri2proto xf86-video-intel
 packages xorg-server xorg-xinit xorg-utils xorg-server-utils xf86-input-synaptics
-packages mesa mesa-demos xorg-xlsfonts xdotool unclutter
-overlays /etc/drirc
+packages mesa xorg-xlsfonts xdotool unclutter # mesa-demos
+overlays /etc/drirc # experimental
 overlays /etc/X11/xorg.conf.d/90-monitor.conf # to fix lcd monitor dpi size
+config set /etc/mkinitcpio.conf MODULES "i915"
 
-## TODO ... abstract to a function or stick in extras ##if ( ! grep -q 
-##'MODULES="i915"' /etc/mkinitcpio.conf ); then
-##    sed -i 's/\(^MODULES\).*$/\1="i915"/' /etc/mkinitcpio.conf
-##        mkinitcpio -p kernel26
-##fi
+# TIME
+# =============================================================================
+packages ntp
+daemon remove hwclock
+daemon add @ntp
 
-# -----------------------------------------------------------------------------
 # EXTRAS
-# -----------------------------------------------------------------------------
+# =============================================================================
+#i915.i915_enable_rc6=1 to address power regression in linux 3.0. TODO: monitor whether this continues to be required
+kernel_params 'i915.modeset=1 quiet hibernate=noresume logo.nologo cryptdevice=/dev/sda4:crypto i915.i915_enable_rc6=1 i915.powersave=1'
+
+# udev hack to speed up boot
+# after ssd firmware update boot is fast, and this didn't improve anything 
+# anyhow
+# ----------------------------------------------------------------------
+# see https://wiki.archlinux.org/index.php/Speed_Up_udev#Option_2
+#cp -i -p /lib/udev/load-modules.sh /lib/udev/load-modules.sh.old
+#ln -sf /sbin/modprobe /lib/udev/load-modules.sh
 
