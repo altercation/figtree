@@ -95,8 +95,7 @@ var_POST_OVERLAY= # unset by default; used in partial-update-overlay
 phase_basics=() # off for testing
 phase_system=() # off for testing
 phase_preparation=(preconfigure intro runtime_network preload configure select_source runtime_repositories runtime_packages)
-#phase_system+=(write_configs write_overlay write_coda) # module specific custom workers (see below)
-phase_system+=(write_configs write_overlay) # module specific custom workers (see below)
+phase_system+=(write_configs write_overlay write_coda) # module specific custom workers (see below)
 
 # ----------------------------------------------------------------------
 # DEFAULT VALUES
@@ -393,11 +392,15 @@ worker_write_coda ()
     # complete system customization
     inform "Final system customization commands started..."
     dfunc
+    echo ">>>>>>>> a"
     rank_mirrors # TODO: copy from runtime optimized file would be faster, but there might be different repos
+    echo ">>>>>>>> b"
     for misc_command in ${MISC_COMMANDS[@]}
     do
+    echo ">>>>>>>> c"
         eval "$misc_command" || show_warning "COMMAND FAILED" "coda command failed: $misc_command"
     done
+    echo ">>>>>>>> d"
     # rerun postconfigure_target
     # this has been run once in the the core/automatic worker_configure_system
     # but we may have made changes that require mkinitcpio recreation.
