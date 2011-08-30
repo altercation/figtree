@@ -15,6 +15,8 @@
 
 9. Confirm I'm not really overwriting TARGET_PACKAGES as I think I am.
 
+10. what about multiple types of repositories...
+
 current:
 
 process_args (in automatic)

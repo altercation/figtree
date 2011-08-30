@@ -711,6 +711,8 @@ select_profile ()
 
 write_overlay_file()
 {
+    echo ">>>>>> OF=$1"
+    read answer
     local overlay_file="$1"
     from_path="${overlay_file/\/\///}" # command line *requires* last slash to be escaped like this: from_path="${overlay_file/\/\//\/}"
     to_path="$var_TARGET_DIR/${overlay_file#*\/\/}"
