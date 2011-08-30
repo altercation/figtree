@@ -2,7 +2,7 @@
 
 # CONFIG-TREE
 # =============================================================================
-#depend_profile systems/lenovo/x220
+depend_profile systems/lenovo/x220
 depend_profile users/es
 depend_profile environments/xmonad/es
 

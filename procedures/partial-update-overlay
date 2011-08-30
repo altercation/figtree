@@ -266,9 +266,9 @@ source_and_overlay()
                 || die_error "Failed to process profile \"$1\"."
     else # we've already run through the overlay update and need to change permissions
         # the only file we *know* we have is the profile, $1
-        chmod --recursive --reference="$1" "$var_OVERLAY_PATH" \
-                && inform "Recursively updated permissions on $var_OVERLAY_PATH" \
-                || die_error "PERMISSIONS UPDATE ERROR" "Recursively updated permissions on $var_OVERLAY_PATH"
+#        chmod --recursive --reference="$1" "$var_OVERLAY_PATH" \
+#                && inform "Recursively updated permissions on $var_OVERLAY_PATH" \
+#                || die_error "PERMISSIONS UPDATE ERROR" "Recursively updated permissions on $var_OVERLAY_PATH"
         chown --recursive --reference="$1" "$var_OVERLAY_PATH" \
                 && inform "Recursively updated ownership on $var_OVERLAY_PATH" \
                 || die_error "PERMISSIONS UPDATE ERROR" "Recursively updated ownership on $var_OVERLAY_PATH"
