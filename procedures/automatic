@@ -92,8 +92,8 @@ var_POST_OVERLAY= # unset by default; used in partial-update-overlay
 # phase_basics=(set_clock prepare_disks) # defaults, here for reference during module development
 # phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for reference
 # phase_finish=(msg_report) # defaults, for reference
-phase_basics=() # off for testing
-phase_system=() # off for testing
+#phase_basics=() # off for testing
+#phase_system=() # off for testing
 phase_preparation=(preconfigure intro runtime_network preload configure select_source runtime_repositories runtime_packages)
 phase_system+=(write_configs write_overlay write_coda) # module specific custom workers (see below)
 
@@ -309,6 +309,7 @@ worker_preload ()
         return 0
 }
 
+dpause() { echo "=====================> pause"; read answer; }
 worker_configure ()
 {
     inform "Starting system configuration and profile load sequence..."
@@ -322,17 +323,21 @@ worker_configure ()
 
     # DEFAULT VALUES
     # override any default_ values using values from profiles
+    dpause
     process_defaults_from_prefix "default_rc_"
     process_defaults_from_prefix "default_fs_"
     process_defaults_from_prefix "default_in_"
+    dpause
 
     # RUNTIME SOURCES
     # NOTE: we've already installed some prerequisite packages (git, etc.) in 
     # order to source remote profiles. We now load any other repos/packages 
     # that have been specified in the user profile.
+    dpause
     var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
     var_RUNTIME_PACKAGES=$(dedup "$var_RUNTIME_PACKAGES $RUNTIME_PACKAGES")
     var_RANKMIRRORS=$RANKMIRRORS
+    dpause
 
     # FILESYSTEM
     # TODO: we're not yet setting any defaults for filesystem values
