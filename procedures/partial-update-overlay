@@ -16,7 +16,7 @@ depend_procedure figtree automatic
 var_MODULE_NAME=figtree
 var_PROCEDURE_SUBPATH=/procedures/partial-update-overlay
 var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && var_AIF_PROCEDURE_PATH="$2"
-var_MODULE_PATHS=("${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}" "/usr/lib/aif/user/figtree")
+var_MODULE_PATHS=("${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}")
 var_FORCE_OVERWRITE=
 var_NO_BACKUPS=
 var_OPTS_STRING="c:fnwDR"
@@ -31,9 +31,9 @@ var_OPTS_STRING="c:fnwDR"
 # phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for reference
 # phase_finish=(msg_report) # defaults, for reference
 #
-phase_preparation=(preconfigure intro configure)
+phase_preparation=(preconfigure intro)
 phase_basics=()
-phase_system=(write_overlay) # module specific custom workers (see below)
+phase_system=(pre_overlay write_overlay post_overlay) # module specific custom workers (see below)
 
 # ----------------------------------------------------------------------
 # aif.sh related functions
@@ -159,6 +159,8 @@ EOF
 
 worker_intro ()
 {
+    [[ -z "$var_PARTIAL_PROFILE" ]] && \
+        die_error "You must specify a config file (-c profile/path) to use this procedure. Run this procedure again with -h for more details."
     local procname="$var_MODULE_NAME $(basename $var_AIF_PROCEDURE_PATH)"
     local default=yes
     if [[ -n "$var_WIPE_OVERLAY" ]]; then
@@ -200,65 +202,70 @@ worker_intro ()
     ask_yesno "Do you want to continue?" $default || exit
 }
 
-worker_configure ()
-{
-    # LOAD PROFILE
-    [[ -z "$var_PARTIAL_PROFILE" ]] && \
-        die_error "You must specify a config file (-c profile/path) to use this procedure. Run this procedure again with -h for more details."
-    load_profile $var_PARTIAL_PROFILE || \
-        die_error "Failed to load profile $var_PARTIAL_PROFILE from paths $var_MODULE_PATHS"
-}
+worker_pre_overlay ()
+{ var_POST_OVERLAY= ; load_profile $var_PARTIAL_PROFILE || die_error "Failed to load profile $var_PARTIAL_PROFILE from paths $var_MODULE_PATHS"; }
 
-
-worker_write_overlay()
-{
-    inform "Overlay write started..."
-    # TODO: consider just moving/copying *all* files in overlay without any specification, or perhaps allow a special overlay value of "*"
-    # TODO: we might need to set certain permissions, but i'd rather leave this for the misc step
-    #       i could also make the system_misc function or worker process an array of commands; here we use installs permissions arg
-    dfunc
-    local overlay_file=
-    for overlay_file in $var_OVERLAY_FILES; do write_overlay_file "$overlay_file"; done
-    for module_root in ${var_MODULE_PATHS[@]}
-    do
-        chmod --recursive --reference=$module_root $(dirname $module_root)
-        chown --recursive --reference=$module_root $(dirname $module_root)
-    done
-}
+worker_post_overlay ()
+{ var_POST_OVERLAY=1; load_profile $var_PARTIAL_PROFILE || die_error "Failed to load profile $var_PARTIAL_PROFILE from paths $var_MODULE_PATHS"; }
 
 write_overlay_file()
 {
     local overlay_file="$1"
-    # TODO: the following substitution performs differently in script vs command line;
-    # command line *requires* last slash to be escaped like this:
-    # from_path="${overlay_file/\/\//\/}"
-    # script *requires* last slash to *not* be escaped, so we use that here
     to_path="${overlay_file/\/\///}"
     from_path="$var_SOURCE_DIR/${overlay_file#*\/\/}"
     if [[ -z "$var_FORCE_OVERWRITE" ]]
     then
-        if [[ ! -f "$from_path" ]]; then
-            show_warning "NO OVERLAY FILE SOURCE" "Profile overlay requests non-existant source file: \"$from_path\""; return 1
-        elif [[ ! -f "$to_path" ]]; then
-            ask_yesno "No overlay file present. Copy current $from_path to $to_path" yes || return 0
-        elif [[ -n "$var_NO_BACKUPS" ]]; then
-            ask_yesno "Overlay file present. Copy current $from_path to $to_path? NO BACKUP WILL BE CREATED." no || return 0
-        else
-            ask_yesno "Overlay file present. Copy current $from_path to $to_path? Backup will be created." yes || return 0
+        if [[ ! -f "$from_path" ]];      then show_warning "NO SOURCE" "Profile overlay requests non-existant source file: \"$from_path\""; return 1
+        elif [[ ! -f "$to_path" ]];      then ask_yesno "No overlay file present. Copy current $from_path to $to_path" yes || return 0
+        elif [[ -n "$var_NO_BACKUPS" ]]; then ask_yesno "Overlay file present. Copy current $from_path to $to_path? NO BACKUP WILL BE CREATED." no || return 0
+        else ask_yesno "Overlay file present. Copy current $from_path to $to_path? Backup will be created." yes || return 0
         fi
     fi
     if [[ -n "$var_NO_BACKUPS" ]]
-    then
-        # install cmd is 
-        local install_cmd='install --backup=none -C -D -v -T '
-    else
-        # install cmd is
-        local install_cmd='install --backup=numbered -C -D -v -T '
+    then local install_cmd='install --backup=none -C -D -v -T '
+    else local install_cmd='install --backup=numbered -C -D -v -T '
     fi
     if $install_cmd "$from_path" "$to_path" &>/dev/null
-    then
-        inform "Successful update of overlay file from \"$from_path\" to \"$to_path\""; return 0
-    else
-        show_warning "CRITICAL OVERLAY FILE ERROR" "Failed to overlay file from \"$from_path\" to \"$to_path\""; return 1
+    then inform "Successful update of overlay file from \"$from_path\" to \"$to_path\""; return 0
+    else show_warning "CRITICAL OVERLAY FILE ERROR" "Failed to overlay file from \"$from_path\" to \"$to_path\""; return 1
     fi
 }
+
+source_and_overlay()
+{
+    # there is probably a clever way to get the phase
+    # i could also override load_profile from figtree automatic here but
+    # I'm going to use global state to make this into, effectively, two different functions that get called by load_profile
+    # If this seems as dirty as it feels, then I'll have to refactor it later
+    # TODO: refactor to two functions?
+    # TODO: is there an easy way to pull the oldest $FUNCNAME?
+    # TODO: is there a better way to handle permissions during the copy? I'll have to sort this out for userspace profiles as well
+    local revert_overlay=$var_OVERLAY_PATH
+    var_OVERLAY_PATH="$(dirname "$1")/overlay"
+    if [[ -z $var_POST_OVERLAY ]]; then # haven't yet updated overlay
+        echo "WE ARE PRE OVERLAY"
+        echo "========================================"
+        read answer
+        if [[ -n "$var_WIPE_OVERLAY" ]]; then
+                if [[ -z "$var_FORCE_OVERRIDE" ]] then
+                        ask_yesno "Press enter to delete existing overlay directory $var_OVERLAY_PATH:" $yes && rm -rf "$var_OVERLAY_PATH"
+                else
+                        rm -rf "$var_OVERLAY_PATH"
+                fi
+        fi
+        source "$1" \
+                && inform "\n${divider}\nSuccessfully loaded profile:\n${1#$var_TEMP_DIR}\n${divider}\n" \
+                || die_error "Failed to process profile \"$1\"."
+    else # we've already run through the overlay update and need to change permissions
+        echo "WE ARE POST OVERLAY"
+        echo "========================================"
+        read answer
+        chmod --recursive --reference="$module_root" "$var_OVERLAY_PATH" \
+                && inform "Recursively updated permissions on $var_OVERLAY_PATH" \
+                || die_error "PERMISSIONS UPDATE ERROR" "Recursively updated permissions on $var_OVERLAY_PATH"
+        chown --recursive --reference="$module_root" "$var_OVERLAY_PATH" \
+                && inform "Recursively updated ownership on $var_OVERLAY_PATH" \
+                || die_error "PERMISSIONS UPDATE ERROR" "Recursively updated ownership on $var_OVERLAY_PATH"
+    fi
+    var_OVERLAY_PATH=$revert_overlay
+} 

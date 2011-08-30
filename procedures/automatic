@@ -80,6 +80,7 @@ var_RUNTIME_PACKAGES_PRELOAD="git" # yaourt mercurial svn
 #var_TARGET_GROUPS="base" this doesn't do anything here unless I override worker_package_list or assign this to TARGET_GROUPS, not var_TARGET_GROUPS
 var_AUTOMATIC_PROFILE= # assigned in process_args
 var_AUR_SUPPORT= # by default no AUR support unless -a command line parameter; TODO: should this be default on?
+var_RECURSIVE=1 # on by default in automatic; overridden in partial-update-overlay, for instance
 
 # ----------------------------------------------------------------------
 # PHASE WORKER CUSTOMIZATIONS
@@ -372,9 +373,6 @@ worker_write_configs()
 worker_write_overlay()
 {
     inform "Overlay write started..."
-    # TODO: consider just moving/copying *all* files in overlay without any specification, or perhaps allow a special overlay value of "*"
-    # TODO: we might need to set certain permissions, but i'd rather leave this for the misc step
-    #       i could also make the system_misc function or worker process an array of commands; here we use installs permissions arg
     dfunc
     local overlay_file=
     for overlay_file in $var_OVERLAY_FILES
@@ -703,21 +701,14 @@ select_profile ()
 write_overlay_file()
 {
     local overlay_file="$1"
-    # TODO: the following substitution performs differently in script vs command line;
-    # command line *requires* last slash to be escaped like this:
-    # from_path="${overlay_file/\/\//\/}"
-    # script *requires* last slash to *not* be escaped, so we use that here
-    from_path="${overlay_file/\/\///}"
+    from_path="${overlay_file/\/\///}" # command line *requires* last slash to be escaped like this: from_path="${overlay_file/\/\//\/}"
     to_path="$var_TARGET_DIR/${overlay_file#*\/\/}"
-    # TODO: test if permissions are retained via --preserve-context
-    # TODO: confirm backups are created correctly
-    # optional: --preserve-context for selinux compliance
     if [[ ! -f "$from_path" ]]
     then
         show_warning "NO OVERLAY FILE SOURCE" "Profile overlay requests non-existant source file: \"$from_path\""
         return 1
     fi
-    if install -C -D -S ".figtree.old" -v -T "$from_path" "$to_path" &>/dev/null
+    if install -C -D -S ".figtree.old" -v -T "$from_path" "$to_path" &>/dev/null  # optional: --preserve-context for selinux compliance
     then
         inform "Successful write of overlay file \"$overlay_file\""
         return 0
@@ -733,7 +724,7 @@ write_overlay_file()
 # functions to support figtree profiles
 
 # load (possibly many, possibly a tree of) profiles, local, relative, or remote paths
-depend_profile() { load_profile "$1"; }
+depend_profile() { [[ -n ${var_RECURSIVE}" ]] && load_profile "$1"; }
 
 # the following are the main set of additional commands available to figtree profiles
 # and build up lists of commands that will be executed later by workers (thus the
