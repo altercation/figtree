@@ -151,8 +151,8 @@ default_fs_BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_la
 /dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
 /dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
 
-# default figtree options
-default_ft_RANKMIRRORS=10 # 0 means don't run
+# default install options
+default_in_RANKMIRRORS=10 # 0 means don't run
 
 # ----------------------------------------------------------------------
 # aif.sh related functions
@@ -322,18 +322,19 @@ worker_configure ()
     load_profile $var_AUTOMATIC_PROFILE || \
         die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $var_MODULE_PATHS"
 
+    # DEFAULT VALUES
+    # override any default_ values using values from profiles
+    process_defaults_from_prefix "default_rc_"
+    process_defaults_from_prefix "default_fs_"
+    process_defaults_from_prefix "default_in_"
+
     # RUNTIME SOURCES
     # NOTE: we've already installed some prerequisite packages (git, etc.) in 
     # order to source remote profiles. We now load any other repos/packages 
     # that have been specified in the user profile.
     var_RUNTIME_REPOSITORIES+=($RUNTIME_REPOSITORIES) # MUST BE IN AN ARRAY
     var_RUNTIME_PACKAGES=$(dedup "$var_RUNTIME_PACKAGES $RUNTIME_PACKAGES")
-
-    # DEFAULT VALUES
-    # override any default_ values using values from profiles
-    process_defaults_from_prefix "default_rc_"
-    process_defaults_from_prefix "default_fs_"
-exit
+    var_RANKMIRRORS=$RANKMIRRORS
 
     # FILESYSTEM
     # TODO: we're not yet setting any defaults for filesystem values
@@ -364,6 +365,7 @@ worker_select_source ()
                 TARGET_REPOSITORIES=(core $var_MIRRORLIST extra $var_MIRRORLIST community $var_MIRRORLIST) 
         fi
     fi
+    rank_mirrors "runtime"
 }
 
 worker_write_configs()
@@ -390,8 +392,9 @@ worker_write_overlay()
 worker_write_coda ()
 {
     # complete system customization
-    inform "Misc. commands started..."
+    inform "Final system customization commands started..."
     dfunc
+    rank_mirrors # TODO: copy from runtime optimized file would be faster, but there might be different repos
     for misc_command in ${MISC_COMMANDS[@]}
     do
         eval "$misc_command" || show_warning "COMMAND FAILED" "$misc_command"
@@ -501,13 +504,12 @@ process_defaults_from_prefix()
     local procedure_items=
     local profile_items=
     local default_prefix=$1
-    local final_prefix=${2:-}
     eval local defaults_list=\"\${!${default_prefix}@}\"
     for default_value_name in $defaults_list
     do
         eval local value_name=\${default_value_name#${default_prefix}}
         if [[ -z ${!value_name} ]]
-        then
+        then # the non-default VALUENAME is null; assign it the default_ value
                 if declare | grep -q "$default_value_name=("
                 then # array
                     eval eval $value_name="(\${$default_value_name[*]})"
@@ -922,20 +924,23 @@ kernel_parameter_write()
 # ----------------------------------------------------------------------
 # functions that override or augment aif core lib-software.sh
 
-rankmirrors()
+rank_mirrors()
 {
     # uses global state $var_RANKMIRRORS
-    if [ $OPTIMIZE_MIRRORS = 1 ]; then
-        install_packages curl
-        cd /etc/pacman.d
-        # don't overwrite older mirrorlist.orig if present
-        cp -n mirrorlist mirrorlist.orig
-        # do write a backup of current mirrorlist
-        cp mirrorlist mirrorlist.backup
-        sed -i 's/^#Server/Server/g' mirrorlist.orig
-        rankmirrors -n 10 mirrorlist.orig | tee mirrorlist
+    [[ "$1" != "runtime" ]] && local config_root="$var_TARGET_DIR"
+    if [[ $var_RANKMIRRORS > 0 ]]; then
+        inform "Beginning mirror optimization; this may take a while..."
+        local mirrorlist="$config_root/etc/pacman.d/mirrorlist"
+        cp -n "$mirrorlist" "${mirrorlist}.original" && cp "$mirrorlist" "${mirrorlist}.prerank" && \
+        sed -i 's/^#Server/Server/g' "${mirrorlist}.original" && rankmirrors -n 10 "${mirrorlist}.original" | tee "$mirrorlist" && \
+        mirrorlist=0
+    fi
+    if [[ $mirrorlist == 0 ]]; then
+        inform "Mirror optimization complete."
+        return 0
     else
-        echo "skipping mirror optimization"
+        show_warning "Mirror optimization failed."
+        return 1
     fi
 }
 
