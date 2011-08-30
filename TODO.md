@@ -10,6 +10,11 @@
    things (workers, phases, etc. have some built in error handling that I haven't 
    fully explored yet)
 
+8. Improve the intelligence of module paths. It should, ideally, act more like 
+   a tree and less like a simple list
+
+9. Confirm I'm not really overwriting TARGET_PACKAGES as I think I am.
+
 current:
 
 process_args (in automatic)
