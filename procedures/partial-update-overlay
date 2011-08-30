@@ -168,6 +168,7 @@ worker_write_overlay()
     do
         write_overlay_file "$overlay_file"
     done
+    chmod and chown en mass
 }
 
 write_overlay_file()
@@ -179,22 +180,30 @@ write_overlay_file()
     # script *requires* last slash to *not* be escaped, so we use that here
     to_path="${overlay_file/\/\///}"
     from_path="$var_SOURCE_DIR/${overlay_file#*\/\/}"
-    
-    if [[ ! -f "$from_path" ]]
+    if [[ -z "$var_FORCE_OVERWRITE" ]]
     then
-        show_warning "NO OVERLAY FILE SOURCE" "Profile overlay requests non-existant source file: \"$from_path\""
-        return 1
-    elif [[ ! -f "$to_path" ]]
+        if [[ ! -f "$from_path" ]]; then
+            show_warning "NO OVERLAY FILE SOURCE" "Profile overlay requests non-existant source file: \"$from_path\""; return 1
+        elif [[ ! -f "$to_path" ]]; then
+            ask_yesno "No overlay file present. Copy current $from_path to $to_path" yes || return 0
+        elif [[ -n "$var_NO_BACKUP" ]]; then
+            ask_yesno "Overlay file present. Copy current $from_path to $to_path? NO BACKUP WILL BE CREATED." no || return 0
+        else
+            ask_yesno "Overlay file present. Copy current $from_path to $to_path? Backup will be created." yes || return 0
+        fi
+    fi
+    if [[ -n "$var_NO_BACKUPS" ]]
     then
-        ask_yesno "No overlay file present. Copy current $from_path to overlay?" yes || return 0
-        # TODO: PERMISSIONS ARE GOING TO BE SCREWED UP!
-        cp "$from_path" "$to_path"
-    elif install -C -D -S ".figtree.old" -v -T "$from_path" "$to_path" &>/dev/null
-    then
-        inform "Successful write of overlay file \"$overlay_file\""
-        return 0
+        # install cmd is 
+        local install_cmd='install --backup=none -C -D -v -T '
     else
-        show_warning "CRITICAL OVERLAY FILE ERROR" "Failed to overlay file from \"$from_path\" to \"$to_path\""
-        return 1
+        # install cmd is
+        local install_cmd='install --backup=numbered -C -D -v -T '
+    fi
+    if $install_cmd "$from_path" "$to_path" &>/dev/null
+    then
+        inform "Successful update of overlay file from \"$from_path\" to \"$to_path\""; return 0
+    else
+        show_warning "CRITICAL OVERLAY FILE ERROR" "Failed to overlay file from \"$from_path\" to \"$to_path\""; return 1
     fi
 }
