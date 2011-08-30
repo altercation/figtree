@@ -17,6 +17,9 @@
 
 10. what about multiple types of repositories...
 
+11. cron support
+12. sudoers support
+
 current:
 
 process_args (in automatic)

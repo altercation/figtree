@@ -369,10 +369,10 @@ worker_select_source ()
 worker_write_configs()
 {
     inform "Configuration write started..."
-    for i in $(seq ${#CONFIG_CHANGES[@]})
+    for i in $(seq ${#var_CONFIG_CHANGES[@]})
     do
-        d "CONFIG: executing config $i of ${#CONFIG_CHANGES[@]}: ${CONFIG_CHANGES[$i]#_}"
-        ${CONFIG_CHANGES[$i]}
+        d "CONFIG: executing config $i of ${#var_CONFIG_CHANGES[@]}: ${var_CONFIG_CHANGES[$i]#_}"
+        ${var_CONFIG_CHANGES[$i]}
     done
 }
 
@@ -393,7 +393,7 @@ worker_write_coda ()
     inform "Final system customization commands started..."
     dfunc
     rank_mirrors # TODO: copy from runtime optimized file would be faster, but there might be different repos
-    for misc_command in ${MISC_COMMANDS[@]}
+    for misc_command in ${var_CODA_COMMANDS[@]}
     do
         eval "$misc_command" || show_warning "COMMAND FAILED" "coda command failed: $misc_command"
     done
@@ -771,25 +771,25 @@ depend_profile() { [[ -n "${var_RECURSIVE}" ]] && load_profile "$1"; }
 #
 # the following are equivalent and may be used interchangeably 
 # add==set  unset==remove==delete
-packages()      { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES+="$* "; dstate TARGET_PACKAGES; }
+packages()      { dfunc; [[ -n "$*" ]] && var_TARGET_PACKAGES+="$* "; }
 package()       { packages "$*"; }
-package_groups(){ dfunc; [[ -n "$*" ]] && TARGET_GROUPS+="$* "; dstate TARGET_PACKAGES; }
+package_groups(){ dfunc; [[ -n "$*" ]] && var_TARGET_GROUPS+="$* "; }
 package_group() { package_groups "$*"; }
-blacklist()     { dfunc; [[ -n "$*" ]] && TARGET_PACKAGES_EXCLUDE+="$* "; dstate TARGET_PACKAGES; }
+blacklist()     { dfunc; [[ -n "$*" ]] && var_TARGET_PACKAGES_EXCLUDE+="$* "; }
 blacklists()    { blacklist "$*"; }
-config ()       { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_config $*"); dstate CONFIG_CHANGES; }
+config ()       { dfunc; [[ -n "$*" ]] && var_CONFIG_CHANGES+=("_config $*"); }
 configs()       { config "$*"; }
-daemons()       { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_daemons $*"); dstate CONFIG_CHANGES; }
+daemons()       { dfunc; [[ -n "$*" ]] && var_CONFIG_CHANGES+=("_daemons $*"); }
 daemon()        { daemons "$*"; }
-modules()       { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_modules $*"); dstate CONFIG_CHANGES; }
+modules()       { dfunc; [[ -n "$*" ]] && var_CONFIG_CHANGES+=("_modules $*"); }
 module()        { modules "$*"; }
-networks()      { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_networks $*"); dstate CONFIG_CHANGES; }
+networks()      { dfunc; [[ -n "$*" ]] && var_CONFIG_CHANGES+=("_networks $*"); }
 network()       { networks "$*"; }
-kernel_params() { dfunc; [[ -n "$*" ]] && CONFIG_CHANGES+=("_kernel_params $*"); dstate CONFIG_CHANGES; }
+kernel_params() { dfunc; [[ -n "$*" ]] && var_CONFIG_CHANGES+=("_kernel_params $*"); }
 kernel_param()  { kernelparams "$*"; }
-coda()          { dfunc; [[ -n "$*" ]] && MISC_COMMANDS+=("$*"); dstate MISC_COMMANDS; }
+coda()          { dfunc; [[ -n "$*" ]] && var_CODA_COMMANDS+=("$*"); }
 codas()         { coda "$*"; }
-overlays()      { dfunc; [[ -n "$*" ]] && for overlay_file in $*; do var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}"; done; dstate var_OVERLAY_FILES; }
+overlays()      { dfunc; [[ -n "$*" ]] && for overlay_file in $*; do var_OVERLAY_FILES+=" $var_OVERLAY_PATH//${overlay_file#/}"; done; }
 overlay()       { overlays "$*"; }
 
 # all _functions are identical to the non _ variants used in profile files.
