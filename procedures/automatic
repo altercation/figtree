@@ -428,7 +428,11 @@ dedup() { for item in $*; do [[ "$newlist" == "${newlist#* $item }" ]] && newlis
 toupper() { echo -n ${1} | tr a-z A-Z; }
 
 d() { debug PROCEDURE "$1"; return 0; }
-dstate() { return; # NOTE: off for now. d "STATECHK: $1 is currently: ${!1}"; }
+dstate()
+{
+    return
+    # NOTE: off for now. d "STATECHK: $1 is currently: ${!1}";
+}
 dfunc()
 {
     # quick debug function, better info than "caller"
