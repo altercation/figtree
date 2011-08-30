@@ -1,0 +1,2 @@
+#!/bin/bash
+chromium --enable-webgl --ignore-gpu-blacklist --keep-alive-for-test --purge-memory-button &
