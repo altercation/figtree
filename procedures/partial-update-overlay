@@ -264,7 +264,7 @@ source_and_overlay()
         source "$1" \
                 && inform "\n${divider}\nSuccessfully loaded profile:\n${1#$var_TEMP_DIR}\n${divider}\n" \
                 || die_error "Failed to process profile \"$1\"."
-    elif [[ -d "$var_OVERLAY_PATH" ]] # we've already run through the overlay update and need to change permissions
+    elif [[ -d "$var_OVERLAY_PATH" ]]; then # we've already run through the overlay update and need to change permissions
         # the only file we *know* we have is the profile, $1
 #        chmod --recursive --reference="$1" "$var_OVERLAY_PATH" \
 #                && inform "Recursively updated permissions on $var_OVERLAY_PATH" \
