@@ -152,7 +152,7 @@ default_fs_BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_la
 /dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
 
 # default install options
-default_in_RANKMIRRORS=10 # 0 means don't run
+default_in_RANKMIRRORS=0 # 0 means don't run; RANKMIRRORS can be set in profiles, 10 is a good number
 
 # ----------------------------------------------------------------------
 # aif.sh related functions
