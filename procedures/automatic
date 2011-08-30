@@ -989,7 +989,7 @@ read answer
 # perform package installation to the target system
 # overriding this function from aif core's lib-software.sh so that we can fail 
 # over to AUR install without having to specify if a package is AUR or not
-installpkg() {
+OFFinstallpkg() {
         ALL_PACKAGES=
         [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
         if [ -n "$var_TARGET_PACKAGES_EXCLUDE" ]

@@ -24,11 +24,11 @@ USECOLOR="yes"
 # FILESYSTEM CONFIGURATION
 # =============================================================================
 # letter figtree automatic provide defaults for now
-#GRUB_DEVICE=/dev/sda
-#PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
-#BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
-#/dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
-#/dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
+GRUB_DEVICE=/dev/sda
+PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
+BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
+/dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
+/dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
 
 # INSTALL OPTIONS
 # =============================================================================

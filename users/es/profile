@@ -6,18 +6,18 @@ package sudo openssh tightvnc
  
 # DNS/NETWORK/PENTEST
 # =============================================================================
-install_packages dnsutils
-install_packages macchanger
-install_packages aircrack-ng aircrack-ng-scripts
-install_aur compat-wireless-patched
-install_aur iodine
-rc_set_module tun
-install_aur sshuttle-git
+packages dnsutils
+packages macchanger
+packages aircrack-ng aircrack-ng-scripts
+packages compat-wireless-patched
+packages iodine
+modules add tun
+packages sshuttle-git
 
 # DNS/NETWORK/PENTEST
 # =============================================================================
-install_packages iptables
-rc_set_daemon @iptables
+packages iptables
+daemons add @iptables
 
 # SHELL/CODING/TXT
 # =============================================================================
