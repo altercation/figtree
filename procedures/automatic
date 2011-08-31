@@ -1062,6 +1062,8 @@ installpkg() {
         target_special_fs on
 
         notify "Installing packages..."
+
+        echo -e "=================================================\nALL_PACKAGES:\n$ALL_PACKAGES"; read
         
         for package in $ALL_PACKAGES
         do
