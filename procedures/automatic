@@ -312,15 +312,9 @@ worker_preload ()
         done
         # have to do this after pacman db updated
         if [[ -n $var_AUR_SUPPORT ]]; then
-                var_RUNTIME_PACKAGES_PRELOAD+=" $(echo $($PACMAN -Sg base-devel | awk '{print $2}'))" && pause "good pacman -Sg" || pause "error in pacman -Sg"
+                var_RUNTIME_PACKAGES_PRELOAD+=" $(echo $($PACMAN -Sg base-devel | awk '{print $2}'))" || die_error "Failed to poll pacman db for base-devel group members."
         fi
         return 0
-}
-pause()
-{
-echo "$1"
-echo "press a key..."
-read answer
 }
 
 worker_configure ()
@@ -1055,6 +1049,7 @@ installpkg() {
 
         notify "Installing packages..."
         
+        pause "test3 ======================================"
         for package in $ALL_PACKAGES
         do
             if [[ `$PACMAN_TARGET -Q "^$package$" &>/dev/null` ]]; then
@@ -1070,6 +1065,7 @@ installpkg() {
                 show_warning "PACKAGE NOT FOUND" "$package\nIf you wish to install packages from AUR, run this procedure again with the '-a' command line parameter."
             fi
         done
+        pause "test4 ======================================"
 
         local _result=''
         if [ $CONTROLLED_EXIT -ne 0 ]; then
@@ -1080,10 +1076,12 @@ installpkg() {
                 echo -e "\nPackage Installation Complete." >>$TMP_PACMAN_LOG
         fi
 
+        pause "test5 ======================================"
         show_warning "$_result" "$TMP_PACMAN_LOG" text || return 1
 
         target_special_fs off
         sync
 
+        pause "test6 ======================================"
         return $CONTROLLED_EXIT
 }
