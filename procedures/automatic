@@ -1052,6 +1052,11 @@ installpkg() {
         ALL_PACKAGES=`dedup "$ALL_PACKAGES"`
         [ -z "$ALL_PACKAGES" ] && die_error "No packages/groups specified to install"
 
+        echo "|?|?|?|?|?|?|?"
+        echo "ALL_PACKAGES"
+        echo "$ALL_PACKAGES"
+        pause "next"
+
         target_special_fs on
 
         notify "Installing packages..."
