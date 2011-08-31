@@ -326,6 +326,10 @@ worker_configure ()
     process_defaults_from_prefix "default_fs_"
     process_defaults_from_prefix "default_in_"
 
+    # ASSIGN CONFIG VALUES
+    echo "HOSTNAME is currently $HOSTNAME"
+exit
+
     # RUNTIME SOURCES
     # NOTE: we've already installed some prerequisite packages (git, etc.) in 
     # order to source remote profiles. We now load any other repos/packages 
