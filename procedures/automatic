@@ -1053,6 +1053,7 @@ installpkg() {
         
         for package in $ALL_PACKAGES
         do
+            pause "proceed...?"
             if [[ `$PACMAN_TARGET -Q "^$package$" &>/dev/null` ]]; then
                 inform "INSTALLATION: $package already installed; skipping"
             elif `$PACMAN_TARGET -Ss "^$package$" &>/dev/null`
