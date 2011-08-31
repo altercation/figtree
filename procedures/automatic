@@ -94,8 +94,12 @@ var_POST_OVERLAY= # unset by default; used in partial-update-overlay
 # phase_finish=(msg_report) # defaults, for reference
 #phase_basics=() # off for testing
 #phase_system=() # off for testing
+phase_system=(package_list test1 install_packages test2 configure_system install_bootloader) # defaults, here for reference
 phase_preparation=(preconfigure intro runtime_network preload configure select_source runtime_repositories runtime_packages)
 phase_system+=(write_configs write_overlay write_coda) # module specific custom workers (see below)
+
+worker_test1() { echo -e "\ntest1============================>>>>\n"; read answer; }
+worker_test2() { echo -e "\ntest2============================>>>>\n"; read answer; }
 
 # ----------------------------------------------------------------------
 # DEFAULT VALUES
