@@ -1012,7 +1012,7 @@ installaur()
         rm -rf $var_TEMP_DIR/$aur_package*
         local restore_dir=`pwd`
         mkdir -p $var_TEMP_DIR/${aur_package}-install &>/dev/null && cd $var_TEMP_DIR/${aur_package}-install &>/dev/null
-        wget "http://aur.archlinux.org/packages/${aur_package}/${aur_package}.tar.gz" &>/dev/null || die_error "Failed to wget "$aur_package from AUR."
+        wget "http://aur.archlinux.org/packages/${aur_package}/${aur_package}.tar.gz" &>/dev/null || die_error "Failed to wget $aur_package from AUR."
         tar -xzvf "${aur_package}.tar.gz" &>/dev/null || die_error "Failed to extract archive for $aur_package."
         cd "$aur_package" &>/dev/null
         makepkg -s --asroot &>/dev/null || die_error "Failed to makepkg for $aur_package"
