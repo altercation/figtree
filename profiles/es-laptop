@@ -9,7 +9,7 @@
 #depend_profile applications/cli/thebasics
 #depend_profile applications/cli/av
 
-packages vim
+#packages vim
  
 # SYSTEM CONFIG VALUES
 # =============================================================================
