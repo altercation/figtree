@@ -1003,6 +1003,7 @@ installaur()
 {
     # helper for our custom installpkg
     inform "Installing $1 from AUR... (press a key)"
+    read
     aur_package="$1"
     if [[ `pacman -Q "^$aur_package$"` ]]; then
         notify "$aur_package already installed; skipping"
