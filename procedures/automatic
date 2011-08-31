@@ -1013,12 +1013,21 @@ installaur()
         mkdir -p $var_TEMP_DIR/${aur_package}-install &>/dev/null && cd $var_TEMP_DIR/${aur_package}-install &>/dev/null
         if ! wget "http://aur.archlinux.org/packages/${aur_package}/${aur_package}.tar.gz" &>/dev/null
         then
-            show_warning "AUR Install" "Failed to wget $aur_package from AUR."; return 1
+            show_warning "AUR Install" "Failed to wget $aur_package from AUR."
+            #return 1
+        elif ! tar -xzvf "${aur_package}.tar.gz" &>/dev/null
+        then
+            show_warning "AUR Install" "Failed to extract archive for $aur_package."
+            #return 1
+        else
+            cd "$aur_package" &>/dev/null
+            if ! makepkg -s --asroot &>/dev/null
+            then
+                show_warning "AUR Install" "Failed to makepkg for $aur_package"
+                #return 1
+            else
+                run_controlled pacman_installaur "$PACMAN_TARGET --noconfirm -U *.pkg.tar.xz" $TMP_PACMAN_LOG "Installing $aur_package..." 
         fi
-        if ! tar -xzvf "${aur_package}.tar.gz" &>/dev/null; then show_warning "AUR Install" "Failed to extract archive for $aur_package."; return 1; fi
-        cd "$aur_package" &>/dev/null
-        if ! makepkg -s --asroot &>/dev/null; then show_warning "AUR Install" "Failed to makepkg for $aur_package"; return 1; fi
-        run_controlled pacman_installaur "$PACMAN_TARGET --noconfirm -U *.pkg.tar.xz" $TMP_PACMAN_LOG "Installing $aur_package..." 
         cd $restore_dir &>/dev/null
         rm -rf $var_TEMP_DIR/${aur_package}-install &>/dev/null
     else
