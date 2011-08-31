@@ -301,13 +301,13 @@ worker_preload ()
                 fi
         done
         inform "Checking for pacman updates..."
-        $PACMAN -Sy pacman --noconfirm &>/dev/null || return 1 # update pacman first to avoid having to run twice
+        $PACMAN -Sy pacman --noconfirm &>$LOG || return 1 # update pacman first to avoid having to run twice
         if [[ -n $var_AUR_SUPPORT ]]; then
                 var_RUNTIME_PACKAGES_PRELOAD+=" $(echo $($PACMAN -Sg base-devel | awk '{print $2}'))" || die_error "Failed to poll pacman db for base-devel group members."
         fi
         for pkg in $var_RUNTIME_PACKAGES_PRELOAD
         do
-                inform "Installing $pkg for use during installation..."; $PACMAN -Sy --noconfirm --needed $pkg &>/dev/null || return 1
+                inform "Installing $pkg for use during installation..."; $PACMAN -Sy --noconfirm --needed $pkg &>$LOG || return 1
         done
         return 0
 }
@@ -662,7 +662,7 @@ make_local ()
         if [[ -e "$full_path_local" ]]; then # found local file
             [[ "$__returnvarname" ]] && eval $__returnvarname="'$full_path_local'" || echo "$full_path_remote"
             return 0
-        elif $repo_command $repo_remote $repo_local &>/dev/null; then # successful clone
+        elif $repo_command $repo_remote $repo_local &>$LOG; then # successful clone
                 # we return the local path and load_profile can handle adding it to the path
                 [[ "$__returnvarname" ]] && eval $__returnvarname="'$full_path_local'" || echo "$full_path_remote"
                 return 0
@@ -766,7 +766,7 @@ write_overlay_file()
         show_warning "NO OVERLAY FILE SOURCE" "Profile overlay requests non-existant source file: \"$from_path\""
         return 1
     fi
-    if install -C -D -S ".figtree.old" -v -T "$from_path" "$to_path" &>/dev/null  # optional: --preserve-context for selinux compliance
+    if install -C -D -S ".figtree.old" -v -T "$from_path" "$to_path" &>$LOG  # optional: --preserve-context for selinux compliance
     then
         inform "Successful write of overlay file \"$overlay_file\""
         return 0
@@ -1004,24 +1004,24 @@ installaur()
     # helper for our custom installpkg
     inform "Installing $1 from AUR..."
     aur_package="$1"
-    if [[ `$PACMAN_TARGET -Q "^$aur_package$" &>/dev/null` ]]; then
-        notify "$aur_package already installed; skipping"
-    elif ! `$PACMAN_TARGET -Qs "^$aur_package$" &>/dev/null`
+#    if [[ `$PACMAN_TARGET -Q "^$aur_package$" &>$LOG` ]]; then
+#        notify "$aur_package already installed; skipping"
+    if ! $PACMAN_TARGET -Qs "^$aur_package$" &>/dev/null
     then
         rm -rf $var_TEMP_DIR/$aur_package*
         local restore_dir=`pwd`
-        mkdir -p $var_TEMP_DIR/${aur_package}-install &>/dev/null && cd $var_TEMP_DIR/${aur_package}-install &>/dev/null
-        if ! wget "http://aur.archlinux.org/packages/${aur_package}/${aur_package}.tar.gz" &>/dev/null
+        mkdir -p $var_TEMP_DIR/${aur_package}-install &>$LOG && cd $var_TEMP_DIR/${aur_package}-install &>$LOG
+        if ! wget "http://aur.archlinux.org/packages/${aur_package}/${aur_package}.tar.gz" &>$LOG
         then
             show_warning "AUR Install" "Failed to wget $aur_package from AUR."
             #return 1
-        elif ! tar -xzvf "${aur_package}.tar.gz" &>/dev/null
+        elif ! tar -xzvf "${aur_package}.tar.gz" &>$LOG
         then
             show_warning "AUR Install" "Failed to extract archive for $aur_package."
             #return 1
         else
-            cd "$aur_package" &>/dev/null
-            if ! makepkg -s --asroot &>/dev/null
+            cd "$aur_package" &>$LOG
+            if ! makepkg -s --asroot &>$LOG
             then
                 show_warning "AUR Install" "Failed to makepkg for $aur_package"
                 #return 1
@@ -1029,8 +1029,8 @@ installaur()
                 run_controlled pacman_installaur "$PACMAN_TARGET --noconfirm -U *.pkg.tar.xz" $TMP_PACMAN_LOG "Installing $aur_package..." 
             fi
         fi
-        cd $restore_dir &>/dev/null
-        rm -rf $var_TEMP_DIR/${aur_package}-install &>/dev/null
+        cd $restore_dir &>$LOG
+        rm -rf $var_TEMP_DIR/${aur_package}-install &>$LOG
     else
         die_error "SHOULDN'T BE HERE: installaur() has been passed a package that pacman can find as well: $aur_package"
     fi
@@ -1068,9 +1068,9 @@ installpkg() {
         
         for package in $ALL_PACKAGES
         do
-            if [[ `$PACMAN_TARGET -Q "^$package$" &>/dev/null` ]]; then
-                inform "INSTALLATION: $package already installed; skipping"
-            elif `$PACMAN_TARGET -Ss "^$package$" &>/dev/null`
+#            if [[ `$PACMAN_TARGET -Q "^$package$" &>/dev/null` ]]; then
+#                inform "INSTALLATION: $package already installed; skipping"
+            if `$PACMAN_TARGET -Ss "^$package$" &>/dev/null`
             then
                 run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $package" $TMP_PACMAN_LOG "Installing $package..." 
             elif [[ -n "$var_AUR_SUPPORT" ]]
