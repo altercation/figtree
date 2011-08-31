@@ -1021,6 +1021,11 @@ installaur()
             #return 1
         else
             cd "$aur_package" &>$LOG
+            # TODO: get_value the depends line in PKGBUILD, install each item (this will end up being recursive by nature)
+#    local package_list=
+#    if ! $(get_value "PKGBUILD" "depends" package_list && current_list=$(strip_punct "$current_list"))
+            
+
             if ! makepkg -s --asroot --noconfirm &>$LOG
             then
                 show_warning "AUR Install" "Failed to makepkg for $aur_package"
