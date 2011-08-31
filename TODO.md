@@ -20,6 +20,18 @@
 11. cron support
 12. sudoers support
 
+13. add post install conform procedure
+
+14. consolidate process_args into automatic?
+15. add +R non recursive option to automatic
+
+16. add multiple arguments to config file parameter in process args (optargs 
+    should pass multiple paths to -c, just use them)
+
+17. If backups set, config values should be backed up, possibly, via commented 
+    out lines
+
+
 current:
 
 process_args (in automatic)

@@ -70,7 +70,6 @@ var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications us
 var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && var_AIF_PROCEDURE_PATH="$2"
 #var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}"
 var_MODULE_PATHS=("${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}" "/usr/lib/aif/user/figtree")
-var_OPTS_STRING="c:r:a"
 # Runtime packages are used during installation but are not installed to the target system unless included in TARGET_PACKAGES as well
 var_RUNTIME_REPOSITORIES= # var_RUNTIME_REPOSITORIES=(archlinuxfr "http://repo.archlinux.fr/${var_ARCH}")
 var_RUNTIME_PACKAGES="automake make patch" # "git gcc autoconf automake bison fakeroot flex gcc libtool m4 make patch pkg-config"
@@ -78,9 +77,6 @@ var_RUNTIME_PACKAGES="automake make patch" # "git gcc autoconf automake bison fa
 # They use the var_RUNTIME_REPOSITORIES value above
 var_RUNTIME_PACKAGES_PRELOAD="git" # yaourt mercurial svn
 var_TARGET_GROUPS="base" # this is problematic... I should identify a better way to do this
-var_AUTOMATIC_PROFILE= # assigned in process_args
-var_AUR_SUPPORT= # by default no AUR support unless -a command line parameter; TODO: should this be default on?
-var_RECURSIVE=1 # on by default in automatic; overridden in partial-update-overlay, for instance
 var_POST_OVERLAY= # unset by default; used in partial-update-overlay
 
 # ----------------------------------------------------------------------
@@ -94,8 +90,10 @@ var_POST_OVERLAY= # unset by default; used in partial-update-overlay
 # phase_finish=(msg_report) # defaults, for reference
 #phase_basics=() # off for testing
 #phase_system=() # off for testing
-phase_preparation=(preconfigure intro runtime_network preload configure select_source runtime_repositories runtime_packages)
+phase_preparation=(preconfigure intro test1 runtime_network preload configure select_source runtime_repositories runtime_packages)
 phase_system+=(write_configs write_overlay write_coda) # module specific custom workers (see below)
+
+worker_test1() { echo "worker_test1"; exit; }
 
 # ----------------------------------------------------------------------
 # DEFAULT VALUES
@@ -153,21 +151,133 @@ default_fs_BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_la
 default_in_RANKMIRRORS=0 # 0 means don't run; RANKMIRRORS can be set in profiles, 10 is a good number
 
 # ----------------------------------------------------------------------
-# aif.sh related functions
+# parameters and aif.sh related functions
 # ----------------------------------------------------------------------
 
+# parameter related defaults
+# ----------------------------------------------------------------------
+var_AUTOMATIC_PROFILE=
+var_REPO_TYPE=
+var_AUR_SUPPORT=
+var_SINGLEPROFILE=
+
+# following for figtree partial-update-overlay
+# these could be specified in the partial-update overlay itself, but
+# give the overlap with the figtree automtaic process_args, I'd rather
+# centralize them here and thus consolidate management of the command
+# line arguments for consistency. For users, the figtree procedure's
+# arguments need to be consistent regardless of which procedure is called
+
+# following for figtree partial-update-overlay
+var_WIPE_OVERLAY=
+var_FORCE_OVERWRITE=
+var_NO_BACKUPS=
+var_DIFFS=
+
+# default intro summary descriptions
+# ----------------------------------------------------------------------
+#declare -A intro_AUTOMATIC_PROFILE intro_REPO_TYPE intro_AUR_SUPPORT intro_SINGLEPROFILE intro_WIPE_OVERLAY intro_FORCE_OVERWRITE intro_NO_BACKUPS intro_DIFFS
+warn_ALL='Run this procedure again with the -h flag to see all options.'
+warn_AUTOMATIC_PROFILE='-c requires one or more profiles listed after it.'
+intro_AUTOMATIC_PROFILE='(-c) CRITICAL: must specify a profile using the -c PROFILE parameter.'
+option_AUTOMATIC_PROFILE=' -c  Profile present. The config profile has been set successfully.'
+usage_AUTOMATIC_PROFILE='
+-c path         Specify a profile path.
+                The path may specified in the following formats:
+
+                relative: profiles/my-laptop
+                absolute: ~/aif-files/figtree/profiles/my-laptop
+                remote:   http://github.com/name/repo/profiles/my-pc
+
+                Note! If you have *already* sourced this *procedure* remotely
+                from a repository, it is fine to just use the relative path
+                pattern above (see first usage example above).'
+
+warn_REPO_TYPE='-r requires a repository type to be specified (git|hg|svn|wget)'
+intro_REPO_TYPE='(-r) Force repo OFF. Remote repository type will be detected AUTOMATICALLY.'
+option_REPO_TYPE=' -r  Force repo ON. Remote repository type has been set manually.'
+usage_REPO_TYPE='
+-r repotype     Force repository type
+                This procedure can normally automatically detect the type of
+                respository used in a remote profile or procedure URL. If this
+                automatic detection fails for some reason, specifying a one of 
+                the following values will force the type to one of:
+
+                git hg|mercurial svn|subversion wget
+
+                NOTE/TODO: wget not yet implemented'
+
+intro_AUR_SUPPORT='(-a) AUR support OFF. Packages not in official repos will be skipped.'
+option_AUR_SUPPORT=' -a  AUR support ON. Packages not in official repos will be sourced from AUR.'
+usage_AUR_SUPPORT='
+-a              Enable AUR support (experimental)
+                Packages includes in a profile that cannot be located in an
+                official repository will be sourced from AUR if present.'
+
+intro_WIPE_OVERLAY='(-w) Wipe overlay directory OFF. Old overlay directory will not be deleted.'
+option_WIPE_OVERLAY=' -w  Wipe overlay directory ON. Old overlay directory will be DELETED first.'
+usage_WIPE_OVERLAY='
+-w              Wipe overwrite directory (DANGER!)
+                Completely removes existing overlay directory prior to copying 
+                new overlay files over. Will operate recursively if the -r 
+                parameter is also present. Be careful! Use version control.'
+
+intro_FORCE_OVERWRITE='(-f) Force overwrite OFF. Prompts given prior to overwrite events.'
+option_FORCE_OVERWRITE=' -f  Force overwrite ON. *NO* PROMPTS given prior to overwrite events.'
+usage_FORCE_OVERWRITE='
+-f              Force overwrite mode (DANGER!)
+                Does not prompt for action when scanning files; simply 
+                overwrites all overlay files in the target profile 
+                subdirectory. Overwritten files will be backed up unless the
+                -n command line parameter is also specified.'
+
+intro_NO_BACKUPS='(-n) No-backups mode OFF. Backups created during any overwrite.'
+option_NO_BACKUPS=' -n  No-backups mode ON. *NO* BACKUP FILES created during overwrites.'
+usage_NO_BACKUPS='
+-n              No backup file. When writing an overlay file, any existing 
+                overlay file in that directory with the same name will normally
+                be backed up first. Use of the '-n' parameter will stop backups
+                from being written; use with caution or with version control!'
+
+intro_SINGLEPROFILE='(-s) Single-profile mode OFF. ALL LINKED PROFILES processed recursively.'
+option_SINGLEPROFILE=' -s  Single-profile mode ON. NO LINKED PROFILES will be processed.'
+usage_SINGLEPROFILE='
+-s              Single-profile mode.
+                Normally, all profiles referenced by master profiles will be 
+                processed by the procedure recursively.  Single-profile mode 
+                references only the profile(s) *explicitly* listed on the 
+                command line.'
+intro_DIFFS='(-D) Diff mode OFF. No file diff information will be shown during overwrites.'
+option_DIFFS=' -D  Diff mode ON. File diffs will be displayed prior to file overwrites.'
+usage_DIFFS='
+-D              Report file/value diffs (used in partial procedures)'
+
+var_OPTS_STRING="c:r:aswfnD"
 process_args ()
 {
     dfunc
-    case $1 in
-        -a) var_AUR_SUPPORT=1 ;;
-        -c) [[ -n "$2" ]] && var_AUTOMATIC_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
-        -r) [[ -n "$2" ]] && var_REPO_TYPE=$2 || die_error "You must specify a repository type of git, hg, or svn with the -r flag." ;;
+
+    [[ "$1" == "-:" ]] && shift
+    local arg="-${1#-}" # normalize edge case of 'aif -p figtree/procedurename -c' with no profile (we get passed -: as an argument)
+    case $arg in
+        # following for figtree automatic and for some partial procedures
+        -c) if [[ -n "$2" ]]; then var_AUTOMATIC_PROFILE=$2; intro_AUTOMATIC_PROFILE="$option_AUTOMATIC_PROFILE"; else die_error $warn_AUTOMATIC_PROFILE; fi ;;
+        -r) if [[ -n "$2" ]]; then var_REPO_TYPE=$2; intro_REPO_TYPE=$option_REPO_TYPE; else die_error $warn_REPO_TYPE; fi ;;
+        -a) var_AUR_SUPPORT=1; intro_AUR_SUPPORT="$option_AUR_SUPPORT" ;;
+        -s) var_SINGLEPROFILE=1; intro_SINGLEPROFILE="$option_SINGLEPROFILE" ;;
+
+        # following for figtree partial-update-overlay (see note above)
+        -w) var_WIPE_OVERLAY=1; intro_WIPE_OVERLAY="$option_WIPE_OVERLAY" ;;
+        -f) var_FORCE_OVERWRITE=1; intro_FORCE_OVERWRITE="$option_FORCE_OVERWRITE" ;;
+        -n) var_NO_BACKUPS=1; intro_NO_BACKUPS="$option_NO_BACKUPS" ;;
+        -D) var_DIFFS=1; intro_DIFFS="$option_DIFFS" ;;
+
         *) usage && exit 5 ;;
     esac
 }
 
-read -r -d '' var_ARGS_USAGE <<-'EOF'
+#read -r -d '' var_ARGS_USAGE <<-'EOF'
+read -r -d '' var_ARGS_USAGE <<-EOF
 ========================================================================
 Full AIF procedure: figtree automatic
 ------------------------------------------------------------------------
@@ -200,45 +310,7 @@ aif -p figtree/automatic -c systems/lenovo/x220/profile
 ------------------------------------------------------------------------
 Options:
 ------------------------------------------------------------------------
-
--c profile/path:    Specify a profile path.
-                    The path may specified in the following formats:
-
-                    relative: profiles/my-laptop
-                    absolute: ~/aif-files/figtree/profiles/my-laptop
-                    remote:   http://github.com/name/repo/profiles/my-pc
-
-                    Note! If you have *already* sourced this procedure
-                    remotely from a repository, it is fine to just use 
-                    the relative path pattern above (see first usage 
-                    example above).
-
--r repository-type  Specify the repository type.
-                    ---
-                    NORMALLY YOU SHOULDN'T NEED TO USE THIS;
-                    PLEASE INFORM ME IF YOU FIND CAUSE BY MAILING TO:
-                    es@ethanschoonover.com
-                    ---
-                    If sourcing from a remote repository, figtree can
-                    usually determine the type based on a simple 
-                    heuristic. If it is failing to correcly identify 
-                    the type of repository, you can specify the version
-                    control system here with one of:
-
-                    git
-                    mercurial (hg is an acceptable abbreviation)
-                    subversion (svn is an acceptable abbreviation)
-
--a                  Enable AUR support.
-                    This will automatically add base-devel to the
-                    runtime support packages and, when a package
-                    included in a profile is not found, will 
-                    search the AUR for the package, building and
-                    installing it if found. 
-                    
-
-                    
-
+$(for usage_item in ${!usage_@}; do echo "${!usage_item}\n"; done)
 ------------------------------------------------------------------------
 EOF
 
@@ -254,27 +326,17 @@ worker_preconfigure ()
 
 worker_intro ()
 {
-local procname="$var_MODULE_NAME $(basename $var_AIF_PROCEDURE_PATH)"
-
-# AUR (see also the installpkg function below)
-if [[ -n "$var_AUR_SUPPORT" ]]
-then
-        inform "\nRUNNING THE $(toupper "$procname") PROCEDURE WITH AUR SUPPORT."
-        inform "Packages will be sourced from AUR if not found in official repositories.\n"
-else
-        inform "\nRUNNING THE $(toupper "$procname") PROCEDURE WITH *NO* AUR SUPPORT."
-        notify "Use command line parameter '-a' if you wish to run with automatic AUR support.\n"
-fi
-
+inform "\nRunning the $var_MODULE_NAME module $(basename $var_AIF_PROCEDURE_PATH) procedure.\nUsing profile $var_AUTOMATIC_PROFILE\n"
+for intro_item in ${!intro_@}; do echo "${!intro_item}"; done
 if [[ "$NOFAILSAFE" != "1" && ! -e /arch ]]
 then
     # looks like an installed system; override this by exporting env var NOFAILSAFE=1
-    inform "IRREVOCABLE FILESYSTEM CHANGES: This procedure will result in complete system disk erasure."
+    inform "\nIRREVOCABLE FILESYSTEM CHANGES: This procedure will result in complete system disk erasure.\n"
     ask_yesno "Do you want to continue?" no || exit
 elif [[ "$NOFAILSAFE" != "1" ]]
 then
     # slightly less scary warning
-    inform "This procedure will perform a complete, automated system installation."
+    inform "\nThis procedure will perform a complete, automated system installation.\n"
     ask_yesno "Do you want to continue?" yes || exit
 fi
 
@@ -782,7 +844,7 @@ write_overlay_file()
 # functions to support figtree profiles
 
 # load (possibly many, possibly a tree of) profiles, local, relative, or remote paths
-depend_profile() { [[ -n "${var_RECURSIVE}" ]] && load_profile "$1"; }
+depend_profile() { [[ -z "${var_SINGLEPROFILE}" ]] && load_profile "$1"; }
 
 # The following are the main set of additional commands available to figtree profiles
 # and build up lists of commands that will be executed later by workers (thus the
