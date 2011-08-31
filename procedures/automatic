@@ -1021,10 +1021,6 @@ installaur()
             #return 1
         else
             cd "$aur_package" &>$LOG
-            # DEBUG: test to see if we can force makepkg to use the target dir for dependencies
-            # TODO: alternately we could scan each PKGBUILD for dependencies and build it ourselves
-            local pacman_revert="$PACMAN"
-            PACMAN="$PACMAN_TARGET"
             if ! makepkg -s --asroot --noconfirm &>$LOG
             then
                 show_warning "AUR Install" "Failed to makepkg for $aur_package"
@@ -1032,7 +1028,6 @@ installaur()
             else
                 run_controlled pacman_installaur "$PACMAN_TARGET --noconfirm -U *.pkg.tar.xz" $TMP_PACMAN_LOG "Installing $aur_package..." 
             fi
-            PACMAN="$pacman_revert"
         fi
         cd $restore_dir &>$LOG
         rm -rf $var_TEMP_DIR/${aur_package}-install &>$LOG
