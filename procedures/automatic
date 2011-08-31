@@ -340,6 +340,15 @@ worker_configure ()
     load_profile $var_AUTOMATIC_PROFILE || \
         die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $var_MODULE_PATHS"
 
+    echo "=================================================================="
+    echo "var_TARGET_PACKAGES:"
+    echo "$var_TARGET_PACKAGES"
+    pause "next"
+    echo "=================================================================="
+    echo "TARGET_PACKAGES:"
+    echo "$TARGET_PACKAGES"
+    pause "next"
+
     # DEFAULT VALUES
     # override any default_ values using values from profiles
     process_defaults_from_prefix "default_rc_"
@@ -462,6 +471,7 @@ dfunc()
     [[ $1 ]] && local with_args=" with arguments \"$@\"" || local with_args=""
     d "FUNCTION: ${FUNCNAME[1]}() called at line ${BASH_LINENO[1]} by ${FUNCNAME[2]}${with_args}"
 }
+pause() { echo "$*"; read; }
 
 
 
