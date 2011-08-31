@@ -313,6 +313,21 @@ worker_configure ()
 {
     inform "Starting system configuration and profile load sequence..."
 
+    # NOTE: there is some overlap here with settings done in the following
+    # aif core procedures and libs:
+    #
+    # worker_configure_system,
+    # lib-ui-interactive.sh preconfigure_target()
+    # lib-misc.sh (functions referenced by preconfigure_target)
+    #
+    # we are retaining reference to those functions here (by not messing
+    # with that worker in the phase_system (we only add to phase_system)
+    # and by not overriding those library functions. This is intentional
+    # so as to minimize our "footprint" on aif core.
+    #
+    # we use some more abstract functions to write out system values 
+    # to /etc/rc.conf
+
     # LOAD PROFILE
     var_LOADED_PROFILES= # reset
     [[ -z "$var_AUTOMATIC_PROFILE" ]] && \
@@ -525,6 +540,25 @@ process_defaults_from_prefix()
         fi
     done
     inform "$procedure_items\n$profile_items"
+}
+write_rc_values_from_defaults()
+{
+    # we have probably already run the process_defaults_from_prefix
+    # and we are *not* going to be using the actual default_VALUENAME variables
+    # instead, we have already assigned default_VALUENAME to VALUENAME *or*
+    # simply taken the # profile VALUENAME
+    #
+    # in this function we take a valuename, strip the default prefix, and
+    # use the result to assign a valuename/value pair to /etc/rc.conf
+    #
+    local default_prefix="default_rc_"
+    eval local defaults_list=\"\${!${default_prefix}@}\"
+    for default_value_name in $defaults_list
+    do
+        eval local value_name=\${default_value_name#${default_prefix}}
+        _config set /etc/rc.conf $value_name "${!value_name}" || die_error "CRITICAL: failed to write $value_name to /etc/rc.conf"
+    done
+    return 0
 }
 
 source_and_overlay()
