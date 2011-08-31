@@ -1005,7 +1005,7 @@ installaur()
     inform "Installing $1 from AUR... (press a key)"
     read
     aur_package="$1"
-    if [[ `pacman -Q "^$aur_package$"` ]]; then
+    if [[ `pacman -Q "^$aur_package$" &>/dev/null` ]]; then
         notify "$aur_package already installed; skipping"
     elif ! `pacman -Qs "^$aur_package$" &>/dev/null`
     then
@@ -1013,9 +1013,9 @@ installaur()
         local restore_dir=`pwd`
         mkdir -p $var_TEMP_DIR/${aur_package}-install &>/dev/null && cd $var_TEMP_DIR/${aur_package}-install &>/dev/null
         wget "http://aur.archlinux.org/packages/${aur_package}/${aur_package}.tar.gz" &>/dev/null || ( show_warning "AUR Install" "Failed to wget $aur_package from AUR."; return 1 )
-        tar -xzvf "${aur_package}.tar.gz" &>/dev/null || ( show_warning "Failed to extract archive for $aur_package."; return 1 )
+        tar -xzvf "${aur_package}.tar.gz" &>/dev/null || ( show_warning "AUR Install" "Failed to extract archive for $aur_package."; return 1 )
         cd "$aur_package" &>/dev/null
-        makepkg -s --asroot &>/dev/null || ( show_warning "Failed to makepkg for $aur_package"; return 1 )
+        makepkg -s --asroot &>/dev/null || ( show_warning "AUR Install" "Failed to makepkg for $aur_package"; return 1 )
         run_controlled pacman_installaur "$PACMAN_TARGET --noconfirm -U *.pkg.tar.xz" $TMP_PACMAN_LOG "Installing $aur_package..." 
         cd $restore_dir &>/dev/null
         rm -rf $var_TEMP_DIR/${aur_package}-install &>/dev/null
