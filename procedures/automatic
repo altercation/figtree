@@ -302,14 +302,13 @@ worker_preload ()
         done
         inform "Checking for pacman updates..."
         $PACMAN -Sy pacman --noconfirm &>/dev/null || return 1 # update pacman first to avoid having to run twice
+        if [[ -n $var_AUR_SUPPORT ]]; then
+                var_RUNTIME_PACKAGES_PRELOAD+=" $(echo $($PACMAN -Sg base-devel | awk '{print $2}'))" || die_error "Failed to poll pacman db for base-devel group members."
+        fi
         for pkg in $var_RUNTIME_PACKAGES_PRELOAD
         do
                 inform "Installing $pkg for use during preload..."; $PACMAN -Sy --noconfirm --needed $pkg &>/dev/null || return 1
         done
-        # have to do this after pacman db updated
-        if [[ -n $var_AUR_SUPPORT ]]; then
-                var_RUNTIME_PACKAGES_PRELOAD+=" $(echo $($PACMAN -Sg base-devel | awk '{print $2}'))" || die_error "Failed to poll pacman db for base-devel group members."
-        fi
         return 0
 }
 
