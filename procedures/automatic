@@ -1027,6 +1027,7 @@ installaur()
                 #return 1
             else
                 run_controlled pacman_installaur "$PACMAN_TARGET --noconfirm -U *.pkg.tar.xz" $TMP_PACMAN_LOG "Installing $aur_package..." 
+            fi
         fi
         cd $restore_dir &>/dev/null
         rm -rf $var_TEMP_DIR/${aur_package}-install &>/dev/null
