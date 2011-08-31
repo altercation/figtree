@@ -394,12 +394,6 @@ worker_package_list ()
         #TARGET_GROUPS is set to base by default in the beginning of this procedure
         #[ -z "$var_TARGET_PACKAGES" -a -z "$var_TARGET_GROUPS" ] && var_TARGET_GROUPS=base
         true
-        echo "=============================================================="
-        echo "worker_package_list"
-        echo "var_TARGET_PACKAGES is:"
-        echo "$var_TARGET_PACKAGES"
-        echo "=============================================================="
-        read
 }
 
 worker_write_configs()
@@ -1037,15 +1031,6 @@ installaur()
 # over to AUR install without having to specify if a package is AUR or not
 installpkg() {
 
-        #DEBUG XXX
-        echo "=============================================================="
-        echo "installpkg"
-        echo "var_TARGET_GROUPS is $var_TARGET_GROUPS"
-        echo "var_TARGET_PACKAGES is:"
-        echo "$var_TARGET_PACKAGES"
-        echo "=============================================================="
-        read
-
         ALL_PACKAGES=
         [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
         if [ -n "$var_TARGET_PACKAGES_EXCLUDE" ]
@@ -1064,14 +1049,6 @@ installpkg() {
         ALL_PACKAGES=`echo "$ALL_PACKAGES"`
         ALL_PACKAGES=`dedup "$ALL_PACKAGES"`
         [ -z "$ALL_PACKAGES" ] && die_error "No packages/groups specified to install"
-
-        #DEBUG XXX
-        echo "=============================================================="
-        echo "installpkg"
-        echo "ALL_PACKAGES is:"
-        echo "$ALL_PACKAGES"
-        echo "=============================================================="
-        read
 
         target_special_fs on
 
