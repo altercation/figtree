@@ -1003,7 +1003,7 @@ rank_mirrors()
 installaur()
 {
     # helper for our custom installpkg
-    inform "Installing $1 from AUR..."
+    pause "Installing $1 from AUR... (press a key)"
     aur_package="$1"
     if [[ `pacman -Q "^$aur_package$"` ]]; then
         notify "$aur_package already installed; skipping"
@@ -1028,11 +1028,6 @@ installaur()
 # overriding this function from aif core's lib-software.sh so that we can fail 
 # over to AUR install without having to specify if a package is AUR or not
 installpkg() {
-        echo "====================================="
-        echo "var_TARGET_PACKAGES"
-        echo "$var_TARGET_PACKAGES"
-        pause "next"
-
         ALL_PACKAGES=
         [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
         if [ -n "$var_TARGET_PACKAGES_EXCLUDE" ]
@@ -1052,16 +1047,10 @@ installpkg() {
         ALL_PACKAGES=`dedup "$ALL_PACKAGES"`
         [ -z "$ALL_PACKAGES" ] && die_error "No packages/groups specified to install"
 
-        echo "|?|?|?|?|?|?|?"
-        echo "ALL_PACKAGES"
-        echo "$ALL_PACKAGES"
-        pause "next"
-
         target_special_fs on
 
         notify "Installing packages..."
         
-        pause "test3 ======================================"
         for package in $ALL_PACKAGES
         do
             if [[ `$PACMAN_TARGET -Q "^$package$" &>/dev/null` ]]; then
@@ -1077,7 +1066,6 @@ installpkg() {
                 show_warning "PACKAGE NOT FOUND" "$package\nIf you wish to install packages from AUR, run this procedure again with the '-a' command line parameter."
             fi
         done
-        pause "test4 ======================================"
 
         local _result=''
         if [ $CONTROLLED_EXIT -ne 0 ]; then
@@ -1088,12 +1076,10 @@ installpkg() {
                 echo -e "\nPackage Installation Complete." >>$TMP_PACMAN_LOG
         fi
 
-        pause "test5 ======================================"
         show_warning "$_result" "$TMP_PACMAN_LOG" text || return 1
 
         target_special_fs off
         sync
 
-        pause "test6 ======================================"
         return $CONTROLLED_EXIT
 }
