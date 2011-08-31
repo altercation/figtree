@@ -1033,8 +1033,8 @@ read answer
 # over to AUR install without having to specify if a package is AUR or not
 installpkg() {
         echo "====================================="
-        echo "TARGET_PACKAGES"
-        echo "$TARGET_PACKAGES"
+        echo "var_TARGET_PACKAGES"
+        echo "$var_TARGET_PACKAGES"
         pause "next"
 
         ALL_PACKAGES=
