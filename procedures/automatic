@@ -1039,6 +1039,7 @@ installpkg() {
         #DEBUG XXX
         echo "=============================================================="
         echo "installpkg"
+        echo "var_TARGET_GROUPS is $var_TARGET_GROUPS"
         echo "var_TARGET_PACKAGES is:"
         echo "$var_TARGET_PACKAGES"
         echo "=============================================================="
