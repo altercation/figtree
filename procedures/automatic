@@ -389,6 +389,7 @@ worker_write_configs()
         d "CONFIG: executing config $i of ${#var_CONFIG_CHANGES[@]}: ${var_CONFIG_CHANGES[$i]#_}"
         ${var_CONFIG_CHANGES[$i]}
     done
+    write_rc_values_from_defaults
 }
 
 worker_write_overlay()
