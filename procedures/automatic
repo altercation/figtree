@@ -1004,9 +1004,9 @@ installaur()
     # helper for our custom installpkg
     inform "Installing $1 from AUR..."
     aur_package="$1"
-    if [[ `pacman -Q "^$aur_package$" &>/dev/null` ]]; then
+    if [[ `$PACMAN_TARGET -Q "^$aur_package$" &>/dev/null` ]]; then
         notify "$aur_package already installed; skipping"
-    elif ! `pacman -Qs "^$aur_package$" &>/dev/null`
+    elif ! `$PACMAN_TARGET -Qs "^$aur_package$" &>/dev/null`
     then
         rm -rf $var_TEMP_DIR/$aur_package*
         local restore_dir=`pwd`
