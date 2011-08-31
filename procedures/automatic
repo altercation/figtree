@@ -1024,7 +1024,7 @@ installaur()
             # TODO: get_value the depends line in PKGBUILD, install each item (this will end up being recursive by nature)
 #    local package_list=
 #    if ! $(get_value "PKGBUILD" "depends" package_list && current_list=$(strip_punct "$current_list"))
-            
+
 
             if ! makepkg -s --asroot --noconfirm &>$LOG
             then
@@ -1081,7 +1081,7 @@ installpkg() {
                 installaur "$package" || return 1
             else
                 echo "DEBUG: var_AUR_SUPPORT=$var_AUR_SUPPORT"
-                show_warning "PACKAGE NOT FOUND" "$package\nIf you wish to install packages from AUR, run this procedure again with the '-a' command line parameter."
+                show_warning "PACKAGE NOT FOUND" "$package\nIf you wish to install packages from AUR, run this procedure again with the\n'-a' command line parameter."
             fi
         done
 
