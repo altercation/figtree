@@ -395,7 +395,6 @@ worker_package_list ()
         true
 }
 
-
 worker_write_configs()
 {
     inform "Configuration write started..."
