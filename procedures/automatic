@@ -1064,8 +1064,6 @@ installpkg() {
 
         notify "Installing packages..."
 
-        echo -e "=================================================\nALL_PACKAGES:\n$ALL_PACKAGES"; read
-        
         for package in $ALL_PACKAGES
         do
 #            if [[ `$PACMAN_TARGET -Q "^$package$" &>/dev/null` ]]; then
