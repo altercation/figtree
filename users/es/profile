@@ -7,12 +7,12 @@ package sudo openssh tightvnc
 # DNS/NETWORK/PENTEST
 # =============================================================================
 packages dnsutils
-packages macchanger
-packages aircrack-ng aircrack-ng-scripts
-packages compat-wireless-patched
-packages iodine
-modules add tun
-packages sshuttle-git
+#packages macchanger
+#packages aircrack-ng aircrack-ng-scripts
+#packages compat-wireless-patched
+#packages iodine
+#modules add tun
+#packages sshuttle-git
 
 # DNS/NETWORK/PENTEST
 # =============================================================================
