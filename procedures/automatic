@@ -339,15 +339,6 @@ worker_configure ()
     load_profile $var_AUTOMATIC_PROFILE || \
         die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $var_MODULE_PATHS"
 
-    echo "=================================================================="
-    echo "var_TARGET_PACKAGES:"
-    echo "$var_TARGET_PACKAGES"
-    pause "next"
-    echo "=================================================================="
-    echo "TARGET_PACKAGES:"
-    echo "$TARGET_PACKAGES"
-    pause "next"
-
     # DEFAULT VALUES
     # override any default_ values using values from profiles
     process_defaults_from_prefix "default_rc_"
@@ -483,9 +474,6 @@ dfunc()
     d "FUNCTION: ${FUNCNAME[1]}() called at line ${BASH_LINENO[1]} by ${FUNCNAME[2]}${with_args}"
 }
 pause() { echo "$*"; read; }
-
-
-
 debug_report_values()
 {
     echo "================================================================================"
@@ -498,7 +486,6 @@ debug_report_values()
     echo "enter to continue..."
     read answer
 }
-
 debug_report_next()
 {
     echo "================================================================================"
@@ -1016,9 +1003,8 @@ rank_mirrors()
 installaur()
 {
     # helper for our custom installpkg
+    inform "Installing $1 from AUR..."
     aur_package="$1"
-echo "=========================================================KEY"
-read answer
     if [[ `pacman -Q "^$aur_package$"` ]]; then
         notify "$aur_package already installed; skipping"
     elif ! `pacman -Qs "^$aur_package$" &>/dev/null`
@@ -1036,8 +1022,6 @@ read answer
     else
         die_error "SHOULDN'T BE HERE: installaur() has been passed a package that pacman can find as well: $aur_package"
     fi
-echo "=========================================================KEY"
-read answer
 }
 
 # perform package installation to the target system
