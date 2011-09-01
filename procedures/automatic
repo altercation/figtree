@@ -1106,12 +1106,10 @@ installpkg() {
         ALL_PACKAGES=
         [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
         echo "1DEBUG=========================installpkg"
-        echo -e "verbose pacman:\n$PACMAN -v"
+        echo -e "verbose pacman:\n$PACMAN -v\n"
+        $PACMAN -v
         echo -e "verbose pacman target:\n$PACMAN_TARGET -v"
-        echo "$PACMAN_TARGET"
-        echo "here with $var_TARGET_GROUPS"
-        echo "here with $ALL_PACKAGES"
-        list_packages group base
+        $PACMAN_TARGET -v
         echo "1DEBUG=========================installpkg"
         read
         if [ -n "$var_TARGET_PACKAGES_EXCLUDE" ]
@@ -1121,10 +1119,6 @@ installpkg() {
                         ALL_PACKAGES=${ALL_PACKAGES//$excl/}
                 done
         fi
-        echo "2DEBUG=========================installpkg"
-        echo "here with $ALL_PACKAGES"
-        echo "2DEBUG=========================installpkg"
-        read
 
         if [ -n "$var_TARGET_PACKAGES" ]
         then
@@ -1139,13 +1133,11 @@ installpkg() {
 
         notify "Installing packages..."
 
-        echo "3DEBUG=========================installpkg"
-        echo "here with $ALL_PACKAGES"
-        echo "3DEBUG=========================installpkg"
-        read
-
         for package in $ALL_PACKAGES
         do
+            echo "CHECKING $package..."
+            $PACMAN_TARGET -Qs "^$package$"
+            read
             if [[ `$PACMAN_TARGET -Qs "^$package$" &>/dev/null` ]]; then
                 inform "INSTALLATION: $package already installed; skipping"
             elif `$PACMAN_TARGET -Ss "^$package$" &>/dev/null`
