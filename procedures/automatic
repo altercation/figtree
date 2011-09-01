@@ -91,7 +91,7 @@ var_POST_OVERLAY= # unset by default; used in partial-update-overlay
 # phase_finish=(msg_report) # defaults, for reference
 #phase_basics=() # off for testing
 #phase_system=() # off for testing
-phase_preparation=(preconfigure opts intro test1 runtime_network preload configure select_source runtime_repositories runtime_packages)
+phase_preparation=(preconfigure intro test1 runtime_network preload configure select_source runtime_repositories runtime_packages)
 phase_system+=(write_configs write_overlay write_coda) # module specific custom workers (see below)
 
 worker_test1() { echo "worker_test1"; exit; }
@@ -267,11 +267,7 @@ process_args ()
         -f) var_FORCE_OVERWRITE=1; intro_FORCE_OVERWRITE="$option_FORCE_OVERWRITE"; default_answer=no ;;
         -n) var_NO_BACKUPS=1; intro_NO_BACKUPS="$option_NO_BACKUPS"; default_answer=no ;;
         -D) var_DIFFS=1; intro_DIFFS="$option_DIFFS" ;;
-        *) 
-            unset_opts
-            usage
-            for usage_item in ${!usage_@}; do echo "${!usage_item}\n"; done
-            exit 5 ;;
+        *) unset_opts && usage && for usage_item in ${!usage_@}; do echo "${!usage_item}\n"; done && exit 5 ;;
     esac
 }
 

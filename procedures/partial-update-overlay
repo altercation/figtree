@@ -22,7 +22,7 @@ var_MODULE_PATHS=("${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}")
 # ----------------------------------------------------------------------
 # PHASE WORKER CUSTOMIZATIONS
 # ----------------------------------------------------------------------
-phase_preparation=(preconfigure opts intro)
+phase_preparation=(preconfigure intro)
 phase_basics=()
 phase_system=(pre_overlay write_overlay post_overlay)
 phase_finish=()
@@ -78,19 +78,11 @@ aif -p http://github.com/user/figtree/raw/master/procedures/automatic \
 ------------------------------------------------------------------------
 Options:
 ------------------------------------------------------------------------
-$(for usage_item in ${!usage_@}; do echo "${!usage_item}\n"; done)
-------------------------------------------------------------------------
 EOF
 
 # ----------------------------------------------------------------------
 # procedure workers
 # ----------------------------------------------------------------------
-worker_optsconfigure ()
-{
-    unused_opts="WIPE_OVERLAY FORCE_OVERWRITE DIFFS"
-    for unused_opt in $unused_opts; do eval "unset intro_$unused_opt; unset option_$unused_opt; unset usage_$unused_opt"; done
-}
-
 worker_pre_overlay ()
 {
     var_LOADED_PROFILES= # reset
