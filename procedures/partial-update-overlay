@@ -14,54 +14,24 @@
 depend_procedure figtree automatic
 
 var_MODULE_NAME=figtree
+var_MODULE_DESCRIPTION="ACTION: This procedure will update the overlay files in the specified procedure(s)."
 var_PROCEDURE_SUBPATH=/procedures/partial-update-overlay
 var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && var_AIF_PROCEDURE_PATH="$2"
 var_MODULE_PATHS=("${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}")
-var_FORCE_OVERWRITE=
-var_NO_BACKUPS=
-var_OPTS_STRING="c:fnwDR"
+var_OPTS_STRING="c:r:aswfnD"
+
 
 # ----------------------------------------------------------------------
 # PHASE WORKER CUSTOMIZATIONS
 # ----------------------------------------------------------------------
-# we reorder phase_preparation so that if we're running as a local 
-# procedure from install media, we set up the network first and bring in
-# the required runtime packages (primarily for our vcs remote sourcing)
-# phase_basics=(set_clock prepare_disks) # defaults, here for reference during module development
-# phase_system=(package_list install_packages configure_system install_bootloader) # defaults, here for reference
-# phase_finish=(msg_report) # defaults, for reference
-#
-phase_preparation=(preconfigure intro)
+phase_preparation=(preconfigure opts intro)
 phase_basics=()
-phase_system=(pre_overlay write_overlay post_overlay) # module specific custom workers (see below)
-phase_finish=() # our overlay messages are the key information here, so no report phase
+phase_system=(pre_overlay write_overlay post_overlay)
+phase_finish=()
 
-
+# Usage
 # ----------------------------------------------------------------------
-# aif.sh related functions
-# ----------------------------------------------------------------------
-
-var_WIPE_OVERLAY=
-var_FORCE_OVERWRITE=
-var_NO_BACKUPS=
-var_DIFFS=
-var_RECURSIVE=
-
-process_args ()
-{
-    dfunc
-    case $1 in
-        -w) var_WIPE_OVERLAY=1 ;;
-        -f) var_FORCE_OVERWRITE=1 ;;
-        -n) var_NO_BACKUPS=1 ;;
-        -D) var_DIFFS=1 ;;
-        -R) var_RECURSIVE=1 ;;
-        -c) [[ -n "$2" ]] && var_PARTIAL_PROFILE=$2 || die_error "You must specify an aif config profile when using the -c flag." ;;
-        *) usage && exit 5 ;;
-    esac
-}
-
-read -r -d '' var_ARGS_USAGE <<-'EOF'
+read -r -d '' var_ARGS_USAGE <<-EOF
 ========================================================================
 Partial AIF procedure: figtree partial-update-overlay
 ------------------------------------------------------------------------
@@ -106,60 +76,14 @@ aif -p http://github.com/user/figtree/raw/master/procedures/automatic \
 ------------------------------------------------------------------------
 Options:
 ------------------------------------------------------------------------
-
--c profile/path:    Specify a profile path.
-                    The path may specified in the following formats:
-
-                    relative: profiles/my-laptop
-                    absolute: ~/aif-files/figtree/profiles/my-laptop
-
-                    Note that the full figtree procedures such as 
-                    "automatic" can also use a remote path, but as we
-                    require local write access, this is not usable for
-                    this partial procedure)
-
--w                  Wipe overwrite directory (DANGER!)
-                    Completely removes existing overlay directory
-                    prior to copying new overlay files over. Will
-                    operate recursively if the -r parameter is also
-                    present. Be careful! Use version control.
-
--f                  Force overwrite mode (DANGER!)
-                    Does not prompt for action when scanning files;
-                    simply overwrites all overlay files in the target
-                    profile subdirectory. Overwritten files will be
-                    backed up unless the -n command line parameter is
-                    also specified.
-
--F                  Force clean overlay mode (DOUBLE DANGER!)
-                    Completely erases the existing overlay directory!
-                    Danger danger danger! All existing overlay data
-                    will be removed. No prompts will be given.
-
--n                  No backup file. When writing an overlay file, any
-                    existing overlay file in that directory with the
-                    same name will normally be backed up first. Use of
-                    the '-n' parameter will stop backups from being
-                    written; use with caution or with version control!
-
--D                  Report file diff before prompting for (or forcing)
-                    file overwrite.
-
--R                  Recursive. All profiles referenced by master
-                    profiles will be processed by the procedure. Note
-                    that the full figtree procedures such as automatic
-                    are always recursive. This partial procedure
-                    normally operates on a single profile but can be
-                    forced into recursive mode using this parameter.
-
+$(for usage_item in ${!usage_@}; do echo "${!usage_item}\n"; done)
 ------------------------------------------------------------------------
 EOF
 
 # ----------------------------------------------------------------------
 # procedure workers
 # ----------------------------------------------------------------------
-
-worker_intro ()
+OFF_worker_intro ()
 {
     [[ -z "$var_PARTIAL_PROFILE" ]] && \
         die_error "You must specify a config file (-c profile/path) to use this procedure. Run this procedure again with -h for more details."
@@ -202,6 +126,12 @@ worker_intro ()
     inform "\nSourcing profile ${var_PARTIAL_PROFILE}${recursive_note}"
     inform "${intro}\n"
     ask_yesno "Do you want to continue?" $default || exit
+}
+
+worker_optsconfigure ()
+{
+    unused_opts="WIPE_OVERLAY FORCE_OVERWRITE DIFFS"
+    for unused_opt in $unused_opts; do eval "unset intro_$unused_opt; unset option_$unused_opt; unset usage_$unused_opt"; done
 }
 
 worker_pre_overlay ()
