@@ -1106,6 +1106,7 @@ installpkg() {
         echo "1DEBUG=========================installpkg"
         echo "here with $var_TARGET_GROUPS"
         echo "here with $ALL_PACKAGES"
+        list_packages group base
         echo "1DEBUG=========================installpkg"
         read
         if [ -n "$var_TARGET_PACKAGES_EXCLUDE" ]
