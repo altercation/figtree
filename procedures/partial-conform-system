@@ -11,6 +11,8 @@
 # figtree
 # ----------------------------------------------------------------------
 
+echo "================> HERE"
+
 #depend_procedure figtree automatic
 [[ "$module" == "http" ]] && depend_procedure http "$(dirname $procedure)/automatic" || depend_procedure figtree automatic
 #module=$module procedure=$procedure      
