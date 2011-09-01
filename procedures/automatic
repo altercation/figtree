@@ -1087,9 +1087,9 @@ installaur()
             if get_value "PKGBUILD" "makedepends" make_dep_list
             then
                 make_dep_list="$(strip_punct "$make_dep_list")" # parens, but packages might still have single quotes
-                debug "Found AUR package make depends list $make_dep_list..."
+                d "Found AUR package make depends list $make_dep_list..."
             else
-                debug "No make depends packages listed in PKGBUILD for ${aur_package}..."
+                d "No make depends packages listed in PKGBUILD for ${aur_package}..."
             fi
             # TODO: this doesn't source make_dep_pkg from AUR...
             for make_dep_pkg in $make_dep_list
@@ -1100,13 +1100,13 @@ installaur()
                     inform "Installing $make_dep_pkg for use during installation..."
                     if $PACMAN -Sy --noconfirm --needed $make_dep_pkg &>$LOG
                     then
-                        debug "GOOD MAKE DEPS INSTALL FOR $make_dep_pkg"
+                        d "GOOD MAKE DEPS INSTALL FOR $make_dep_pkg"
                     else
                         show_warning "MAKEDEPENDS Install Failer" "BAD INSTALL FOR $make_dep_pkg; see LOG" #DEBUG
                         return 1
                     fi
                 else
-                    debug "Skipping $make_dep_pkg; already installed."
+                    d "Skipping $make_dep_pkg; already installed."
                 fi
             done
 
