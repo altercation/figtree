@@ -247,6 +247,7 @@ var_FORCE_OVERWRITE=        # partial-update-overlay
 var_NO_BACKUPS=             # automatic partial-update-overaly
 var_DIFFS=                  # partial-update-overlay
 default_answer=yes
+unused_opts="WIPE_OVERLAY FORCE_OVERWRITE DIFFS"
 
 # turn off items not used in this procedure
 # ----------------------------------------------------------------------
@@ -266,7 +267,11 @@ process_args ()
         -f) var_FORCE_OVERWRITE=1; intro_FORCE_OVERWRITE="$option_FORCE_OVERWRITE"; default_answer=no ;;
         -n) var_NO_BACKUPS=1; intro_NO_BACKUPS="$option_NO_BACKUPS"; default_answer=no ;;
         -D) var_DIFFS=1; intro_DIFFS="$option_DIFFS" ;;
-        *) usage && exit 5 ;;
+        *) 
+            unset_opts
+            usage
+            for usage_item in ${!usage_@}; do echo "${!usage_item}\n"; done
+            exit 5 ;;
     esac
 }
 
@@ -304,8 +309,6 @@ aif -p figtree/automatic -c systems/lenovo/x220/profile
 ------------------------------------------------------------------------
 Options:
 ------------------------------------------------------------------------
-$(for usage_item in ${!usage_@}; do echo "${!usage_item}\n"; done)
-------------------------------------------------------------------------
 EOF
 
 # ----------------------------------------------------------------------
@@ -316,11 +319,11 @@ worker_preconfigure ()
 {
     var_UI_TYPE=${arg_ui_type:-cli}
     ui_init
+    unset_opts
 }
 
-worker_opts ()
+unset_opts ()
 {
-    unused_opts="WIPE_OVERLAY FORCE_OVERWRITE DIFFS"
     for unused_opt in $unused_opts; do eval "unset intro_$unused_opt; unset option_$unused_opt; unset usage_$unused_opt"; done
 }
 
