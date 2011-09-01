@@ -1081,6 +1081,27 @@ installaur()
             # for each item, install
             cd "$aur_package" #&>$LOG
             local dep_list
+            local make_dep_list
+
+            if get_value "PKGBUILD" "makedepends" dep_list
+            then
+                make_dep_list="$(strip_punct "$dep_list")" # parens, but packages might still have single quotes
+                inform "Found AUR package make depends list $make_dep_list..."
+            else
+                inform "No make depends packages listed in PKGBUILD for ${aur_package}..."
+            fi
+
+            # TODO: this doesn't source make_dep_pkg from AUR...
+            for make_dep_pkg in $dep_list
+            do
+                if ! $PACMAN -Qs "^$make_dep_pkg$" &>$LOG
+                then
+                    inform "Installing $make_dep_pkg for use during installation..."; $PACMAN -Sy --noconfirm --needed $make_dep_pkg &>$LOG || return 1
+                else
+                    inform "Skipping $make_dep_pkg; already installed."
+                fi
+            done
+
             if get_value "PKGBUILD" "depends" dep_list
             then
                 dep_list="$(strip_punct "$dep_list")" # parens, but packages might still have single quotes
@@ -1088,9 +1109,23 @@ installaur()
             else
                 inform "No depends packages listed in PKGBUILD for ${aur_package}..."
             fi
-            # TODO: get_value the depends line in PKGBUILD, install each item (this will end up being recursive by nature)
-#    local package_list=
-# TODO: also turn off dependency installation... it's problematic because packages install to the wrong locations based on configure values in the PKGBUILD (maybe?)
+
+            # TODO:
+            # there are some unknowns here
+            # 1. are we running out of space during install? is this is 
+            # a problem if using /tmp instead of /mnt/tmp? are we sure /mnt/tmp 
+            # is properly mounted to install target? Does it matter and should 
+            # we just use /tmp?
+            # 2. is our attempt to make the PACMAN environment variable 
+            # PACMAN_TARGET for makepkg -s working? (this should be testable)
+            # 3. do we need to skip the makepkg -s dependency checks and just 
+            # install the packages ourselves? This related to the next item...
+            # 4. If we are doing a manual makedeps check above, does makepkg -s 
+            # repeat this and install those items on the target system? We 
+            # don't necessarily *need* them there (though they might be useful 
+            # if we need to upgrade/install later). What's the status of those 
+            # makedepends items on the target?
+
             local PACMAN_REVERT="$PACMAN"
             export PACMAN="$PACMAN_TARGET" # makepkg -s uses PACMAN env variable and we try to make sure we're using PACMAN_TARGET HERE; might not work? DEBUG
             if ! makepkg -s --asroot --noconfirm #&>$LOG
@@ -1160,14 +1195,16 @@ installpkg() {
                 inform "Skipping: $package already installed"
             elif $PACMAN_TARGET -Ss "^$package$" &>$LOG
             then
-                run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $package" $TMP_PACMAN_LOG "Installing $package..." 
-            elif [[ -n "$var_AUR_SUPPORT" ]]
+                run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $package" $TMP_PACMAN_LOG "Installing $package..." && good_packages+="$package " || bad_packages+="$package "
+            elif [[ -z "$var_AUR_SUPPORT" ]]
             then
-                installaur "$package" || return 1
-            else
                 echo "DEBUG: var_AUR_SUPPORT=$var_AUR_SUPPORT"
-                show_warning "PACKAGE NOT FOUND - $package" "If you wish to install packages from AUR, run this procedure again with the\n'-a' command line parameter."
-                show_warning "PACKAGE NOT FOUND - $package" "If you wish to install packages from AUR, run this procedure again with the\n'-a' command line parameter."
+                show_warning "PACKAGE NOT FOUND - $package" "To search AUR for packages not found in official repos, run again with the\n'-a'."
+            elif installaur "$package"
+            then
+                good_packages+="$package "
+            else
+                bad_packages+="$package "
             fi
         done
 
@@ -1184,6 +1221,9 @@ installpkg() {
 
         target_special_fs off
         sync
+
+        echo -e "DEBUG: good packages:\n$good_packages"
+        echo -e "DEBUG: bad packages:\n$bad_packages"; read
 
         return $CONTROLLED_EXIT
 }
