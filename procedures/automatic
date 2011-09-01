@@ -1087,7 +1087,7 @@ installaur()
                 read
                 less PKGBUILD
                 echo "FOUND DEP LIST $dep_list ...(enter)"; read
-                dep_list="$(strip_punct "$current_list")"
+                dep_list="$(strip_punct "$dep_list")" # parens, but packages might still have single quotes
                 echo "FOUND DEP LIST $dep_list ...(enter)"; read
             else
                 echo "DIDN'T FIND DEP LIST... (enter for less on PKGBUILD)"
