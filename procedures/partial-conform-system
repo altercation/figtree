@@ -11,6 +11,12 @@
 # figtree
 # ----------------------------------------------------------------------
 depend_procedure figtree automatic
+[[ "$module" == "http" ]] && initial_module_path="$(dirname $procedure)/"
+echo "module=$module procedure=$procedure       dirname=$(dirname $procedure)automatic"
+#module=$module procedure=$procedure      
+load_procedure "$module" "${initial_module_path}automatic" && echo "SUCCESS" || echo "FAILED"
+
+
 
 # ----------------------------------------------------------------------
 # procedure specific definitions
@@ -52,8 +58,6 @@ EOF
 # ----------------------------------------------------------------------
 # procedure workers
 # ----------------------------------------------------------------------
-
-change target dir from mnt to /
 
 # ----------------------------------------------------------------------
 # procedure workers
