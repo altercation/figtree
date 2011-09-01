@@ -1051,6 +1051,7 @@ rank_mirrors()
 installaur()
 {
     # helper for our custom installpkg
+    pause "INSTALL $1 FROM AUR?"
     inform "Downloading $1 from AUR..."
     aur_package="$1"
 #    if [[ `$PACMAN_TARGET -Q "^$aur_package$" &>$LOG` ]]; then

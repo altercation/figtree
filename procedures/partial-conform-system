@@ -1,3 +1,60 @@
 #!/bin/bash
 
-# placeholder for figtree conform procedure
+# figtree; an Arch Linux AIF module to create conFIG TREEs from local or remote profiles
+# Ethan Schoonover <es@ethanschoonover.com>
+# Please see the http://ethanschoonover.com/figtree for details and usage
+
+# this procedure is meant to be run on an existing system. it installs
+# packages and overlays from a profile to bring the system "up to date"
+
+# ----------------------------------------------------------------------
+# figtree
+# ----------------------------------------------------------------------
+depend_procedure figtree automatic
+
+# ----------------------------------------------------------------------
+# procedure specific definitions
+# ----------------------------------------------------------------------
+var_MODULE_NAME=figtree
+var_MODULE_ACTION="ACTION: This procedure will update the package and overlay files on a live system to conform to the specified profile."
+var_PROCEDURE_SUBPATH=/procedures/partial-conform-system
+var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && var_AIF_PROCEDURE_PATH="$2"
+var_MODULE_PATHS=("${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}")
+var_TARGET_DIR=""
+
+# ----------------------------------------------------------------------
+# PHASE WORKER CUSTOMIZATIONS
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# PHASE WORKER CUSTOMIZATIONS
+# ----------------------------------------------------------------------
+#phase_system=(package_list install_packages configure_system write_configs write_overlay write_coda)
+phase_preparation=(preconfigure intro preload configure select_source runtime_repositories runtime_packages)
+phase_basics=()
+phase_system=(package_list install_packages)
+phase_finish=()
+
+# parameter related defaults
+# ----------------------------------------------------------------------
+unused_opts="WIPE_OVERLAY"
+
+# Usage
+# ----------------------------------------------------------------------
+read -r -d '' var_MODULE_USAGE <<-EOF
+This partial procedure is meant to be run on a live system (post install
+and after reboot, at the minimum). It then ensures that all packages are
+updated, installed and any overlay files are installed. If overlay files
+differ between the source profile overlay directory and the target files
+the procedure will prompt for an overwrite decision (unless using the -f
+force overwrite argument).
+EOF
+
+# ----------------------------------------------------------------------
+# procedure workers
+# ----------------------------------------------------------------------
+
+change target dir from mnt to /
+
+# ----------------------------------------------------------------------
+# procedure workers
+# ----------------------------------------------------------------------

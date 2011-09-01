@@ -31,6 +31,8 @@
 17. If backups set, config values should be backed up, possibly, via commented 
     out lines
 
+18. refine bootloader kernel param function
+
 
 current:
 

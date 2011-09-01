@@ -5,7 +5,8 @@
 
 # XORG GENERAL
 # =============================================================================
-packages xorg-server xorg-xinit xorg-utils xorg-server-utils unclutter xorg-xlsfonts xdotool xcompmgr hsetroot
+packages xorg unclutter xdotool xcompmgr hsetroot
+#packages xorg-server xorg-xinit xorg-utils xorg-server-utils unclutter xorg-xlsfonts xdotool xcompmgr hsetroot
 
 # HASKELL & XMONAD
 # =============================================================================
