@@ -1058,14 +1058,15 @@ installaur()
     # helper for our custom installpkg
     pause "INSTALL $1 FROM AUR?"
     inform "Downloading $1 from AUR..."
-    aur_package="$1"
+    local aur_package="$1"
 #    if [[ `$PACMAN_TARGET -Q "^$aur_package$" &>$LOG` ]]; then
 #        notify "$aur_package already installed; skipping"
+    local build_dir="${var_TARGET_DIR}/tmp/${aur_package}-install" #$var_TEMP_DIR/$aur_package*
     if ! $PACMAN_TARGET -Qs "^$aur_package$" &>/dev/null
     then
-        rm -rf $var_TEMP_DIR/$aur_package*
+        [[ -e "$build_dir" ]] && rm -rf $build_dir
         local restore_dir=`pwd`
-        mkdir -p $var_TEMP_DIR/${aur_package}-install &>$LOG && cd $var_TEMP_DIR/${aur_package}-install &>$LOG
+        mkdir -p $build_dir &>$LOG && cd $build_dir &>$LOG
         if ! wget "http://aur.archlinux.org/packages/${aur_package}/${aur_package}.tar.gz" &>$LOG
         then
             show_warning "AUR Install" "Failed to wget $aur_package from AUR."
@@ -1094,11 +1095,11 @@ installaur()
 
 #ask_yesno "Do you want to continue?" $default_answer || exit # DEBUG
         cd $restore_dir &>$LOG
-        if [[ -e "$var_TEMP_DIR/${aur_package}" ]]
+        if [[ -e "$build_dir" ]]
         then
             echo "DEBUG: about to rm install dir..."
             read
-            rm -rf $var_TEMP_DIR/${aur_package}-install &>$LOG
+            rm -rf $build_dir &>$LOG
             echo "DEBUG: completed rm install dir..."
             read
         else
@@ -1116,22 +1117,8 @@ installaur()
 installpkg() {
 
         [[ -n "$1" ]] && PACMAN_TARGET="$1"
-        echo "PACMAN_TARGET=$PACMAN_TARGET"
-        read
-        echo "test git presence on SOURCE"
-        $PACMAN -Qs "^git$"
-        echo "test git presence on TARGET"
-        $PACMAN_TARGET -Qs "^git$"
-        read #DEBUG
         ALL_PACKAGES=
         [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
-        echo "1DEBUG=========================installpkg"
-        echo -e "verbose pacman:\n$PACMAN -v\n"
-        $PACMAN -v
-        echo -e "verbose pacman target:\n$PACMAN_TARGET -v"
-        $PACMAN_TARGET -v
-        echo "1DEBUG=========================installpkg"
-        read
         if [ -n "$var_TARGET_PACKAGES_EXCLUDE" ]
         then
                 for excl in $var_TARGET_PACKAGES_EXCLUDE
