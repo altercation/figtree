@@ -34,12 +34,6 @@ unused_opts="REPO_TYPE AUR_SUPPORT"
 # Usage
 # ----------------------------------------------------------------------
 read -r -d '' var_MODULE_USAGE <<-EOF
-========================================================================
-Partial AIF procedure: figtree partial-update-overlay
-------------------------------------------------------------------------
-Usage examples:
-------------------------------------------------------------------------
-
 This partial procedure updates the overlay files associated with a 
 figtree profile. A profile might be in:
 
@@ -72,12 +66,8 @@ LOCAL PROCEDURE & LOCAL, ABSOLUTE PROFILE PATH
 aif -p figtree/automatic -c /tmp/aif/systems/lenovo/x220
 
 REMOTE PROCEDURE & LOCAL PROFILE
-aif -p http://github.com/user/figtree/raw/master/procedures/automatic \\
+aif -p http://github.com/user/figtree/raw/master/procedures/automatic \
     -c /usr/lib/aif/user/figtree/profiles/my-laptop
-
-------------------------------------------------------------------------
-Options:
-------------------------------------------------------------------------
 EOF
 
 # ----------------------------------------------------------------------

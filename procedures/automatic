@@ -270,8 +270,8 @@ process_args ()
         -D) var_DIFFS=1; intro_DIFFS="$option_DIFFS" ;;
         *)
             unset_opts # remove opt information for items we don't use in in the calling procedure
-            var_ARGS_USAGE="\nAIF PROCEDURE: $var_MODULE_NAME module $(basename $var_AIF_PROCEDURE_PATH) procedure.\n${div}\n"
-            var_ARGS_USAGE+="${div}\nUsage:\n${div}\n${var_MODULE_USAGE}\n${div}\nOptions:\n${div}
+            var_ARGS_USAGE="AIF PROCEDURE: $var_MODULE_NAME module $(basename $var_AIF_PROCEDURE_PATH) procedure.\n${div}\n"
+            var_ARGS_USAGE+="Usage:\n${div}\n${var_MODULE_USAGE}\n${div}\nOptions:\n${div}
             $(for usage_item in ${!usage_@}; do echo "${!usage_item}\n"; done)"
             usage && exit 5
         ;;
@@ -280,12 +280,6 @@ process_args ()
 
 #read -r -d '' var_ARGS_USAGE <<-'EOF'
 read -r -d '' var_MODULE_USAGE <<-EOF
-===============================================================================
-Full AIF procedure: figtree automatic
--------------------------------------------------------------------------------
-Usage examples:
--------------------------------------------------------------------------------
-
 (note that in the first example, the procedure must be sourced using the 
 raw/master remote path as AIF doesn't initially have git support. Once 
 the figtree procedure is running, the profile paths can (and should) 
@@ -308,7 +302,6 @@ aif -p figtree/automatic -c profiles/my-desktop
 
 LOCAL PROCEDURE & LOCAL PROFILE (can be any figtree profile)
 aif -p figtree/automatic -c systems/lenovo/x220/profile
-
 EOF
 
 # ----------------------------------------------------------------------
