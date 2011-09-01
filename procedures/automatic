@@ -1086,7 +1086,7 @@ installaur()
 #    if ! $(get_value "PKGBUILD" "depends" package_list && current_list=$(strip_punct "$current_list"))
 # TODO: also turn off dependency installation... it's problematic because packages install to the wrong locations based on configure values in the PKGBUILD (maybe?)
 
-            if ! makepkg -s --asroot --noconfirm &>$LOG
+            if ! makepkg -s --asroot --noconfirm #&>$LOG
             then
                 show_warning "AUR Install" "Failed to makepkg for $aur_package"
                 #return 1
@@ -1143,10 +1143,8 @@ installpkg() {
             if $PACMAN_TARGET -Qs "^$package$" &>$LOG
             then
                 inform "INSTALLATION: $package already installed; skipping"
-                read
             elif $PACMAN_TARGET -Ss "^$package$" &>$LOG
             then
-                echo "about to install..."; read
                 run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $package" $TMP_PACMAN_LOG "Installing $package..." 
             elif [[ -n "$var_AUR_SUPPORT" ]]
             then
