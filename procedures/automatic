@@ -59,7 +59,9 @@
 # procedure specific definitions
 # ----------------------------------------------------------------------
 
-depend_procedure core automatic
+# depend_procedure core automatic
+[[ "$module" == "http" ]] && initial_module_path="$(dirname $procedure)"
+load_procedure "$module" "${initial_module_path}${procedure}"
 
 var_MODULE_NAME=figtree
 var_MODULE_ACTION="IRREVOCABLE FILESYSTEM CHANGES:\nThis procedure performs a complete system disk erasure and automated installation." \
