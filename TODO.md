@@ -35,6 +35,8 @@
 
 19. fix pacman query in install functions (to skip existing)
 
+20. fix list_packages group when target dir is null (submit patch?)
+
 current:
 
 process_args (in automatic)
