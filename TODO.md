@@ -33,6 +33,7 @@
 
 18. refine bootloader kernel param function
 
+19. fix pacman query in install functions (to skip existing)
 
 current:
 
