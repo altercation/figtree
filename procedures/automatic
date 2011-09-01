@@ -91,7 +91,7 @@ var_POST_OVERLAY= # unset by default; used in partial-update-overlay
 # phase_finish=(msg_report) # defaults, for reference
 #phase_basics=() # off for testing
 #phase_system=() # off for testing
-phase_preparation=(preconfigure intro test1 runtime_network preload configure select_source runtime_repositories runtime_packages)
+phase_preparation=(preconfigure intro runtime_network preload configure test1 select_source runtime_repositories runtime_packages)
 phase_system+=(write_configs write_overlay write_coda) # module specific custom workers (see below)
 
 worker_test1() { echo "worker_test1"; exit; }
@@ -775,7 +775,7 @@ load_profile()
     local profile_type=${2:-} # only used internally in this function
     if [[ "${profile_path:0:1}" == "/" ]]; then # absolute local path
         # add to module paths (thus if we've donwloaded a repo, we'll check locally next time)
-        [[ "${profile_type}" != "xrelative" ]] && update_modulepaths_from_profilepath "$profile_path"
+        [[ "${profile_type}" != "relative" ]] && update_modulepaths_from_profilepath "$profile_path"
         [[ -d "${profile_path}" ]] && profile_path="$profile_path/profile"
         if [[ -f "${profile_path}" ]]
         then

@@ -87,14 +87,14 @@ worker_pre_overlay ()
 {
     var_LOADED_PROFILES= # reset
     var_POST_OVERLAY=
-    load_profile $var_PARTIAL_PROFILE || die_error "Failed to load profile $var_PARTIAL_PROFILE from paths $var_MODULE_PATHS"
+    load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $var_MODULE_PATHS"
 }
 
 worker_post_overlay ()
 {
     var_LOADED_PROFILES= # reset
     var_POST_OVERLAY=1
-    load_profile $var_PARTIAL_PROFILE || die_error "Failed to load profile $var_PARTIAL_PROFILE from paths $var_MODULE_PATHS"
+    load_profile $var_AUTOMATIC_PROFILE || die_error "Failed to load profile $var_AUTOMATIC_PROFILE from paths $var_MODULE_PATHS"
 }
 
 write_overlay_file()
