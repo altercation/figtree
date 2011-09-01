@@ -445,11 +445,6 @@ worker_package_list ()
         var_TARGET_PACKAGES+=$TARGET_PACKAGES
         var_TARGET_GROUPS+=$TARGET_GROUPS
         var_TARGET_PACKAGES_EXCLUDE+=$TARGET_PACKAGES_EXCLUDE
-        echo ">>>>>>DEBUG"
-        echo "$var_TARGET_GROUPS"
-        echo "$var_TARGET_PACKAGES"
-        echo ">>>>>>DEBUG"
-        read
         #TARGET_GROUPS is set to base by default in the beginning of this procedure
         #[ -z "$var_TARGET_PACKAGES" -a -z "$var_TARGET_GROUPS" ] && var_TARGET_GROUPS=base
         true
@@ -1080,13 +1075,14 @@ installaur()
             show_warning "AUR Install" "Failed to extract archive for $aur_package."
             #return 1
         else
+            # get list of dependencies
+            # for each item, install
+
             cd "$aur_package" #&>$LOG
-            echo "cd'd"; read
             # TODO: get_value the depends line in PKGBUILD, install each item (this will end up being recursive by nature)
 #    local package_list=
 #    if ! $(get_value "PKGBUILD" "depends" package_list && current_list=$(strip_punct "$current_list"))
 # TODO: also turn off dependency installation... it's problematic because packages install to the wrong locations based on configure values in the PKGBUILD (maybe?)
-
             if ! makepkg -s --asroot --noconfirm #&>$LOG
             then
                 show_warning "AUR Install" "Failed to makepkg for $aur_package"
@@ -1110,7 +1106,13 @@ ask_yesno "Do you want to continue?" $default_answer || exit # DEBUG
 installpkg() {
 
         [[ -n "$1" ]] && PACMAN_TARGET="$1"
-
+        echo "PACMAN_TARGET=$PACMAN_TARGET"
+        read
+        echo "test git presence on SOURCE"
+        $PACMAN -Qs "^git$" &>$LOG
+        echo "test git presence on TARGET"
+        $PACMAN_TARGET -Qs "^git$" &>$LOG
+        read
         ALL_PACKAGES=
         [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
         echo "1DEBUG=========================installpkg"
