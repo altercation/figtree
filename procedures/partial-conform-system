@@ -11,8 +11,8 @@
 # figtree
 # ----------------------------------------------------------------------
 
+echo ">>>>> ${var_MODULE_PATHS[*]} >>> $var_AIF_PROCEDURE_PATH +++ $module +++ $procedure"
 #depend_procedure figtree automatic
-echo ">>>>> ${var_MODULE_PATHS[*]}"
 [[ "$module" == "http" ]] && depend_procedure http "$(dirname $procedure)/automatic" || depend_procedure figtree automatic
 #module=$module procedure=$procedure      
 #load_procedure "$module" "${initial_module_path}automatic" && echo "SUCCESS" || echo "FAILED"
@@ -27,7 +27,7 @@ var_PROCEDURE_SUBPATH=/procedures/partial-conform-system
 var_MODULE_PATHS=("${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}")
 var_TARGET_DIR=""
 
-echo ">>>>> ${var_MODULE_PATHS[*]}"
+echo ">>>>> ${var_MODULE_PATHS[*]} >>> $var_AIF_PROCEDURE_PATH +++ $module +++ $procedure"
 [[ "$module" == "http" ]] && depend_procedure http "$(dirname $var_AIF_PROCEDURE_PATH)/automatic" || depend_procedure figtree automatic
 echo "================> HERE"
 
