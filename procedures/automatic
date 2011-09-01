@@ -440,6 +440,11 @@ worker_package_list ()
         var_TARGET_PACKAGES+=$TARGET_PACKAGES
         var_TARGET_GROUPS+=$TARGET_GROUPS
         var_TARGET_PACKAGES_EXCLUDE+=$TARGET_PACKAGES_EXCLUDE
+        echo ">>>>>>"
+        echo "$var_TARGET_GROUPS"
+        echo "$var_TARGET_PACKAGES"
+        echo ">>>>>>"
+        read
         #TARGET_GROUPS is set to base by default in the beginning of this procedure
         #[ -z "$var_TARGET_PACKAGES" -a -z "$var_TARGET_GROUPS" ] && var_TARGET_GROUPS=base
         true
