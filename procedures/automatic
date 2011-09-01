@@ -356,7 +356,12 @@ worker_preload ()
         fi
         for pkg in $var_RUNTIME_PACKAGES_PRELOAD
         do
-                inform "Installing $pkg for use during installation..."; $PACMAN -Sy --noconfirm --needed $pkg &>$LOG || return 1
+                if ! $PACMAN -Qs "^$pkg$"
+                then
+                    inform "Installing $pkg for use during installation..."; $PACMAN -Sy --noconfirm --needed $pkg &>$LOG || return 1
+                else
+                    inform "Skipping $pkg; already installed."
+                fi
         done
         return 0
 }
