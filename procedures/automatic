@@ -1146,7 +1146,7 @@ installpkg() {
         do
             if $PACMAN_TARGET -Qs "^$package$" &>$LOG
             then
-                inform "INSTALLATION: $package already installed; skipping"
+                inform "Skipping: $package already installed"
             elif $PACMAN_TARGET -Ss "^$package$" &>$LOG
             then
                 run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $package" $TMP_PACMAN_LOG "Installing $package..." 
