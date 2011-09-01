@@ -1146,7 +1146,7 @@ installpkg() {
         fi
         ALL_PACKAGES=`echo "$ALL_PACKAGES"`
         ALL_PACKAGES=`dedup "$ALL_PACKAGES"`
-ALL_PACKAGES="gromit-mpx $ALL_PACKAGES" #DEBUG
+#ALL_PACKAGES="gromit-mpx $ALL_PACKAGES" #DEBUG
         [ -z "$ALL_PACKAGES" ] && die_error "No packages/groups specified to install"
 
         target_special_fs on
