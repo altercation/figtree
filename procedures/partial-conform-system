@@ -23,6 +23,7 @@ var_PROCEDURE_SUBPATH=/procedures/partial-conform-system
 var_MODULE_PATHS=("${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}")
 var_TARGET_DIR=""
 PACMAN_TARGET="$PACMAN"
+echo "HERE WITH NEW TARGET $PACMAN_TARGET"
 
 #[[ "$module" == "http" ]] && depend_procedure http "$(dirname $var_AIF_PROCEDURE_PATH)/automatic" || depend_procedure figtree automatic
 

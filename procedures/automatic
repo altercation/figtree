@@ -1101,6 +1101,8 @@ installaur()
 # over to AUR install without having to specify if a package is AUR or not
 installpkg() {
 
+        [[ -n "$1" ]] && PACMAN_TARGET="$1"
+
         ALL_PACKAGES=
         [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
         echo "1DEBUG=========================installpkg"
