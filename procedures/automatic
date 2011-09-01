@@ -79,6 +79,7 @@ var_RUNTIME_PACKAGES="automake make patch" # "git gcc autoconf automake bison fa
 var_RUNTIME_PACKAGES_PRELOAD="git" # yaourt mercurial svn
 var_TARGET_GROUPS="base" # this is problematic... I should identify a better way to do this
 var_POST_OVERLAY= # unset by default; used in partial-update-overlay
+div="-------------------------------------------------------------------------------"
 
 # ----------------------------------------------------------------------
 # PHASE WORKER CUSTOMIZATIONS
@@ -269,7 +270,9 @@ process_args ()
         -D) var_DIFFS=1; intro_DIFFS="$option_DIFFS" ;;
         *)
             unset_opts # remove opt information for items we don't use in in the calling procedure
-            var_ARGS_USAGE="$var_MODULE_USAGE\n$(for usage_item in ${!usage_@}; do echo "${!usage_item}\n"; done)"
+            var_ARGS_USAGE="\nAIF PROCEDURE: $var_MODULE_NAME module $(basename $var_AIF_PROCEDURE_PATH) procedure.\n${div}\n"
+            var_ARGS_USAGE+="${div}\nUsage:\n${div}\n${var_MODULE_USAGE}\n${div}\nOptions:\n${div}
+            $(for usage_item in ${!usage_@}; do echo "${!usage_item}\n"; done)"
             usage && exit 5
         ;;
     esac
@@ -306,9 +309,6 @@ aif -p figtree/automatic -c profiles/my-desktop
 LOCAL PROCEDURE & LOCAL PROFILE (can be any figtree profile)
 aif -p figtree/automatic -c systems/lenovo/x220/profile
 
--------------------------------------------------------------------------------
-Options:
--------------------------------------------------------------------------------
 EOF
 
 # ----------------------------------------------------------------------
