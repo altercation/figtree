@@ -270,8 +270,8 @@ process_args ()
         -D) var_DIFFS=1; intro_DIFFS="$option_DIFFS" ;;
         *)
             unset_opts # remove opt information for items we don't use in in the calling procedure
-            var_ARGS_USAGE="\nAIF PROCEDURE: $var_MODULE_NAME module $(basename $var_AIF_PROCEDURE_PATH) procedure.\n${div}\n"
-            var_ARGS_USAGE+="Usage:\n${div}\n${var_MODULE_USAGE}\n${div}\nOptions:\n${div}
+            var_ARGS_USAGE="\n${div}\nAIF PROCEDURE: $var_MODULE_NAME module $(basename $var_AIF_PROCEDURE_PATH) procedure.\n${div}\n"
+            var_ARGS_USAGE+="Usage:\n${div}\n\n${var_MODULE_USAGE}\n\n${div}\nOptions:\n${div}
             $(for usage_item in ${!usage_@}; do echo "${!usage_item}\n"; done)"
             usage && exit 5
         ;;
@@ -326,7 +326,7 @@ inform "\nPROCEDURE: $var_MODULE_NAME module $(basename $var_AIF_PROCEDURE_PATH)
 inform "PROFILE:   $var_AUTOMATIC_PROFILE"
 inform "\nOPTIONS:"
 for intro_item in ${!intro_@}; do [[ -n "${!intro_item}" ]] && echo "${!intro_item}"; done
-inform "\n${var_MODULE_ACTIONS}\n"
+inform "\n${var_MODULE_ACTION}\n"
 [[ -e "/arch" ]] && default_answer=yes
 if [[ "$NOFAILSAFE" != "1" ]]; then ask_yesno "Do you want to continue?" $default_answer || exit; fi
 }
