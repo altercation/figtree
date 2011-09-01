@@ -62,3 +62,8 @@ true # read above is throwing an error...?
 # procedure workers
 # ----------------------------------------------------------------------
 
+worker_install_packages ()
+{
+        installpkg
+}
+
