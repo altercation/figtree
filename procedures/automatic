@@ -1166,7 +1166,8 @@ installaur()
             local PACMAN_REVERT="$PACMAN"
             export PACMAN="$PACMAN_TARGET" # makepkg -s uses PACMAN env variable and we try to make sure we're using PACMAN_TARGET HERE; might not work? DEBUG
             #if ! makepkg -s --asroot --noconfirm #&>$LOG
-            if ! makepkg -d --asroot --noconfirm #&>$LOG
+            if ! makepkg --syncdeps --asroot --noconfirm --clean --cleancache #&>$LOG
+            #if ! makepkg --nodeps --asroot --noconfirm --clean --cleancache #&>$LOG
             then
                 show_warning "AUR Install" "Failed to makepkg for $aur_package"
                 #return 1

@@ -37,6 +37,8 @@
 
 20. fix list_packages group when target dir is null (submit patch?)
 
+21. openssh, aif, wget
+
 current:
 
 process_args (in automatic)
