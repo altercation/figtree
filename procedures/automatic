@@ -1103,6 +1103,10 @@ installpkg() {
 
         ALL_PACKAGES=
         [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
+        echo "1DEBUG=========================installpkg"
+        echo "here with $ALL_PACKAGES"
+        echo "1DEBUG=========================installpkg"
+        read
         if [ -n "$var_TARGET_PACKAGES_EXCLUDE" ]
         then
                 for excl in $var_TARGET_PACKAGES_EXCLUDE
@@ -1110,6 +1114,10 @@ installpkg() {
                         ALL_PACKAGES=${ALL_PACKAGES//$excl/}
                 done
         fi
+        echo "2DEBUG=========================installpkg"
+        echo "here with $ALL_PACKAGES"
+        echo "2DEBUG=========================installpkg"
+        read
 
         if [ -n "$var_TARGET_PACKAGES" ]
         then
@@ -1124,9 +1132,9 @@ installpkg() {
 
         notify "Installing packages..."
 
-        echo "DEBUG=========================installpkg"
+        echo "3DEBUG=========================installpkg"
         echo "here with $ALL_PACKAGES"
-        echo "DEBUG=========================installpkg"
+        echo "3DEBUG=========================installpkg"
         read
 
         for package in $ALL_PACKAGES
