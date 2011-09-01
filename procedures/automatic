@@ -352,10 +352,10 @@ worker_preload ()
         done
         inform "Checking for pacman updates..."
         $PACMAN -Sy pacman --noconfirm &>$LOG || return 1 # update pacman first to avoid having to run twice
-# skipping this here since we are now checking makedepends in installaur function
-#        if [[ -n $var_AUR_SUPPORT ]]; then
-#                var_RUNTIME_PACKAGES_PRELOAD+=" $(echo $($PACMAN -Sg base-devel | awk '{print $2}'))" || die_error "Failed to poll pacman db for base-devel group members."
-#        fi
+# DEBUG: could skip this here since we are now checking makedepends in installaur function
+        if [[ -n $var_AUR_SUPPORT ]]; then
+                var_RUNTIME_PACKAGES_PRELOAD+=" $(echo $($PACMAN -Sg base-devel | awk '{print $2}'))" || die_error "Failed to poll pacman db for base-devel group members."
+        fi
         for pkg in $var_RUNTIME_PACKAGES_PRELOAD
         do
                 if ! $PACMAN -Qs "^$pkg$" &>$LOG
