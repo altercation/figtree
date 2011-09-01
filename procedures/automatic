@@ -1129,11 +1129,12 @@ installaur()
                     # TODO: the pacman -Qs check should be made a helper 
                     # function? we should do it again here since dependencies 
                     # might be in AUR as well
-                    if $PACMAN_TARGET -Sy --noconfirm --needed $dep_pkg &>$LOG
+                    # if $PACMAN_TARGET -Sy --noconfirm --needed $dep_pkg &>$LOG
+                    if run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $dep_pkg" $TMP_PACMAN_LOG "Installing ${aur_package} dependency $dep_pkg..."
                     then
-                        d "GOOD MAKE DEPS INSTALL FOR $dep_pkg"
+                        d "GOOD DEPS INSTALL FOR $dep_pkg"
                     else
-                        show_warning "MAKEDEPENDS Install Failer" "BAD INSTALL FOR $dep_pkg; see LOG" #DEBUG
+                        show_warning "DEPEND Install Failer" "BAD INSTALL FOR $dep_pkg; see LOG" #DEBUG
                         return 1
                     fi
                 else
