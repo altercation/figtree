@@ -1094,7 +1094,17 @@ installaur()
 
 #ask_yesno "Do you want to continue?" $default_answer || exit # DEBUG
         cd $restore_dir &>$LOG
-        [[ -e "$var_TEMP_DIR/${aur_package}" ]] && rm -rf $var_TEMP_DIR/${aur_package}-install &>$LOG
+        if [[ -e "$var_TEMP_DIR/${aur_package}" ]]
+        then
+            echo "DEBUG: about to rm install dir..."
+            read
+            rm -rf $var_TEMP_DIR/${aur_package}-install &>$LOG
+            echo "DEBUG: completed rm install dir..."
+            read
+        else
+            echo "DEBUG: skipped rm install dir due to failed existence check..."
+            read
+        fi
     else
         die_error "SHOULDN'T BE HERE: installaur() has been passed a package that pacman can find as well: $aur_package"
     fi
