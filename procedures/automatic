@@ -1125,6 +1125,7 @@ installaur()
             # don't necessarily *need* them there (though they might be useful 
             # if we need to upgrade/install later). What's the status of those 
             # makedepends items on the target?
+            # (testing with weechat-git)
 
             local PACMAN_REVERT="$PACMAN"
             export PACMAN="$PACMAN_TARGET" # makepkg -s uses PACMAN env variable and we try to make sure we're using PACMAN_TARGET HERE; might not work? DEBUG
