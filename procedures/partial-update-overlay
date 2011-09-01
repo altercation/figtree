@@ -8,11 +8,13 @@
 # aif profile directory
 
 # ----------------------------------------------------------------------
-# procedure specific definitions
+# figtree
 # ----------------------------------------------------------------------
-
 depend_procedure figtree automatic
 
+# ----------------------------------------------------------------------
+# procedure specific definitions
+# ----------------------------------------------------------------------
 var_MODULE_NAME=figtree
 var_MODULE_ACTION="ACTION: This procedure will update the overlay files in the specified procedure(s)."
 var_PROCEDURE_SUBPATH=/procedures/partial-update-overlay
