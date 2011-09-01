@@ -1260,8 +1260,8 @@ installpkg() {
         target_special_fs off
         sync
 
-        echo -e "DEBUG: good packages:\n$good_packages"
-        echo -e "DEBUG: bad packages:\n$bad_packages"; read
+#        echo -e "DEBUG: good packages:\n$good_packages"
+#        echo -e "DEBUG: bad packages:\n$bad_packages"; read
 
         return $CONTROLLED_EXIT
 }
