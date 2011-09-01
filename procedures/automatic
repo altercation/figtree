@@ -1076,13 +1076,22 @@ installaur()
             show_warning "AUR Install" "Failed to extract archive for $aur_package."
             #return 1
         else
+            local dep_list
+            if get_value "PKGBUILD" "depends" dep_list
+            then
+                dep_list="$(strip_punct "$current_list"))"
+                echo "FOUND DEP LIST $dep_list ...(enter)"; read
+            else
+                echo "DIDN'T FIND DEP LIST... (enter for less on PKGBUILD)"
+                read
+                less PKGBUILD
+            fi
             # get list of dependencies
             # for each item, install
 
             cd "$aur_package" #&>$LOG
             # TODO: get_value the depends line in PKGBUILD, install each item (this will end up being recursive by nature)
 #    local package_list=
-#    if ! $(get_value "PKGBUILD" "depends" package_list && current_list=$(strip_punct "$current_list"))
 # TODO: also turn off dependency installation... it's problematic because packages install to the wrong locations based on configure values in the PKGBUILD (maybe?)
             if ! makepkg -s --asroot --noconfirm #&>$LOG
             then
