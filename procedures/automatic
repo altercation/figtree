@@ -1097,9 +1097,17 @@ installaur()
             do
                 if ! $PACMAN -Qs "^$make_dep_pkg$" &>$LOG
                 then
-                    inform "Installing $make_dep_pkg for use during installation..."; $PACMAN -Sy --noconfirm --needed $make_dep_pkg &>$LOG || return 1
+                    echo "installing $make_dep_pkg..."; read #DEBUG
+                    inform "Installing $make_dep_pkg for use during installation..."
+                    if $PACMAN -Sy --noconfirm --needed $make_dep_pkg &>$LOG
+                    then
+                        echo "GOOD MAKE DEPS INSTALL FOR $make_dep_pkg; see LOG";read #DEBUG
+                    else
+                        echo "BAD INSTALL FOR $make_dep_pkg; see LOG";read #DEBUG
+                        return 1
+                    fi
                 else
-                    inform "Skipping $make_dep_pkg; already installed."
+                    inform "Skipping $make_dep_pkg; already installed."; read #DEBUG
                 fi
             done
 
