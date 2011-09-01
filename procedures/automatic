@@ -1076,6 +1076,9 @@ installaur()
             show_warning "AUR Install" "Failed to extract archive for $aur_package."
             #return 1
         else
+            # get list of dependencies
+            # for each item, install
+            cd "$aur_package" #&>$LOG
             local dep_list
             if get_value "PKGBUILD" "depends" dep_list
             then
@@ -1086,10 +1089,6 @@ installaur()
                 read
                 less PKGBUILD
             fi
-            # get list of dependencies
-            # for each item, install
-
-            cd "$aur_package" #&>$LOG
             # TODO: get_value the depends line in PKGBUILD, install each item (this will end up being recursive by nature)
 #    local package_list=
 # TODO: also turn off dependency installation... it's problematic because packages install to the wrong locations based on configure values in the PKGBUILD (maybe?)
