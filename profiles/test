@@ -7,7 +7,7 @@
 #depend_profile applications/cli/thebasics
 #depend_profile applications/cli/av
 
-packages vim weechat-git
+packages weechat-git
  
 # SYSTEM CONFIG VALUES
 # =============================================================================
