@@ -1095,6 +1095,7 @@ installaur()
             # TODO: this doesn't source make_dep_pkg from AUR...
             for make_dep_pkg in $make_dep_list
             do
+                make_dep_pkg="$(strip_punct $make_dep_pkg)"
                 if ! $PACMAN -Qs "^$make_dep_pkg$" &>$LOG
                 then
                     echo "installing $make_dep_pkg..."; read #DEBUG
