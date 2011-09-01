@@ -1106,6 +1106,8 @@ installpkg() {
         ALL_PACKAGES=
         [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
         echo "1DEBUG=========================installpkg"
+        echo -e "verbose pacman:\n$PACMAN -v"
+        echo -e "verbose pacman target:\n$PACMAN_TARGET -v"
         echo "$PACMAN_TARGET"
         echo "here with $var_TARGET_GROUPS"
         echo "here with $ALL_PACKAGES"
