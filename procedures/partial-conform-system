@@ -11,8 +11,8 @@
 # figtree
 # ----------------------------------------------------------------------
 
-depend_procedure figtree automatic
-[[ "$module" == "http" ]] && initial_module_path="$(dirname $procedure)/" || initial_module_path=
+#depend_procedure figtree automatic
+[[ "$module" == "http" ]] && depend_procedure http "$(dirname $procedure)/automatic" || depend_procedure figtree automatic
 #module=$module procedure=$procedure      
 #load_procedure "$module" "${initial_module_path}automatic" && echo "SUCCESS" || echo "FAILED"
 
