@@ -59,7 +59,7 @@
 # procedure specific definitions
 # ----------------------------------------------------------------------
 
-depend_procedure core automatic
+depend_procedure core automatic || die_error "couldn't source automatic"
 
 var_MODULE_NAME=figtree
 var_MODULE_ACTION="IRREVOCABLE FILESYSTEM CHANGES:\nThis procedure performs a complete system erasure and automated installation." \
