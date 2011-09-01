@@ -267,17 +267,21 @@ process_args ()
         -f) var_FORCE_OVERWRITE=1; intro_FORCE_OVERWRITE="$option_FORCE_OVERWRITE"; default_answer=no ;;
         -n) var_NO_BACKUPS=1; intro_NO_BACKUPS="$option_NO_BACKUPS"; default_answer=no ;;
         -D) var_DIFFS=1; intro_DIFFS="$option_DIFFS" ;;
-        *) unset_opts && usage && for usage_item in ${!usage_@}; do echo "${!usage_item}\n"; done && exit 5 ;;
+        *)
+            unset_opts # remove opt information for items we don't use in in the calling procedure
+            var_ARGS_USAGE="$var_MODULE_USAGE\n$(for usage_item in ${!usage_@}; do echo "${!usage_item}\n"; done)"
+            usage && exit 5
+        ;;
     esac
 }
 
 #read -r -d '' var_ARGS_USAGE <<-'EOF'
-read -r -d '' var_ARGS_USAGE <<-EOF
-========================================================================
+read -r -d '' var_MODULE_USAGE <<-EOF
+===============================================================================
 Full AIF procedure: figtree automatic
-------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 Usage examples:
-------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 (note that in the first example, the procedure must be sourced using the 
 raw/master remote path as AIF doesn't initially have git support. Once 
@@ -285,15 +289,15 @@ the figtree procedure is running, the profile paths can (and should)
 omit the raw/master path as in the second and third examples.
 
 REMOTE PROCEDURE & REMOTE PROFILE
-aif -p http://github.com/user/figtree/raw/master/procedures/automatic \
+aif -p http://github.com/user/figtree/raw/master/procedures/automatic \\
     -c profiles/my-laptop
 
 REMOTE PROCEDURE & REMOTE PROFILE (DIFFERENT SOURCE URLS)
-aif -p http://github.com/user/figtree/raw/master/procedures/automatic \
+aif -p http://github.com/user/figtree/raw/master/procedures/automatic \\
     -c http://github.com/OTHERUSER/figtree/profiles/my-laptop
 
 LOCAL PROCEDURE & REMOTE PROFILE
-aif -p figtree/automatic \
+aif -p figtree/automatic \\
     -c https://github.com/altercation/figtree/profiles/my-laptop
 
 LOCAL PROCEDURE & LOCAL PROFILE
@@ -302,9 +306,9 @@ aif -p figtree/automatic -c profiles/my-desktop
 LOCAL PROCEDURE & LOCAL PROFILE (can be any figtree profile)
 aif -p figtree/automatic -c systems/lenovo/x220/profile
 
-------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 Options:
-------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 EOF
 
 # ----------------------------------------------------------------------
