@@ -62,7 +62,7 @@
 depend_procedure core automatic
 
 var_MODULE_NAME=figtree
-var_MODULE_ACTION="IRREVOCABLE FILESYSTEM CHANGES:\nThis procedure performs a complete system disk erasure and automated installation." \
+var_MODULE_ACTION="IRREVOCABLE FILESYSTEM CHANGES:\nThis procedure performs a complete system erasure and automated installation." \
 var_PROCEDURE_SUBPATH=/procedures/automatic
 
 var_TEMP_DIR="${RUNTIME_DIR}/${var_MODULE_NAME}-temp"
@@ -1080,7 +1080,8 @@ installaur()
             show_warning "AUR Install" "Failed to extract archive for $aur_package."
             #return 1
         else
-            cd "$aur_package" &>$LOG
+            cd "$aur_package" #&>$LOG
+            echo "cd'd"; read
             # TODO: get_value the depends line in PKGBUILD, install each item (this will end up being recursive by nature)
 #    local package_list=
 #    if ! $(get_value "PKGBUILD" "depends" package_list && current_list=$(strip_punct "$current_list"))
@@ -1095,7 +1096,7 @@ installaur()
             fi
         fi
 
-ask_yesno "Do you want to continue?" $default_answer || exit
+ask_yesno "Do you want to continue?" $default_answer || exit # DEBUG
         cd $restore_dir &>$LOG
         rm -rf $var_TEMP_DIR/${aur_package}-install &>$LOG
     else
