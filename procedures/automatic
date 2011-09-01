@@ -211,7 +211,7 @@ usage_FORCE_OVERWRITE='
                 subdirectory. Overwritten files will be backed up unless the
                 -n command line parameter is also specified.'
 
-intro_NO_BACKUPS='(-n) No-backups mode OFF. Backups created during any overwrite.'
+intro_NO_BACKUPS='(-n) No-backups mode OFF. Backups WILL BE created during any overwrite.'
 option_NO_BACKUPS=' -n  No-backups mode ON. *NO* BACKUP FILES created during overwrites.'
 usage_NO_BACKUPS='
 -n              No backup file. When writing an overlay file, any existing 
@@ -1109,10 +1109,10 @@ installpkg() {
         echo "PACMAN_TARGET=$PACMAN_TARGET"
         read
         echo "test git presence on SOURCE"
-        $PACMAN -Qs "^git$" &>$LOG
+        $PACMAN -Qs "^git$"
         echo "test git presence on TARGET"
-        $PACMAN_TARGET -Qs "^git$" &>$LOG
-        read
+        $PACMAN_TARGET -Qs "^git$"
+        read #DEBUG
         ALL_PACKAGES=
         [ -n "$var_TARGET_GROUPS" ] && ALL_PACKAGES=`list_packages group "$var_TARGET_GROUPS" | awk '{print $2}'`
         echo "1DEBUG=========================installpkg"
