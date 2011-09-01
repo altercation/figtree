@@ -1140,16 +1140,20 @@ installpkg() {
 
         for package in $ALL_PACKAGES
         do
-            if $PACMAN_TARGET -Qs "^$package$" &>$LOG then
+            if $PACMAN_TARGET -Qs "^$package$" &>$LOG
+            then
                 inform "INSTALLATION: $package already installed; skipping"
+                read
             elif $PACMAN_TARGET -Ss "^$package$" &>$LOG
             then
+                echo "about to install..."; read
                 run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $package" $TMP_PACMAN_LOG "Installing $package..." 
             elif [[ -n "$var_AUR_SUPPORT" ]]
             then
                 installaur "$package" || return 1
             else
                 echo "DEBUG: var_AUR_SUPPORT=$var_AUR_SUPPORT"
+                show_warning "PACKAGE NOT FOUND - $package" "If you wish to install packages from AUR, run this procedure again with the\n'-a' command line parameter."
                 show_warning "PACKAGE NOT FOUND - $package" "If you wish to install packages from AUR, run this procedure again with the\n'-a' command line parameter."
             fi
         done
