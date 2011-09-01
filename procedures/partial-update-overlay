@@ -66,7 +66,7 @@ LOCAL PROCEDURE & LOCAL, ABSOLUTE PROFILE PATH
 aif -p figtree/automatic -c /tmp/aif/systems/lenovo/x220
 
 REMOTE PROCEDURE & LOCAL PROFILE
-aif -p http://github.com/user/figtree/raw/master/procedures/automatic \
+aif -p http://github.com/user/figtree/raw/master/procedures/automatic \\
     -c /usr/lib/aif/user/figtree/profiles/my-laptop
 EOF
 
