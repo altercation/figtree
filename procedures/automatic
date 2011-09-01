@@ -62,7 +62,7 @@
 depend_procedure core automatic
 
 var_MODULE_NAME=figtree
-var_MODULE_DESCRIPTION="IRREVOCABLE FILESYSTEM CHANGES:\nThis procedure performs a complete system disk erasure and automated installation." \
+var_MODULE_ACTION="IRREVOCABLE FILESYSTEM CHANGES:\nThis procedure performs a complete system disk erasure and automated installation." \
 var_PROCEDURE_SUBPATH=/procedures/automatic
 
 var_TEMP_DIR="${RUNTIME_DIR}/${var_MODULE_NAME}-temp"
@@ -329,7 +329,7 @@ inform "\nPROCEDURE: $var_MODULE_NAME module $(basename $var_AIF_PROCEDURE_PATH)
 inform "PROFILE:   $var_AUTOMATIC_PROFILE"
 inform "\nOPTIONS:"
 for intro_item in ${!intro_@}; do [[ -n "${!intro_item}" ]] && echo "${!intro_item}"; done
-inform "\n${var_MODULE_DESCRIPTION}\n"
+inform "\n${var_MODULE_ACTIONS}\n"
 [[ -e "/arch" ]] && default_answer=yes
 if [[ "$NOFAILSAFE" != "1" ]]; then ask_yesno "Do you want to continue?" $default_answer || exit; fi
 }

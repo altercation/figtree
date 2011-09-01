@@ -14,7 +14,7 @@
 depend_procedure figtree automatic
 
 var_MODULE_NAME=figtree
-var_MODULE_DESCRIPTION="ACTION: This procedure will update the overlay files in the specified procedure(s)."
+var_MODULE_ACTION="ACTION: This procedure will update the overlay files in the specified procedure(s)."
 var_PROCEDURE_SUBPATH=/procedures/partial-update-overlay
 var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && var_AIF_PROCEDURE_PATH="$2"
 var_MODULE_PATHS=("${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}")
