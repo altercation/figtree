@@ -1092,9 +1092,9 @@ installaur()
             fi
         fi
 
-ask_yesno "Do you want to continue?" $default_answer || exit # DEBUG
+#ask_yesno "Do you want to continue?" $default_answer || exit # DEBUG
         cd $restore_dir &>$LOG
-        rm -rf $var_TEMP_DIR/${aur_package}-install &>$LOG
+        [[ -e "$var_TEMP_DIR/${aur_package}" ]] && rm -rf $var_TEMP_DIR/${aur_package}-install &>$LOG
     else
         die_error "SHOULDN'T BE HERE: installaur() has been passed a package that pacman can find as well: $aur_package"
     fi
