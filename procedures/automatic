@@ -356,7 +356,7 @@ worker_preload ()
         fi
         for pkg in $var_RUNTIME_PACKAGES_PRELOAD
         do
-                if ! $PACMAN -Qs "^$pkg$"
+                if ! $PACMAN -Qs "^$pkg$" &>$LOG
                 then
                     inform "Installing $pkg for use during installation..."; $PACMAN -Sy --noconfirm --needed $pkg &>$LOG || return 1
                 else
@@ -1140,12 +1140,9 @@ installpkg() {
 
         for package in $ALL_PACKAGES
         do
-            echo "CHECKING $package..."
-            $PACMAN_TARGET -Qs "^$package$"
-            read
-            if [[ `$PACMAN_TARGET -Qs "^$package$" &>/dev/null` ]]; then
+            if $PACMAN_TARGET -Qs "^$package$" &>$LOG then
                 inform "INSTALLATION: $package already installed; skipping"
-            elif `$PACMAN_TARGET -Ss "^$package$" &>/dev/null`
+            elif $PACMAN_TARGET -Ss "^$package$" &>$LOG
             then
                 run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $package" $TMP_PACMAN_LOG "Installing $package..." 
             elif [[ -n "$var_AUR_SUPPORT" ]]
