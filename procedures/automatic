@@ -59,7 +59,7 @@
 # procedure specific definitions
 # ----------------------------------------------------------------------
 
-depend_procedure core automatic || die_error "couldn't source automatic"
+depend_procedure core automatic
 
 var_MODULE_NAME=figtree
 var_MODULE_ACTION="IRREVOCABLE FILESYSTEM CHANGES:\nThis procedure performs a complete system erasure and automated installation." \
@@ -1110,6 +1110,9 @@ installaur()
                 fi
             done
 
+
+
+
             if get_value "PKGBUILD" "depends" dep_list
             then
                 dep_list="$(strip_punct "$dep_list")" # parens, but packages might still have single quotes
@@ -1117,6 +1120,30 @@ installaur()
             else
                 inform "No depends packages listed in PKGBUILD for ${aur_package}..."
             fi
+            for dep_pkg in $dep_list
+            do
+                dep_pkg="$(strip_punct $dep_pkg)"
+                if ! $PACMAN_TARGET -Qs "^$dep_pkg$" &>$LOG
+                then
+                    inform "Installing $dep_pkg for use during installation..."
+                    # TODO: the pacman -Qs check should be made a helper 
+                    # function? we should do it again here since dependencies 
+                    # might be in AUR as well
+                    if $PACMAN_TARGET -Sy --noconfirm --needed $dep_pkg &>$LOG
+                    then
+                        d "GOOD MAKE DEPS INSTALL FOR $dep_pkg"
+                    else
+                        show_warning "MAKEDEPENDS Install Failer" "BAD INSTALL FOR $dep_pkg; see LOG" #DEBUG
+                        return 1
+                    fi
+                else
+                    d "Skipping $dep_pkg; already installed."
+                fi
+            done
+
+
+
+
 
             # TODO:
             # there are some unknowns here
@@ -1137,7 +1164,8 @@ installaur()
 
             local PACMAN_REVERT="$PACMAN"
             export PACMAN="$PACMAN_TARGET" # makepkg -s uses PACMAN env variable and we try to make sure we're using PACMAN_TARGET HERE; might not work? DEBUG
-            if ! makepkg -s --asroot --noconfirm #&>$LOG
+            #if ! makepkg -s --asroot --noconfirm #&>$LOG
+            if ! makepkg -d --asroot --noconfirm #&>$LOG
             then
                 show_warning "AUR Install" "Failed to makepkg for $aur_package"
                 #return 1
