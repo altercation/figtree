@@ -61,15 +61,14 @@
 
 depend_procedure core automatic
 
-    echo "IN PRE"
 var_MODULE_NAME=figtree
 var_MODULE_ACTION="IRREVOCABLE FILESYSTEM CHANGES:\nThis procedure performs a complete system disk erasure and automated installation." \
 var_PROCEDURE_SUBPATH=/procedures/automatic
 
 var_TEMP_DIR="${RUNTIME_DIR}/${var_MODULE_NAME}-temp"
-[[ -e "$var_TEMP_DIR" ]] && rm -rf "$var_TEMP_DIR"; mkdir -p "$var_TEMP_DIR"
+[[ -e "$var_TEMP_DIR" ]] && rm -rf "$var_TEMP_DIR" || true; mkdir -p "$var_TEMP_DIR"
 var_KNOWN_SUBDIRS=(procedures libs profiles systems environments applications users examples peripherals filesystems) # figtree specific
-var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && var_AIF_PROCEDURE_PATH="$2"
+var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && var_AIF_PROCEDURE_PATH="$2" || true
 #var_MODULE_PATHS[0]="${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}"
 var_MODULE_PATHS=("${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}" "/usr/lib/aif/user/figtree")
 # Runtime packages are used during installation but are not installed to the target system unless included in TARGET_PACKAGES as well

@@ -10,13 +10,11 @@
 # ----------------------------------------------------------------------
 # figtree
 # ----------------------------------------------------------------------
+
 depend_procedure figtree automatic
-[[ "$module" == "http" ]] && initial_module_path="$(dirname $procedure)/"
-echo "module=$module procedure=$procedure       dirname=$(dirname $procedure)automatic"
+[[ "$module" == "http" ]] && initial_module_path="$(dirname $procedure)/" || initial_module_path=
 #module=$module procedure=$procedure      
-load_procedure "$module" "${initial_module_path}automatic" && echo "SUCCESS" || echo "FAILED"
-
-
+#load_procedure "$module" "${initial_module_path}automatic" && echo "SUCCESS" || echo "FAILED"
 
 # ----------------------------------------------------------------------
 # procedure specific definitions
@@ -24,7 +22,7 @@ load_procedure "$module" "${initial_module_path}automatic" && echo "SUCCESS" || 
 var_MODULE_NAME=figtree
 var_MODULE_ACTION="ACTION: This procedure will update the package and overlay files on a live system to conform to the specified profile."
 var_PROCEDURE_SUBPATH=/procedures/partial-conform-system
-var_AIF_PROCEDURE_PATH="$procedure"; [[ "$module" == "http" ]] && var_AIF_PROCEDURE_PATH="$2"
+[[ "$module" == "http" ]] && var_AIF_PROCEDURE_PATH="$2" || var_AIF_PROCEDURE_PATH="$procedure"
 var_MODULE_PATHS=("${var_AIF_PROCEDURE_PATH%$var_PROCEDURE_SUBPATH*}")
 var_TARGET_DIR=""
 
@@ -54,6 +52,7 @@ differ between the source profile overlay directory and the target files
 the procedure will prompt for an overwrite decision (unless using the -f
 force overwrite argument).
 EOF
+true # read above is throwing an error...?
 
 # ----------------------------------------------------------------------
 # procedure workers
@@ -62,3 +61,4 @@ EOF
 # ----------------------------------------------------------------------
 # procedure workers
 # ----------------------------------------------------------------------
+
