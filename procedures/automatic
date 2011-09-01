@@ -1146,8 +1146,8 @@ installpkg() {
 
         for package in $ALL_PACKAGES
         do
-#            if [[ `$PACMAN_TARGET -Q "^$package$" &>/dev/null` ]]; then
-#                inform "INSTALLATION: $package already installed; skipping"
+            if [[ `$PACMAN_TARGET -Qs "^$package$" &>/dev/null` ]]; then
+                inform "INSTALLATION: $package already installed; skipping"
             if `$PACMAN_TARGET -Ss "^$package$" &>/dev/null`
             then
                 run_controlled pacman_installpkg "$PACMAN_TARGET --noconfirm -S $package" $TMP_PACMAN_LOG "Installing $package..." 
