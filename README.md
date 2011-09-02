@@ -23,9 +23,9 @@ Figtree is an AIF module with several key features:
    can be local, remote, both, and from different remote locations.
 4. Supports automatic AUR package installation (see issues)
 5. Loads both remote and local profiles.
-6. Profiles can be standard AIF profiles or "figtree profiles" which 
-   support more complex system configuration at install time
-7. Each profile can install "overlay files" (custom config files)
+6. Profiles can be standard AIF profiles or "figtree profiles" which support 
+   more complex system configuration at install time.
+7. Profiles can link to other profiles, creating a con**fig tree** of profiles.
 8. Profiles can use custom commands to add to:
 
    * add to the install package list
@@ -127,7 +127,8 @@ Update just one profile:
 
 ## Profile Commands
 
-Figtree can use normal AIF profiles and can add the following special commands:
+Figtree can use normal AIF profiles and can add the following figtree specific 
+commands:
 
   * **depend_profile** path/to/profile
   * **packages** packagename aurpackagename \[anotherpackage\]
