@@ -62,15 +62,28 @@ Figtree is an AIF module with several key features:
 
 Figtree is designed to allow rapid installation from existing profiles, and rapid updating of profiles from an existing installation.
 
-### Install procedures:
+### New Install Procedures:
 
-  * automatic (install from figtree profiles during normal Arch ISO installation)
+Run from Arch ISO boot:
 
-  * partial-conform-system (install packages/configs on an existing system)
+  * **automatic** (sources local or remote root profile and automatically 
+  installs full system) \
+  STATUS: working, AUR option (-a) throwing errors
+
+### Existing System Conform Procedures:
+
+These partial procedures are designed to be run on an existing system (*not* 
+from the ISO). They ensure your system matches the profiles and can thus be run 
+anytime. They can be run in dry-run mode to see what changes would be made 
+first.
+
+  * partial-conform-system (install packages/configs on an existing system) \
+    STATUS: in testing
 
 ### Update procedures:
 
-These update the profile itself, not the system.
+These update the profile itself, not the system. They can be run in dry-run 
+mode (to implement) to find out what would be updated first.
 
   * partial-update-overlay (update overlay files, possibly selectively, from live system)
 
