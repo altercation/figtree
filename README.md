@@ -152,13 +152,14 @@ commands:
   * **depend_profile** path/to/profile
   * **packages** packagename aurpackagename \[anotherpackage\]
   * **blacklist** packagename
-  * **config** set /path/to/config/file VALUENAME newvalue
-  * **config** unset /path/to/config/file VALUENAME
-  * **daemons** add @daemon !daemon daemon
-  * **daemons** remove daemon anotherdaemon
-  * **modules** add modulename anothermodule
-  * **modules** remove modulename anothermodule
-  * **networks** network-name work-networkname \[another-network\]
+  * **config set** /path/to/config/file VALUENAME newvalue
+  * **config unset** /path/to/config/file VALUENAME
+  * **daemons add** @daemon !daemon daemon
+  * **daemons remove** daemon anotherdaemon
+  * **modules add** modulename anothermodule
+  * **modules remove** modulename anothermodule
+  * **networks add** network-name work-networkname \[another-network\]
+  * **networks remove** network-name
   * **kernel_params** parameter-list-here
   * **coda** 'arbitrary command goes here to be run at end of installation'
   * **overlay** /etc/file.conf /usr/file/name
