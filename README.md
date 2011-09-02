@@ -11,7 +11,9 @@ Here there be dragons
 
 Figtree is an AIF module with several key features:
 
-1. Can be run from a remote path, even from an standard Arch Linux ISO
+1. Can be run from a remote path. Boot from a standard Arch Linux installation 
+   image and remotely access your custom installation profile with no customization 
+   of the ISO.
 2. Remote source for both the procedure and profiles can be a version control system.
    Currently only github has been tested, but figtree has been designed to support
    git (github/other), mercurial (bitbucket/other), svn (google-code/other), and wget
