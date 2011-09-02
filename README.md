@@ -27,11 +27,12 @@ Figtree is an AIF module with several key features:
    support more complex system configuration at install time
 7. Each profile can install "overlay files" (custom config files)
 8. Profiles can use custom commands to add to:
-        * add to the install package list
-        * customize system variables in arbitrary config files
-        * add overlay files
-        * add kernel parameters
-        * add custom system commands to be run at the end of the install
+
+   * add to the install package list
+   * customize system variables in arbitrary config files
+   * add overlay files
+   * add kernel parameters
+   * add custom system commands to be run at the end of the install
 
 The main procedure is "automatic" and builds on the AIF core automatic 
 procedure. Other procedures include:
