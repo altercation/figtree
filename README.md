@@ -67,7 +67,7 @@ REMOTE PROCEDURE & REMOTE PROFILE
 
     # aif -p partial-configure-network
     # aif -p http://github.com/altercation/figtree/raw/master/procedures/automatic \
-          -c profiles/my-laptop
+          -c profiles/generic
 
 REMOTE PROCEDURE & REMOTE PROFILE (DIFFERENT SOURCE URLS)
 
@@ -85,7 +85,7 @@ REMOTE PROCEDURE & LOCAL PROFILE
     # aif -p http://github.com/altercation/figtree/raw/master/procedures/automatic \
           -c ~/aif-profiles/my-custom-laptop
 
-or local profile in /usr/lib/aif/user/figtree/profiles (and not present on remote repo)
+or local profile in /usr/lib/aif/user/figtree/profiles (as long as there is no profile with the same name on remote repo, otherwise use absolute local path)
 
     # aif -p partial-configure-network
     # aif -p http://github.com/altercation/figtree/raw/master/procedures/automatic \
