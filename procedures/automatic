@@ -123,7 +123,6 @@ KEYMAP=
 CONSOLEFONT=
 CONSOLEMAP=
 USECOLOR=
-HOSTNAME=
 NETWORK_PERSIST=
 NETWORKS=
 
@@ -137,7 +136,6 @@ default_rc_KEYMAP="us"
 default_rc_CONSOLEFONT=
 default_rc_CONSOLEMAP=
 default_rc_USECOLOR="yes"
-default_rc_HOSTNAME=""
 default_rc_NETWORK_PERSIST="no"
 default_rc_NETWORKS=(main home work)
 

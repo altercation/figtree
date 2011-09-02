@@ -1,5 +1,90 @@
 #!/bin/bash
 
+# SKELETON
+# =============================================================================
+# repos may deal with most of this. this is the directory structure the user
+# wants to set up automatically.
+#
+# could just bd xdg standard if that's your thing
+# this is the output of `tree -dL 1 ~`
+
+read -r -d '' var_TREE <<-EOF
+/home/es
+├── bin
+├── etc
+│   ├── bin
+│   ├── cron
+│   ├── docs
+│   ├── fonts
+│   ├── irc
+│   ├── mail
+│   ├── sec
+│   ├── shell
+│   ├── utf
+│   ├── vcs
+│   ├── vim
+│   ├── web
+│   ├── xmonad
+│   └── xorg
+├── sec
+│   ├── bin
+│   └── dictionaries
+├── shr
+│   └── music
+├── tmp
+├── var
+│   ├── cal
+│   ├── Dropbox
+│   ├── irc
+│   ├── mail
+│   └── vim
+└── wrk
+    ├── archlinux
+    ├── code
+    ├── sec
+    ├── web
+    └── write
+EOF
+
+# LINKS
+# =============================================================================
+# Links are source-linktarget pairs. Each link is checked for current state of 
+# each pair component. Given the current state, one of several logical actions 
+# is performed to bring the link into the desired state.
+
+source_link ~/source/file ~/linkfile
+
+# REPOS
+# =============================================================================
+# repositories to clone locally. if present no action is taken (never auto 
+# updated). Note that these are created before the tree above so they will not
+# conflict with existing content. If they do, an error will be logged.
+
+repo http://remote.url/here ~/local/path [repotype]
+repo http://remote.url/here ~/local/path [repotype]
+repo http://remote.url/here ~/local/path [repotype]
+repo http://remote.url/here ~/local/path [repotype]
+
+# SECURE
+# =============================================================================
+# secure content (non public) and security related settings
+# including passwords in text files (terrible but true), ssh key configuration,
+# and other such sensitive stuff
+
+
+
+
+
+
+
+
+
+
+
+
+
+# PACKAGES BELOW WILL BE MOVED TO A DIFFERENT PROFILE LATER...
+
 # SYSADMIN
 # =============================================================================
 package sudo openssh tightvnc
