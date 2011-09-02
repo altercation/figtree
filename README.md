@@ -58,22 +58,25 @@ Figtree is an AIF module with several key features:
    * add kernel parameters
    * add custom system commands to be run at the end of the install
 
-## Procedures
+## Install & Update Lifecycle: figtree procedures
 
-The main procedure is "automatic" and builds on the AIF core automatic 
-procedure. Other procedures include:
+Figtree is designed to allow rapid installation from existing profiles, and rapid updating of profiles from an existing installation.
 
-* partial-update-overlay
-  Run on a live system to update the overlay files in a profile overlay 
-  directory from the overlay file list in the profile
+### Install procedures:
 
-* partial-conform-system (work in progress)
-  Installs packages, configuration values and overlay files on a live system
-  post-install
+  * automatic (install from figtree profiles during normal Arch ISO installation)
 
-I've tried to make this a standard AIF module. There are probably a lot of 
-areas that could be improved on and I hope to continue to refactor it even
-after most features are completed.
+  * partial-conform-system (install packages/configs on an existing system)
+
+### Update procedures:
+
+These update the profile itself, not the system.
+
+  * partial-update-overlay (update overlay files, possibly selectively, from live system)
+
+  * partial-update-configs (update config values) - not yet implemented
+
+  * partial-update-packages (update or just list package diff) - not yet implemented
 
 ## Profiles, Scope, Linking
 
