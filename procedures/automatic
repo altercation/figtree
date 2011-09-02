@@ -1063,7 +1063,7 @@ installaur()
     local aur_package="$1"
 #    if [[ `$PACMAN_TARGET -Q "^$aur_package$" &>$LOG` ]]; then
 #        notify "$aur_package already installed; skipping"
-    local build_dir="${var_TARGET_DIR}/etc/tmp/${aur_package}-install" #$var_TEMP_DIR/$aur_package*
+    local build_dir="${var_TARGET_DIR}/tmp/${aur_package}-install" #$var_TEMP_DIR/$aur_package*
     if ! $PACMAN_TARGET -Qs "^$aur_package$" &>/dev/null
     then
         [[ -e "$build_dir" ]] && rm -rf $build_dir
