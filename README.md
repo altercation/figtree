@@ -158,33 +158,40 @@ grammatical number.
 
 ## Profile Variables
 
-    HOSTNAME="es-laptop"
-    LOCALE="en_US.UTF-8"
-    DAEMON_LOCALE="no"
-    HARDWARECLOCK="UTC"
-    TIMEZONE="Canada/Pacific"
-    KEYMAP="us"
-    CONSOLEFONT="ter-120n"
-    CONSOLEMAP=
-    USECOLOR="yes"
+This is a superset of the standard AIF profile variables. Each is listed below 
+with its default values.
 
-    GRUB_DEVICE=/dev/sda
-    PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
-    BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
-    /dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
-    /dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
+**HOSTNAME**="archlinux"
+**LOCALE**="en_US.UTF-8"
+**DAEMON_LOCALE**="no"
+**HARDWARECLOCK**="UTC"
+**TIMEZONE**="Canada/Pacific"
+**KEYMAP**="us"
+**CONSOLEFONT**="ter-120n"
+**CONSOLEMAP**=
+**USECOLOR**="yes"
 
-    RANKMIRRORS=0 # set number of mirrors here; 0=don't run rankmirrors
+**GRUB_DEVICE**=/dev/sda
+**PARTITIONS**='/dev/sda 100:ext2:+ 512:swap *:ext4'
+**BLOCKDATA**='/dev/sda1 raw no_label 
+ext2;yes;/boot;target;no_opts;no_label;no_params
+/dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
+/dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
 
-    CODA
+**RANKMIRRORS**=0 # set number of mirrors here; 0=don't run rankmirrors. 10 is good.
 
+**CODA**='not yet implemented; block of commands to run at end of install.'
 
-    RUNTIME_REPOSITORIES=
-    RUNTIME_PACKAGES=
+**RUNTIME_REPOSITORIES**=
+**RUNTIME_PACKAGES**=
 
-    TARGET_GROUPS=
-    TARGET_PACKAGES_EXCLUDE=
-    TARGET_PACKAGES=
+**TARGET_GROUPS=
+
+The following variables work with figtree but it's better to use the `packages` 
+and `blacklist` commands.
+
+**TARGET_PACKAGES_EXCLUDE**=
+**TARGET_PACKAGES**=
 
 ## PATHS
 
