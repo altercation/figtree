@@ -59,6 +59,34 @@ I've tried to make this a standard AIF module. There are probably a lot of
 areas that could be improved on and I hope to continue to refactor it even
 after most features are completed.
 
+## Profiles, Scope, Linking
+
+One of the key motivations behind figtree was to enable the "stacking" of configuration profiles. It is common to have different hardware but similar desktop environments, application sets and user configurations. Thus one might have a configuration tree like this:
+
+    Specific-System
+      |
+      +--Systems/Manufacturer/Model
+      |
+      +--Environments/Type/Variant
+      |
+      +--Applicatons/Category/Set
+      |
+      +--Users/You
+
+A desktop and laptop might thus look like this:
+
+    profiles/es/es-desktop              profiles/es/es-desktop
+      |                                   |
+      +--systems/lenovo/x220              +--systems/generic/pc
+      |                                   |
+      +--environments/xmonad/es           +--environments/xmonad/es
+      |                                   |
+      +--applicatons/cli/basics           +--applications/cli/basics
+      +--applicatons/cli/media            +--applications/cli/media
+      |                                   +--applicatoins/gui/video
+      |                                   |
+      +--users/es                         +--users/es
+
 ## USAGE: New, Full Installation: Quick Examples
 
 At a basic Arch ISO boot prompt (new install):
@@ -172,7 +200,8 @@ grammatical number.
 ## Profile Variables
 
 This is a superset of the standard AIF profile variables. Each is listed below 
-with its default values.
+with its default values. None of these are required in a profile, though at the least
+a HOSTNAME would make sense to customize.
 
 ### /etc/rc.conf related values
   * **HOSTNAME**="archlinux"
