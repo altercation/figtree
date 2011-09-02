@@ -1163,6 +1163,17 @@ installaur()
             # makedepends items on the target?
             # (testing with weechat-git)
 
+            echo "TEST: >>>>>SRCDEST=$SRCDEST && PKGDEST=$PKGDEST"
+            echo "press enter"
+            read
+
+            SRCDEST="$build_dir/$aur_package/src"
+            PKGDEST="$build_dir/$aur_package/pkg"
+
+            echo "TEST: >>>>>SRCDEST=$SRCDEST && PKGDEST=$PKGDEST"
+            echo "press enter"
+            read
+
             local PACMAN_REVERT="$PACMAN"
             export PACMAN="$PACMAN_TARGET" # makepkg -s uses PACMAN env variable and we try to make sure we're using PACMAN_TARGET HERE; might not work? DEBUG
             #if ! makepkg -s --asroot --noconfirm #&>$LOG
