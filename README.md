@@ -129,19 +129,19 @@ Update just one profile:
 
 Figtree can use normal AIF profiles and can add the following special commands:
 
-  * depend_profile path/to/profile
-  * packages packagename aurpackagename \[anotherpackage\]
-  * blacklist packagename
-  * config set /path/to/config/file VALUENAME newvalue
-  * config unset /path/to/config/file VALUENAME
-  * daemons add @daemon !daemon daemon
-  * daemons remove daemon anotherdaemon
-  * modules add modulename anothermodule
-  * modules remove modulename anothermodule
-  * networks network-name work-networkname \[another-network\]
-  * kernel_params parameter-list-here
-  * coda 'arbitrary command goes here to be run at end of installation'
-  * overlay /etc/file.conf /usr/file/name
+  * **depend_profile** path/to/profile
+  * **packages** packagename aurpackagename \[anotherpackage\]
+  * **blacklist** packagename
+  * **config** set /path/to/config/file VALUENAME newvalue
+  * **config** unset /path/to/config/file VALUENAME
+  * **daemons** add @daemon !daemon daemon
+  * **daemons** remove daemon anotherdaemon
+  * **modules** add modulename anothermodule
+  * **modules** remove modulename anothermodule
+  * **networks** network-name work-networkname \[another-network\]
+  * **kernel_params** parameter-list-here
+  * **coda** 'arbitrary command goes here to be run at end of installation'
+  * **overlay** /etc/file.conf /usr/file/name
 
 The above forms are the canonical forms of the commands but for the most part 
 the plural/singular forms are identical (packages and package are identical 
