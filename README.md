@@ -1,7 +1,8 @@
 figtree
 =======
 
-## an Arch Linux AIF module to create conFIG TREEs from local or remote profiles
+an Arch Linux AIF module to create conFIG TREEs from local or remote profiles
+
 Ethan Schoonover <es@ethanschoonover.com>
 
 ## CODE STATUS
@@ -226,23 +227,19 @@ Given a relative profile, figtree will look for the profile in the same module
 as the source profile. Thus if you source a profile from
 github using the following command line:
 
-    # aif -p http://github.com/user/figtree/raw/master/procedures/automatic \\
-          -c http://github.com/username/figtree/profiles/my-laptop
+    # aif -p http://github.com/altercation/figtree/raw/master/procedures/automatic \\
+          -c profiles/my-laptop
 
-and include the following command in the config profile:
+figtree will try to source the profile from the following location:
 
-    depend_profile systems/lenovo/x220
-
-figtree will try to source the linked profile from the following location:
-
-    http://github.com/username/figtree/systems/lenovo/x220
+    http://github.com/username/figtree/profiles/my-laptop
 
 The profile file itself has a default filename of `profile` though figtree can 
-accept profiles with a different name as well:
+accept profiles with a different name as well. Thus:
 
     http://github.com/username/figtree/systems/lenovo/x220
           
-will source either of the following files
+will source either of the following files:
 
     http://github.com/username/figtree/systems/lenovo/*x220*
     http://github.com/username/figtree/systems/lenovo/x220/*profile*
