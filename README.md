@@ -161,6 +161,7 @@ grammatical number.
 This is a superset of the standard AIF profile variables. Each is listed below 
 with its default values.
 
+### /etc/rc.conf related values
   * **HOSTNAME**="archlinux"
   * **LOCALE**="en_US.UTF-8"
   * **DAEMON_LOCALE**="no"
@@ -171,6 +172,7 @@ with its default values.
   * **CONSOLEMAP**=
   * **USECOLOR**="yes"
 
+### filesystem related
   * **GRUB_DEVICE**=/dev/sda
   * **PARTITIONS**='/dev/sda 100:ext2:+ 512:swap *:ext4'
   * **BLOCKDATA**='/dev/sda1 raw no_label 
@@ -178,9 +180,11 @@ with its default values.
 /dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
 /dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
 
+### rank mirrors
   * **RANKMIRRORS**=0 # set number of mirrors here; 0=don't run rankmirrors. 10 
   is good.
 
+### coda
   * **CODA**='not yet implemented; block of commands to run at end of install.'
 
   * **RUNTIME_REPOSITORIES**=
