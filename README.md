@@ -177,16 +177,17 @@ grammatical number.
 
 Paths can be in one of three forms: relative, absolute and remote.
 
-    * relative: systems/make/model
-    * absolute: /usr/lib/aif/user/figtree/systems/make/model
-    * remote:   http://github.com/username/figtree/profiles/my-profile
+  * relative: systems/make/model
+  * absolute: /usr/lib/aif/user/figtree/systems/make/model
+  * remote:   http://github.com/username/figtree/profiles/my-profile
 
 
 
-    * relative
-      Given a relative profile, figtree will look for the profile in the 
-      same module as the source profile. Thus if you source a profile from
-      github using the following command line:
+  * relative
+
+    Given a relative profile, figtree will look for the profile in the same 
+    module as the source profile. Thus if you source a profile from
+    github using the following command line:
 
             # aif -p http://github.com/user/figtree/raw/master/procedures/automatic \\
                   -c http://github.com/username/figtree/profiles/my-laptop
