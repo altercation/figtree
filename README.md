@@ -63,19 +63,19 @@ after most features are completed.
 
 One of the key motivations behind figtree was to enable the "stacking" of configuration profiles. It is common to have different hardware but similar desktop environments, application sets and user configurations. Thus one might have a configuration tree like this:
 
-    Specific-System
+    specific-system
       |
-      +--Systems/Manufacturer/Model
+      +--systems/manufacturer/model
       |
-      +--Environments/Type/Variant
+      +--environments/type/variant
       |
-      +--Applicatons/Category/Set
+      +--applicatons/category/set
       |
-      +--Users/You
+      +--users/you
 
 A desktop and laptop might thus look like this:
 
-    profiles/es/es-desktop              profiles/es/es-desktop
+    profiles/es/es-laptop               profiles/es/es-desktop
       |                                   |
       +--systems/lenovo/x220              +--systems/generic/pc
       |                                   |
@@ -86,6 +86,8 @@ A desktop and laptop might thus look like this:
       |                                   +--applicatoins/gui/video
       |                                   |
       +--users/es                         +--users/es
+
+Figtree has several "top level" profile categories (systems, environments, applications, peripherals, profiles, filesystems, users) where profiles can live (as files or in subdirectories). Feedback is welcome regarding this structure.
 
 ## USAGE: New, Full Installation: Quick Examples
 
