@@ -133,6 +133,17 @@ Update just one profile:
 
     # aif -p figtree/partial-update-overlay -c systems/lenovo/x220/profile -s
 
+## Command Line Arguments
+
+**-c profile/path**  Config Profile (relative, absolute, or remote path)
+**-r git|hg|svn|wget**  (only git tested to date) Force repo ON. Remote repository type set manually. Not required (figtree will automatically detect the repo type)
+**-a**  AUR support ON. Packages not in official repos will be sourced from AUR.
+**-w**  Wipe overlay directory ON. Old overlay directory will be DELETED first. (partial-update-overlay procedure only) 
+**-f**  Force overwrite ON. *NO* PROMPTS given prior to overwrite events. (partial-update-overlay only)
+**-n**  No-backups mode ON. *NO* BACKUP FILES created during overwrites.
+**-s**  Single-profile mode ON. NO LINKED PROFILES will be processed.
+**-D**  (not implemented yet) Diff mode ON. File diffs will be displayed prior to file overwrites.
+
 ## Profile Commands
 
 Figtree can use normal AIF profiles and can add the following figtree specific 
