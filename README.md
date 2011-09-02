@@ -14,18 +14,25 @@ Figtree is an AIF module with several key features:
 1. Can be run from a remote path. Boot from a standard Arch Linux installation 
    image and remotely access your custom installation profile with no customization 
    of the ISO.
+
 2. Remote source for both the procedure and profiles can be a version control system.
    Currently only github has been tested, but figtree has been designed to support
    git (github/other), mercurial (bitbucket/other), svn (google-code/other), and wget
    as a fallback option.
+
 3. Intelligent sourcing of files (if you've already specified a remote path for the 
    procedure, you can use a relative path for the profile). Procedures and profiles
    can be local, remote, both, and from different remote locations.
+
 4. Supports automatic AUR package installation (see issues)
+
 5. Loads both remote and local profiles.
+
 6. Profiles can be standard AIF profiles or "figtree profiles" which support 
    more complex system configuration at install time.
+
 7. Profiles can link to other profiles, creating a con**fig tree** of profiles.
+
 8. Profiles can use custom commands to add to:
 
    * add to the install package list
