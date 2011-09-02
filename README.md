@@ -7,7 +7,7 @@ Ethan Schoonover <es@ethanschoonover.com>
 ## CODE STATUS
 Here there be dragons
 
-## Description
+## Features
 
 Figtree is an AIF module with several key features:
 
@@ -33,6 +33,8 @@ Figtree is an AIF module with several key features:
    * add overlay files
    * add kernel parameters
    * add custom system commands to be run at the end of the install
+
+## Procedures
 
 The main procedure is "automatic" and builds on the AIF core automatic 
 procedure. Other procedures include:
