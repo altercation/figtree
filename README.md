@@ -177,11 +177,11 @@ grammatical number.
 
 Paths can be in one of three forms: relative, absolute and remote.
 
-  * relative: systems/make/model
+  * relative: `systems/make/model`
 
-  * absolute: /usr/lib/aif/user/figtree/systems/make/model
+  * absolute: `/usr/lib/aif/user/figtree/systems/make/model`
 
-  * remote:   http://github.com/username/figtree/profiles/my-profile
+  * remote:   `http://github.com/username/figtree/profiles/my-profile`
 
 
 
