@@ -12,15 +12,19 @@ Here there be dragons
 Figtree is an AIF module with several key features:
 
 1. Can be run from a remote path, even from an standard Arch Linux ISO
-2. Remote sources can be a git repository (currently only git tested though
-   figtree has been designed to support mercurial, svn and wget for remote
-   sources as well)
-3. Supports automatic AUR package installation (see issues)
-4. Loads both remote and local profiles.
-5. Profiles can be standard AIF profiles or "figtree profiles" which 
+2. Remote source for both the procedure and profiles can be a version control system.
+   Currently only github has been tested, but figtree has been designed to support
+   git (github/other), mercurial (bitbucket/other), svn (google-code/other), and wget
+   as a fallback option.
+3. Intelligent sourcing of files (if you've already specified a remote path for the 
+   procedure, you can use a relative path for the profile). Procedures and profiles
+   can be local, remote, both, and from different remote locations.
+4. Supports automatic AUR package installation (see issues)
+5. Loads both remote and local profiles.
+6. Profiles can be standard AIF profiles or "figtree profiles" which 
    support more complex system configuration at install time
-6. Each profile can install "overlay files" (custom config files)
-7. Profiles can use custom commands to add to:
+7. Each profile can install "overlay files" (custom config files)
+8. Profiles can use custom commands to add to:
         * add to the install package list
         * customize system variables in arbitrary config files
         * add overlay files
@@ -90,6 +94,24 @@ LOCAL PROCEDURE & LOCAL PROFILE (can be any figtree profile)
 
 ## USAGE: Updating overlay in a local profile
 
+Each profile can have an optional overlay directory in the same parent folder. This 
+overlay directory acts as a fake root where overlay files are saved and will be installed.
+Thus if you have a profile reference by the path:
+
+    systems/lenovo/x220
+
+The "standard" figtree path for that will be (locally)
+
+    /usr/lib/aif/user/figtree/systems/lenovo/x220/profile
+
+The overlay file for /etc/acpi/handler.sh would thus be:
+
+    /usr/lib/aif/user/figtree/systems/lenovo/x220/overlay/etc/acpi/handler.sh
+
+These overlay files can be automatically saved into your profile overlay directory from
+your current live system using the figtree partial procedure `partial-update-overlay`.
+Examples:
+
 Update all linked profiles, wiping out existing overlay directory:
 
     # aif -p figtree/partial-update-overlay -c profiles/my-desktop -wf
@@ -106,13 +128,13 @@ Figtree can use normal AIF profiles and can add the following special commands:
     Includes the contents of another profile (and any profiles that are recursively
     linked). Paths can be in one of three formats:
 
-        * relative
-          Given a relative profile, figtree will look for the profile in the 
-          same module as the source profile. Thus if you source a profile from
-          github using the following command line:
+    * relative
+      Given a relative profile, figtree will look for the profile in the 
+      same module as the source profile. Thus if you source a profile from
+      github using the following command line:
 
-              # aif -p http://github.com/user/figtree/raw/master/procedures/automatic \\
-                    -c http://github.com/username/figtree/profiles/my-laptop
+        # aif -p http://github.com/user/figtree/raw/master/procedures/automatic \\
+              -c http://github.com/username/figtree/profiles/my-laptop
 
           and include the following command in the config profile:
 
