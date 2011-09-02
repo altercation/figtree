@@ -120,13 +120,68 @@ Update just one profile:
 
     # aif -p figtree/partial-update-overlay -c systems/lenovo/x220/profile -s
 
-## Building Profiles
+## Profile Commands
 
 Figtree can use normal AIF profiles and can add the following special commands:
 
-  * depend_profile
-    Includes the contents of another profile (and any profiles that are recursively
-    linked). Paths can be in one of three formats:
+  * depend_profile path/to/profile
+  * packages packagename aurpackagename \[anotherpackage\]
+  * blacklist packagename
+  * config set /path/to/config/file VALUENAME newvalue
+  * config unset /path/to/config/file VALUENAME
+  * daemons add @daemon !daemon daemon
+  * daemons remove daemon anotherdaemon
+  * modules add modulename anothermodule
+  * modules remove modulename anothermodule
+  * networks network-name work-networkname \[another-network\]
+  * kernel_params parameter-list-here
+  * coda 'arbitrary command goes here to be run at end of installation'
+  * overlay /etc/file.conf /usr/file/name
+
+The above forms are the canonical forms of the commands but for the most part 
+the plural/singular forms are identical (packages and package are identical 
+commands). This avoids a common error due to the intuitive matching of 
+grammatical number.
+
+## Profile Variables
+
+    HOSTNAME="es-laptop"
+    LOCALE="en_US.UTF-8"
+    DAEMON_LOCALE="no"
+    HARDWARECLOCK="UTC"
+    TIMEZONE="Canada/Pacific"
+    KEYMAP="us"
+    CONSOLEFONT="ter-120n"
+    CONSOLEMAP=
+    USECOLOR="yes"
+
+    GRUB_DEVICE=/dev/sda
+    PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
+    BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
+    /dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
+    /dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
+
+    RANKMIRRORS=0 # set number of mirrors here; 0=don't run rankmirrors
+
+    CODA
+
+
+    RUNTIME_REPOSITORIES=
+    RUNTIME_PACKAGES=
+
+    TARGET_GROUPS=
+    TARGET_PACKAGES_EXCLUDE=
+    TARGET_PACKAGES=
+
+## PATHS
+
+Paths can be in one of three forms: relative, absolute and remote.
+
+    * relative: systems/make/model
+    * absolute: /usr/lib/aif/user/figtree/systems/make/model
+    * remote:   http://github.com/username/figtree/profiles/my-profile
+
+
 
     * relative
       Given a relative profile, figtree will look for the profile in the 
