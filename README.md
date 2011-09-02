@@ -189,11 +189,11 @@ When looking for profiles in a given path, figtree looks first for a file named
 a match based on the last component of the path. Thus in the remote example 
 above, figtree would first look for:
 
-  `http://github.com/username/figtree/profiles/my-profile/`*`profile`*
+    http://github.com/username/figtree/profiles/my-profile/profile
 
 and failing that would attempt to use:
 
-  `http://github.com/username/figtree/profiles/`*`my-profile`*
+    http://github.com/username/figtree/profiles/my-profile
 
   * relative
 
