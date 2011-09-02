@@ -9,8 +9,8 @@
 
 # EXTRA PACKAGES
 # =============================================================================
-#packages weechat-git
 packages vim aif openssh wget
+packages weechat-git
  
 # SYSTEM CONFIG VALUES
 # =============================================================================
