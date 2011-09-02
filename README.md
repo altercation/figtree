@@ -133,12 +133,12 @@ Figtree can use normal AIF profiles and can add the following special commands:
       same module as the source profile. Thus if you source a profile from
       github using the following command line:
 
-          # aif -p http://github.com/user/figtree/raw/master/procedures/automatic \\
+              # aif -p http://github.com/user/figtree/raw/master/procedures/automatic \\
               -c http://github.com/username/figtree/profiles/my-laptop
 
-          and include the following command in the config profile:
+      and include the following command in the config profile:
 
-                depend_profile systems/lenovo/x220
+              depend_profile systems/lenovo/x220
 
           figtree will try to source the linked profile from the following location:
 
