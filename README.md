@@ -183,6 +183,11 @@ Paths can be in one of three forms: relative, absolute and remote.
 
   * remote:   `http://github.com/username/figtree/profiles/my-profile`
 
+When looking for profiles in a given path, figtree looks first for a file named 
+"profile" (this is the default, much like a webserver looks for a file named 
+"index.html" in directory). If figtree doesn't find "profile" it looks for 
+a match based on the last component of the path ('my-profile' in the remote 
+example above).
 
 
   * relative
