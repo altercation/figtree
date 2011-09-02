@@ -140,24 +140,25 @@ Figtree can use normal AIF profiles and can add the following special commands:
 
               depend_profile systems/lenovo/x220
 
-          figtree will try to source the linked profile from the following location:
+      figtree will try to source the linked profile from the following 
+      location:
 
-                http://github.com/username/figtree/systems/lenovo/x220
+            http://github.com/username/figtree/systems/lenovo/x220
 
-          The profile file itself has a default filename of `profile` though figtree
-          can accept profiles with a different name as well:
+      The profile file itself has a default filename of `profile` though 
+      figtree can accept profiles with a different name as well:
 
-                http://github.com/username/figtree/systems/lenovo/x220
+            http://github.com/username/figtree/systems/lenovo/x220
           
-          will source either of the following files
+      will source either of the following files
 
-                http://github.com/username/figtree/systems/lenovo/*x220*
-                http://github.com/username/figtree/systems/lenovo/x220/*profile*
+            http://github.com/username/figtree/systems/lenovo/*x220*
+            http://github.com/username/figtree/systems/lenovo/x220/*profile*
 
-          The latter form (profile) is preferred as this allows the overlay directory
-          to live in the same parent:
+      The latter form (profile) is preferred as this allows the overlay 
+      directory to live in the same parent:
 
-                http://github.com/username/figtree/systems/lenovo/x220/*overlay*
+            http://github.com/username/figtree/systems/lenovo/x220/*overlay*
 
 ## Details
 
