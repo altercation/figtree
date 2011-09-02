@@ -133,8 +133,8 @@ Figtree can use normal AIF profiles and can add the following special commands:
       same module as the source profile. Thus if you source a profile from
       github using the following command line:
 
-              # aif -p http://github.com/user/figtree/raw/master/procedures/automatic \\
-              -c http://github.com/username/figtree/profiles/my-laptop
+              aif -p http://github.com/user/figtree/raw/master/procedures/automatic \\
+                  -c http://github.com/username/figtree/profiles/my-laptop
 
       and include the following command in the config profile:
 
