@@ -186,7 +186,7 @@ with its default values.
   * **RUNTIME_REPOSITORIES**=
   * **RUNTIME_PACKAGES**=
 
-  * **TARGET_GROUPS=
+  * **TARGET_GROUPS**=
 
 The following variables work with figtree but it's better to use the `packages` 
 and `blacklist` commands.
