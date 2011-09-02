@@ -2,11 +2,22 @@ figtree
 =======
 
 an Arch Linux AIF module to create conFIG TREEs from local or remote profiles
-
 Ethan Schoonover <es@ethanschoonover.com>
 
-## CODE STATUS
-Here there be dragons
+## Goals:
+
+  * Keep your system config in version control
+
+  * Separate hardware specific packages, configuration files,
+    and values from other profile scope
+
+  * Easily update the profile from a live system; easily update
+    a live system from the profile
+
+  * Access the profile at install time from the Arch ISO via AIF
+
+
+## CODE STATUS: Here there be dragons
 
 ## Features
 
