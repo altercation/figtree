@@ -1164,14 +1164,13 @@ installaur()
             # (testing with weechat-git)
 
             echo "TEST: >>>>>SRCDEST=$SRCDEST && PKGDEST=$PKGDEST"
-            echo "press enter"
 
             SRCDEST="$build_dir/$aur_package/src"
             PKGDEST="$build_dir/$aur_package/pkg"
 
             echo "TEST: >>>>>SRCDEST=$SRCDEST && PKGDEST=$PKGDEST"
-            echo "press enter"
-            exit
+            echo "proceeding in 3 sec"
+            sleep 3
 
             local PACMAN_REVERT="$PACMAN"
             export PACMAN="$PACMAN_TARGET" # makepkg -s uses PACMAN env variable and we try to make sure we're using PACMAN_TARGET HERE; might not work? DEBUG
