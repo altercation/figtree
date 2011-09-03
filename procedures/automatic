@@ -311,7 +311,6 @@ worker_preconfigure ()
     var_UI_TYPE=${arg_ui_type:-cli}
     ui_init
     unset_opts
-    rank_mirrors "runtime" #...slow, let's save it for install only
 }
 
 unset_opts ()
@@ -350,6 +349,7 @@ worker_preload ()
                         add_pacman_repo runtime $repo "$location" || return 1
                 fi
         done
+        rank_mirrors "runtime" #...slow, let's save it for install only
         inform "Checking for pacman updates..."
         $PACMAN -Sy pacman --noconfirm &>$LOG || return 1 # update pacman first to avoid having to run twice
 # DEBUG: could skip this here since we are now checking makedepends in installaur function
