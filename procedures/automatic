@@ -307,6 +307,7 @@ EOF
 
 worker_preconfigure ()
 {
+    echo "TEST>>>"
     var_UI_TYPE=${arg_ui_type:-cli}
     ui_init
     unset_opts
