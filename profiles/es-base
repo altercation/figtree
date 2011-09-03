@@ -31,7 +31,7 @@ BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_para
 
 # INSTALL OPTIONS
 # =============================================================================
-RANKMIRRORS=0 # set top # of mirrors during install; 0=don't run rankmirrors
+RANKMIRRORS=10 # set top # of mirrors during install; 0=don't run rankmirrors
 
 # =============================================================================
 # Don't modify items below unless you have cause to. Rather, use the following

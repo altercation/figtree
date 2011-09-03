@@ -147,7 +147,7 @@ default_fs_BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_la
 /dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
 
 # default install options
-default_in_RANKMIRRORS=0 # 0 means don't run; RANKMIRRORS can be set in profiles, 10 is a good number
+default_in_RANKMIRRORS=10 # 0 means don't run; RANKMIRRORS can be set in profiles, 10 is a good number
 
 # ----------------------------------------------------------------------
 # parameters and aif.sh related functions
@@ -435,7 +435,7 @@ worker_select_source ()
                 TARGET_REPOSITORIES=(core $var_MIRRORLIST extra $var_MIRRORLIST community $var_MIRRORLIST) 
         fi
     fi
-    #rank_mirrors "runtime" #...slow, let's save it for install only
+    rank_mirrors "runtime" #...slow, let's save it for install only
 }
 
 worker_package_list ()
