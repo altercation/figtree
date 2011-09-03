@@ -310,6 +310,7 @@ worker_preconfigure ()
     var_UI_TYPE=${arg_ui_type:-cli}
     ui_init
     unset_opts
+    rank_mirrors "runtime" #...slow, let's save it for install only
 }
 
 unset_opts ()
@@ -435,7 +436,7 @@ worker_select_source ()
                 TARGET_REPOSITORIES=(core $var_MIRRORLIST extra $var_MIRRORLIST community $var_MIRRORLIST) 
         fi
     fi
-    rank_mirrors "runtime" #...slow, let's save it for install only
+    #rank_mirrors "runtime" #...slow, let's save it for install only
 }
 
 worker_package_list ()
