@@ -29,10 +29,10 @@ overlay /etc/pm/sleep.d/90alsa
 overlay /etc/thinkfan.conf
 # add line to /etc/modprobe.d/modprobe.conf:
 # options thinkpad_acpi fan_control=1
-newline="options thinkpad_acpi fan_control=1"
-if ( ! grep -q "${newline}" /etc/modprobe.d/modprobe.conf ); then
-    echo "${newline}" >> /etc/modprobe.d/modprobe.conf
-fi
+#newline="options thinkpad_acpi fan_control=1"
+#if ( ! grep -q "${newline}" /etc/modprobe.d/modprobe.conf ); then
+#    echo "${newline}" >> /etc/modprobe.d/modprobe.conf
+#fi
 # tp_smapi not yet working on x220t?
 # TODO: monitor tp_smapi compatibility status
 #packages tp_smapi

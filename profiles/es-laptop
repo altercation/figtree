@@ -1,5 +1,84 @@
 #!/bin/bash
 
+# CONFIG-TREE
+# =============================================================================
+depend_profile users/es
+depend_profile environments/xmonad/es
 depend_profile systems/lenovo/x220
-depend_profile profiles/es-base
+#depend_profile applications/cli/thebasics
+#depend_profile applications/cli/av
+ 
+# SYSTEM CONFIG VALUES
+# =============================================================================
+# other profiles depend on this, hostname not needed here, just for reference
 HOSTNAME="tau"
+LOCALE="en_US.UTF-8"
+DAEMON_LOCALE="no"
+HARDWARECLOCK="UTC"
+TIMEZONE="Canada/Pacific"
+KEYMAP="us"
+CONSOLEFONT="ter-120n"
+CONSOLEMAP=
+USECOLOR="yes"
+
+# FILESYSTEM CONFIGURATION
+# =============================================================================
+GRUB_DEVICE=/dev/sda
+PARTITIONS='/dev/sda 100:ext2:+ *:ext4'
+BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
+/dev/sda2 raw no_label dm_crypt;yes;no_mountpoint;target;no_opts;sda2crypt;-c__aes-xts-plain__-y__-s__512
+/dev/mapper/sda2crypt dm_crypt no_label lvm-pv;yes;no_mountpoint;target;no_opts;no_label;no_params
+/dev/mapper/sda2crypt+ lvm-pv no_label lvm-vg;yes;no_mountpoint;target;no_opts;cryptpool;/dev/mapper/sda2crypt
+/dev/mapper/cryptpool lvm-vg cryptpool lvm-lv;yes;no_mountpoint;target;no_opts;cryptswap;1G|lvm-lv;yes;no_mountpoint;target;no_opts;cryptroot;5G|lvm-lv;yes;no_mountpoint;target;no_opts;crypthome;5G
+/dev/mapper/cryptpool-cryptswap lvm-lv no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
+/dev/mapper/cryptpool-cryptroot lvm-lv no_label xfs;yes;/;target;no_opts;no_label;no_params
+/dev/mapper/cryptpool-crypthome lvm-lv no_label xfs;yes;/home;target;no_opts;no_label;no_params'
+
+# INSTALL OPTIONS
+# =============================================================================
+RANKMIRRORS=10 # set top # of mirrors during install; 0=don't run rankmirrors
+
+# =============================================================================
+# Don't modify items below unless you have cause to. Rather, use the following
+# commands (here or in depend_profile config files):
+#
+# packages  packagename [packagename...]
+# package_groups groupname [groupname...]
+# blacklist packagename [packagename...] (same as blacklisting a package)
+# -----------------------------------------------------------------------------
+# config    set /config/file/path VALUENAME "value to set"
+# config    unset /config/file/path VALUENAME (comments out the value)
+# daemons   add daemonname [@daemonname] [!daemonname]
+# daemons   remove daemonname [daemonname...]
+# modules   add modulename [modulename...]
+# modules   remove modulname [modulename...]
+# modules   add networkname [networkname...]
+# modules   remove networkname [networkname...]
+# overlay   /install/path/file [/another/file/here]
+#           (place the file in the overlay directory or use the
+#            figtree module partial-update-overlay procedure)
+# coda      'misc command to be run at end of installation goes-here'
+# -----------------------------------------------------------------------------
+# kernelparams parameter list here
+#
+# plural and singular forms of each command are equivalent in order to 
+# eliminate a common error in the config syntax:
+# -----------------------------------------------------------------------------
+# packages|package package_groups|package_group blacklist|blacklists 
+# config|configs daemons|daemon modules|module networks|network 
+# kernelparams|kernelparam coda|codas overlays|overlay
+# -----------------------------------------------------------------------------
+# the following are equivalent and may be used interchangeably 
+# add==set  unset==remove==delete
+
+# =============================================================================
+# RUNTIME_REPOSITORIES / RUNTIME_PACKAGES
+# =============================================================================
+RUNTIME_REPOSITORIES=(core "http://mirror.rit.edu/archlinux/${var_ARCH}")
+RUNTIME_PACKAGES=
+
+# INSTALL PACKAGES
+# =============================================================================
+TARGET_GROUPS=
+TARGET_PACKAGES_EXCLUDE=
+TARGET_PACKAGES=
