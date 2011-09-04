@@ -28,11 +28,21 @@ USECOLOR="yes"
 # FILESYSTEM CONFIGURATION
 # =============================================================================
 # letter figtree automatic provide defaults for now
+#GRUB_DEVICE=/dev/sda
+#PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
+#BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
+#/dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
+#/dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
 GRUB_DEVICE=/dev/sda
-PARTITIONS='/dev/sda 100:ext2:+ 512:swap *:ext4'
+PARTITIONS='/dev/sda 100:ext2:+ *:ext4'
 BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_params
-/dev/sda2 raw no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
-/dev/sda3 raw no_label ext4;yes;/;target;no_opts;no_label;no_params'
+/dev/sda2 raw no_label dm_crypt;yes;no_mountpoint;target;no_opts;sda2crypt;-c__aes-xts-plain__-y__-s__512
+/dev/mapper/sda2crypt dm_crypt no_label lvm-pv;yes;no_mountpoint;target;no_opts;no_label;no_params
+/dev/mapper/sda2crypt+ lvm-pv no_label lvm-vg;yes;no_mountpoint;target;no_opts;cryptpool;/dev/mapper/sda2crypt
+/dev/mapper/cryptpool lvm-vg cryptpool lvm-lv;yes;no_mountpoint;target;no_opts;cryptswap;1G|lvm-lv;yes;no_mountpoint;target;no_opts;cryptroot;5G|lvm-lv;yes;no_mountpoint;target;no_opts;crypthome;5G
+/dev/mapper/cryptpool-cryptswap lvm-lv no_label swap;yes;no_mountpoint;target;no_opts;no_label;no_params
+/dev/mapper/cryptpool-cryptroot lvm-lv no_label xfs;yes;/;target;no_opts;no_label;no_params
+/dev/mapper/cryptpool-crypthome lvm-lv no_label xfs;yes;/home;target;no_opts;no_label;no_params'
 
 # INSTALL OPTIONS
 # =============================================================================

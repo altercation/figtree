@@ -34,6 +34,7 @@ BLOCKDATA='/dev/sda1 raw no_label ext2;yes;/boot;target;no_opts;no_label;no_para
 /dev/mapper/cryptpool-cryptroot lvm-lv no_label xfs;yes;/;target;no_opts;no_label;no_params
 /dev/mapper/cryptpool-crypthome lvm-lv no_label xfs;yes;/home;target;no_opts;no_label;no_params'
 
+
 # INSTALL OPTIONS
 # =============================================================================
 RANKMIRRORS=10 # set top # of mirrors during install; 0=don't run rankmirrors
