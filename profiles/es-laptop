@@ -74,7 +74,7 @@ RANKMIRRORS=10 # set top # of mirrors during install; 0=don't run rankmirrors
 # =============================================================================
 # RUNTIME_REPOSITORIES / RUNTIME_PACKAGES
 # =============================================================================
-RUNTIME_REPOSITORIES=(core "http://mirror.rit.edu/archlinux/${var_ARCH}")
+RUNTIME_REPOSITORIES= #(core "http://mirror.rit.edu/archlinux/$repo/os/$arch")
 RUNTIME_PACKAGES=
 
 # INSTALL PACKAGES
